@@ -1,0 +1,356 @@
+{%- liquid
+  assign align = block.settings.alignment | default: 'flex-start'
+  assign align_mobile = block.settings.alignment_mobile | default: 'inherit'
+  if align_mobile == 'inherit'
+    assign align_mobile = align
+  endif
+
+  # Wie viele Kreise gezeigt werden. Leere Plaetze erzeugen sonst graue
+  # Platzhalter, die nach fehlendem Bild aussehen.
+  assign avatar_count = block.settings.avatar_count | default: '3' | times: 1
+-%}
+<div class="happy-customersV2-{{ block.id }}" {{ block.shopify_attributes }}>
+  {%- if avatar_count > 0 -%}
+    <div class="avatarsV2-{{ block.id }}">
+      {%- if block.settings.image != blank -%}
+        {{ block.settings.image | image_url: width: 100 | image_tag }}
+      {%- else -%}
+        <svg xmlns="http://www.w3.org/2000/svg" class="placeholder-svg" width="40px" height="40px" viewBox="0 0 16 16" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8C16 12.4183 12.4183 16 8 16z" fill="#f2f2f2"/></svg>
+      {%- endif -%}
+      {%- if avatar_count > 1 -%}
+        {%- if block.settings.image_2 != blank -%}
+          {{ block.settings.image_2 | image_url: width: 100 | image_tag }}
+        {%- else -%}
+          <svg xmlns="http://www.w3.org/2000/svg" class="placeholder-svg" width="40px" height="40px" viewBox="0 0 16 16" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8C16 12.4183 12.4183 16 8 16z" fill="#f2f2f2"/></svg>
+        {%- endif -%}
+      {%- endif -%}
+      {%- if avatar_count > 2 -%}
+        {%- if block.settings.image_3 != blank -%}
+          {{ block.settings.image_3 | image_url: width: 100 | image_tag }}
+        {%- else -%}
+          <svg xmlns="http://www.w3.org/2000/svg" class="placeholder-svg" width="40px" height="40px" viewBox="0 0 16 16" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8C16 12.4183 12.4183 16 8 16z" fill="#f2f2f2"/></svg>
+        {%- endif -%}
+      {%- endif -%}
+    </div>
+  {%- endif -%}
+  <span class="textV2-{{ block.id }}">
+    <span style="font-weight: 900;">{{ block.settings.name }}</span>
+    <span class="verifiedV2-{{ block.id }}">
+      {%- if block.settings.badge != blank -%}
+        {{ block.settings.badge | image_url: width: 50 | image_tag }}
+      {%- else -%}
+        <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="auto" viewBox="0 0 24 24" fill="none">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M21.007 8.27C22.194 9.125 23 10.45 23 12c0 1.55-.806 2.876-1.993 3.73.24 1.442-.134 2.958-1.227 4.05-1.095 1.095-2.61 1.459-4.046 1.225C14.883 22.196 13.546 23 12 23c-1.55 0-2.878-.807-3.731-1.996-1.438.235-2.954-.128-4.05-1.224-1.095-1.095-1.459-2.611-1.217-4.05C1.816 14.877 1 13.551 1 12s.816-2.878 2.002-3.73c-.242-1.439.122-2.955 1.218-4.05 1.093-1.094 2.61-1.467 4.057-1.227C9.125 1.804 10.453 1 12 1c1.545 0 2.88.803 3.732 1.993 1.442-.24 2.956.135 4.048 1.227 1.093 1.092 1.468 2.608 1.227 4.05Zm-4.426-.084a1 1 0 0 1 .233 1.395l-5 7a1 1 0 0 1-1.521.126l-3-3a1 1 0 0 1 1.414-1.414l2.165 2.165 4.314-6.04a1 1 0 0 1 1.395-.232Z"
+                fill="{{ block.settings.verified_badge }}"/>
+        </svg>
+      {% endif %}
+    </span>
+    <span>{{ block.settings.text }}</span>
+  </span>
+</div>
+
+<style>
+      /*
+       * Der Block liegt in einer Blockgruppe, die ihre Kinder ueber align-items
+       * ausrichtet. Damit die Ausrichtung hier ueberhaupt greift, muss der Block
+       * volle Breite bekommen - sonst waere die Box selbst schon schmal und
+       * justify-content wirkungslos.
+       */
+      .happy-customersV2-{{ block.id }} {
+          display: flex;
+          align-items: center;
+          align-self: stretch;
+          width: 100%;
+          justify-content: {{ align }};
+          background-color: #ffffff;
+          border-radius: {{ block.settings.border_radius }}px;
+          padding: {{ block.settings.padding_top }}px {{ block.settings.padding_bottom }}px;
+          margin: {{ block.settings.margin_top }}px 0 {{ block.settings.margin_bottom }}px 0;
+          font-size: {{ block.settings.font_size }}px;
+          color: {{block.settings.text_color}};
+          background: {{block.settings.background_review}};
+          border: {{block.settings.border_size}}rem {{block.settings.border_style}} {{block.settings.border_color}};
+      }
+
+      @media screen and (max-width: 749px) {
+        .happy-customersV2-{{ block.id }} {
+            justify-content: {{ align_mobile }};
+        }
+      }
+
+      .avatarsV2-{{ block.id }} {
+          display: flex;
+          margin-right: 10px;
+      }
+
+      .avatarsV2-{{ block.id }} img, .avatarsV2-{{ block.id }} svg {
+          width: {{ block.settings.avatar_size }}px;
+          height: {{ block.settings.avatar_size }}px;
+          border-radius: 50%;
+          border: 2px solid white;
+          margin-left: -7px;
+          object-fit: cover;
+      }
+
+      /* Einzelnes Bild braucht keinen Ueberlappungs-Versatz. */
+      .avatarsV2-{{ block.id }} > *:first-child {
+          margin-left: 0;
+      }
+
+  .textV2-{{ block.id }} {
+      font-weight: normal;
+      font-size: {{ block.settings.font_size }}px;
+      color: {{block.settings.text_color}};
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+  }
+
+      .textV2-{{ block.id }} strong {
+          font-weight: 800;
+      }
+
+      .verifiedV2-{{ block.id }} {
+          vertical-align: middle;
+          height: 13px;
+          width: 13px;
+      }
+  .verifiedV2-{{ block.id }} img, .verifiedV2-{{ block.id }} svg {
+          height: 100%;
+          width: 100%;
+      }
+</style>
+
+{% schema %}
+
+{
+      "name": "Review V1",
+      "tag": null,
+      "settings": [
+        {
+          "type": "select",
+          "id": "avatar_count",
+          "label": "Anzahl der Bilder",
+          "options": [
+            { "value": "0", "label": "Keine" },
+            { "value": "1", "label": "1 Bild" },
+            { "value": "2", "label": "2 Bilder" },
+            { "value": "3", "label": "3 Bilder" }
+          ],
+          "default": "3",
+          "info": "Nicht belegte Plätze zeigen sonst einen grauen Kreis."
+        },
+        {
+          "type": "range",
+          "id": "avatar_size",
+          "label": "Bildgröße",
+          "min": 16,
+          "max": 48,
+          "step": 2,
+          "unit": "px",
+          "default": 22,
+          "visible_if": "{{ block.settings.avatar_count != '0' }}"
+        },
+        {
+              "type": "image_picker",
+              "id": "image",
+              "label": "Bild 1",
+              "visible_if": "{{ block.settings.avatar_count != '0' }}"
+            },
+        {
+              "type": "image_picker",
+              "id": "image_2",
+              "label": "Bild 2",
+              "visible_if": "{{ block.settings.avatar_count == '2' or block.settings.avatar_count == '3' }}"
+            },
+        {
+              "type": "image_picker",
+              "id": "image_3",
+              "label": "Bild 3",
+              "visible_if": "{{ block.settings.avatar_count == '3' }}"
+            },
+        {
+          "type": "text",
+          "id": "name",
+          "label": "Name",
+          "default": "Michelle"
+        },
+        {
+              "type": "image_picker",
+              "id": "badge",
+              "label": "Eigenes Siegel-Bild"
+            },
+        {
+          "type": "inline_richtext",
+          "id": "text",
+          "label": "Text",
+          "default": "and <strong>758</strong> people purchased"
+        },
+        {
+          "type": "header",
+          "content": "Design"
+        },
+        {
+          "type": "select",
+          "id": "alignment",
+          "label": "Ausrichtung (Desktop)",
+          "options": [
+            { "value": "flex-start", "label": "Links" },
+            { "value": "center", "label": "Mittig" },
+            { "value": "flex-end", "label": "Rechts" }
+          ],
+          "default": "flex-start"
+        },
+        {
+          "type": "select",
+          "id": "alignment_mobile",
+          "label": "Ausrichtung (Handy)",
+          "options": [
+            { "value": "inherit", "label": "Wie Desktop" },
+            { "value": "flex-start", "label": "Links" },
+            { "value": "center", "label": "Mittig" },
+            { "value": "flex-end", "label": "Rechts" }
+          ],
+          "default": "inherit"
+        },
+        {
+          "type": "color",
+          "id": "background_review",
+          "label": "Hintergrundfarbe",
+          "default": "#ffffff"
+        },
+        {
+          "type": "color",
+          "id": "text_color",
+          "label": "Textfarbe",
+          "default": "#000000"
+        },
+         {
+          "type": "color",
+          "id": "verified_badge",
+          "label": "Farbe des Siegels",
+          "default": "#1c9cef"
+        },
+        {
+          "type": "color",
+          "id": "border_color",
+          "label": "Rahmenfarbe",
+          "default": "#f2f2f2"
+    },
+    {
+      "type": "select",
+      "id": "border_style",
+      "options": [
+        {
+          "value": "none",
+          "label": "Keiner"
+        },
+        {
+          "value": "solid",
+          "label": "Durchgezogen"
+        },
+        {
+          "value": "dashed",
+          "label": "Gestrichelt"
+        },
+        {
+          "value": "dotted",
+          "label": "Gepunktet"
+        },
+        {
+          "value": "double",
+          "label": "Doppelt"
+        },
+        {
+          "value": "inset",
+          "label": "Inset"
+        },
+        {
+          "value": "outset",
+          "label": "Outset"
+        }
+      ],
+      "default": "dashed",
+      "label": "Rahmenart"
+    },
+    {
+      "type": "range",
+          "id": "border_size",
+          "label": "Rahmendicke",
+          "default": 0.2,
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "unit": "rem"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Eckenrundung",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+          "id": "font_size",
+          "label": "Schriftgröße",
+          "default": 12,
+          "min": 8,
+          "max": 20,
+      "step": 1,
+          "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "label": "Innenabstand oben/unten",
+      "default": 5
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "label": "Innenabstand seitlich",
+      "default": 15
+    },
+    {
+      "type": "range",
+      "id": "margin_top",
+      "min": -30,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "label": "Abstand oben",
+      "default": 10,
+      "info": "Negative Werte ziehen den Block naeher an den darueberliegenden heran."
+    },
+    {
+      "type": "range",
+      "id": "margin_bottom",
+      "min": -30,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "label": "Abstand unten",
+      "default": 10
+    }
+    ],
+    "presets": [
+      {
+        "name": "Review V1",
+        "category": "Lumin Blocks"
+      }
+    ]
+    }
+{% endschema %}

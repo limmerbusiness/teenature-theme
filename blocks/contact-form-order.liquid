@@ -1,0 +1,28 @@
+{% liquid
+  assign input_id = 'ContactForm-order-' | append: block.id
+%}
+<div {{ block.shopify_attributes }}>
+  <label
+    class="visually-hidden"
+    for="{{ input_id }}"
+  >
+    Bestellnummer
+  </label>
+  <input
+    type="text"
+    id="{{ input_id }}"
+    class="contact-form__input"
+    name="contact[Bestellnummer]"
+    value="{% if form.Bestellnummer %}{{ form.Bestellnummer }}{% endif %}"
+    placeholder="Bestellnummer"
+  >
+</div>
+
+{% schema %}
+{
+  "name": "Bestellnummer",
+  "tag": null,
+  "settings": [],
+  "presets": []
+}
+{% endschema %}

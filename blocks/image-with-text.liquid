@@ -1,0 +1,390 @@
+{% liquid
+  assign s = block.settings
+  assign layout = s.layout | default: 'horizontal'
+  assign image_width = s.image_width | default: 50
+  assign image_width_mobile = s.image_width_mobile | default: 50
+  assign text_width = 100 | minus: image_width
+  assign text_width_mobile = 100 | minus: image_width_mobile
+  assign gap = s.gap | default: 24
+  assign image_position = s.image_position | default: 'left'
+  assign vertical_alignment = s.vertical_alignment | default: 'center'
+  assign text_alignment = s.text_alignment | default: 'left'
+
+  assign ratio = 1
+  case s.image_ratio
+    when 'landscape'
+      assign ratio = '16 / 9'
+    when 'portrait'
+      assign ratio = '4 / 5'
+    when 'square'
+      assign ratio = '1 / 1'
+    when 'adapt'
+      if s.image != blank
+        assign ratio = s.image.aspect_ratio
+      endif
+  endcase
+
+  if ratio == 0 or ratio == null
+    assign ratio = 1
+  endif
+
+  assign widths = '240, 352, 832, 1200, 1600, 1920'
+  if layout == 'horizontal' and s.vertical_on_mobile
+    assign sizes = 'auto, (min-width: 750px) ' | append: image_width | append: 'vw, 100vw'
+  else
+    assign sizes = 'auto, (min-width: 750px) ' | append: image_width | append: 'vw, ' | append: image_width_mobile | append: 'vw'
+  endif
+%}
+
+<div
+  class="
+    image-with-text
+    image-with-text--{{ block.id }}
+    image-with-text--{{ layout }}
+    {% if layout == 'horizontal' and image_position == 'right' %}image-with-text--image-right{% endif %}
+    {% if layout == 'horizontal' and s.vertical_on_mobile %}image-with-text--stack-mobile{% endif %}
+    spacing-style
+  "
+  style="
+    --iwt-image-width: {{ image_width }}%;
+    --iwt-text-width: {{ text_width }}%;
+    --iwt-image-width-mobile: {{ image_width_mobile }}%;
+    --iwt-text-width-mobile: {{ text_width_mobile }}%;
+    --iwt-gap: {{ gap }}px;
+    --iwt-align: {{ vertical_alignment }};
+    --iwt-text-align: {{ text_alignment }};
+    --iwt-ratio: {{ ratio }};
+    --iwt-radius: {{ s.border_radius | default: 0 }}px;
+    {% render 'spacing-style', settings: s %}
+  "
+  {{ block.shopify_attributes }}
+>
+  <div class="image-with-text__media">
+    {%- if s.image != blank -%}
+      {{
+        s.image
+        | image_url: width: 1920
+        | image_tag:
+          widths: widths,
+          sizes: sizes,
+          class: 'image-with-text__image',
+          loading: 'lazy'
+      }}
+    {%- else -%}
+      <div class="image-with-text__placeholder">
+        {{ 'image' | placeholder_svg_tag: 'image-with-text__placeholder-svg' }}
+      </div>
+    {%- endif -%}
+  </div>
+
+  {%- if s.text != blank -%}
+    <div class="image-with-text__text rte">
+      {{ s.text }}
+    </div>
+  {%- endif -%}
+</div>
+
+{% stylesheet %}
+  .image-with-text {
+    display: flex;
+    width: 100%;
+    gap: var(--iwt-gap);
+    align-items: var(--iwt-align);
+  }
+
+  .image-with-text--horizontal {
+    flex-direction: row;
+  }
+
+  .image-with-text--horizontal.image-with-text--image-right {
+    flex-direction: row-reverse;
+  }
+
+  .image-with-text--vertical {
+    flex-direction: column;
+  }
+
+  .image-with-text__media {
+    flex: 0 0 var(--iwt-image-width);
+    width: var(--iwt-image-width);
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .image-with-text--vertical .image-with-text__media {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .image-with-text__image,
+  .image-with-text__placeholder {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: var(--iwt-ratio);
+    object-fit: cover;
+    border-radius: var(--iwt-radius);
+  }
+
+  .image-with-text__placeholder {
+    overflow: hidden;
+    background: rgb(var(--color-foreground-rgb, 0 0 0) / 0.06);
+  }
+
+  .image-with-text__placeholder-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .image-with-text__text {
+    flex: 1 1 var(--iwt-text-width);
+    min-width: 0;
+    text-align: var(--iwt-text-align);
+  }
+
+  .image-with-text--vertical .image-with-text__text {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .image-with-text__text > *:first-child {
+    margin-block-start: 0;
+  }
+
+  .image-with-text__text > *:last-child {
+    margin-block-end: 0;
+  }
+
+  @media screen and (max-width: 749px) {
+    .image-with-text--horizontal:not(.image-with-text--stack-mobile) .image-with-text__media {
+      flex: 0 0 var(--iwt-image-width-mobile);
+      width: var(--iwt-image-width-mobile);
+    }
+
+    .image-with-text--horizontal:not(.image-with-text--stack-mobile) .image-with-text__text {
+      flex: 1 1 var(--iwt-text-width-mobile);
+    }
+
+    .image-with-text--stack-mobile {
+      flex-direction: column;
+    }
+
+    .image-with-text--stack-mobile .image-with-text__media {
+      flex: 0 0 auto;
+      width: 100%;
+    }
+
+    .image-with-text--stack-mobile .image-with-text__text {
+      flex: 1 1 auto;
+      width: 100%;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.image_with_text",
+  "tag": null,
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "t:settings.image"
+    },
+    {
+      "type": "select",
+      "id": "image_ratio",
+      "label": "t:settings.aspect_ratio",
+      "options": [
+        {
+          "value": "adapt",
+          "label": "t:options.auto"
+        },
+        {
+          "value": "portrait",
+          "label": "t:options.portrait"
+        },
+        {
+          "value": "square",
+          "label": "t:options.square"
+        },
+        {
+          "value": "landscape",
+          "label": "t:options.landscape"
+        }
+      ],
+      "default": "adapt"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "t:settings.border_radius",
+      "min": 0,
+      "max": 100,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "t:settings.text",
+      "default": "<p>Share details about your brand, product, or promotion. Highlight what makes you unique.</p>"
+    },
+    {
+      "type": "text_alignment",
+      "id": "text_alignment",
+      "label": "t:settings.alignment",
+      "default": "left"
+    },
+    {
+      "type": "header",
+      "content": "t:content.layout"
+    },
+    {
+      "type": "select",
+      "id": "image_position",
+      "label": "t:settings.image_position",
+      "options": [
+        {
+          "value": "left",
+          "label": "t:options.left"
+        },
+        {
+          "value": "right",
+          "label": "t:options.right"
+        }
+      ],
+      "default": "left",
+      "visible_if": "{{ block.settings.layout == 'horizontal' }}"
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "t:settings.direction",
+      "options": [
+        {
+          "value": "horizontal",
+          "label": "t:options.horizontal"
+        },
+        {
+          "value": "vertical",
+          "label": "t:options.vertical"
+        }
+      ],
+      "default": "horizontal"
+    },
+    {
+      "type": "checkbox",
+      "id": "vertical_on_mobile",
+      "label": "t:settings.vertical_on_mobile",
+      "default": true,
+      "visible_if": "{{ block.settings.layout == 'horizontal' }}"
+    },
+    {
+      "type": "range",
+      "id": "image_width",
+      "label": "t:settings.width_desktop",
+      "min": 5,
+      "max": 90,
+      "step": 1,
+      "unit": "%",
+      "default": 50,
+      "visible_if": "{{ block.settings.layout == 'horizontal' }}"
+    },
+    {
+      "type": "range",
+      "id": "image_width_mobile",
+      "label": "t:settings.width_mobile",
+      "min": 5,
+      "max": 90,
+      "step": 1,
+      "unit": "%",
+      "default": 50,
+      "visible_if": "{{ block.settings.layout == 'horizontal' and block.settings.vertical_on_mobile == false }}"
+    },
+    {
+      "type": "select",
+      "id": "vertical_alignment",
+      "label": "t:settings.position",
+      "options": [
+        {
+          "value": "flex-start",
+          "label": "t:options.top"
+        },
+        {
+          "value": "center",
+          "label": "t:options.center"
+        },
+        {
+          "value": "flex-end",
+          "label": "t:options.bottom"
+        }
+      ],
+      "default": "center",
+      "visible_if": "{{ block.settings.layout == 'horizontal' }}"
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "label": "t:settings.gap",
+      "min": 0,
+      "max": 64,
+      "step": 2,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-start",
+      "label": "t:settings.left",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-end",
+      "label": "t:settings.right",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.image_with_text",
+      "category": "t:categories.basic"
+    }
+  ]
+}
+{% endschema %}

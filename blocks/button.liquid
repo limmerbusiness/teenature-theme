@@ -1,0 +1,355 @@
+
+{% render 'button', link: block.settings.link %}
+
+{%- comment -%}
+  Die Klasse am Knopf richtet sich nach dem gewaehlten Stil
+  (button / button-secondary / link), deshalb werden hier alle drei
+  Varianten angesprochen.
+{%- endcomment -%}
+{%- assign btn = '.button--' | append: block.id | append: ', .button-secondary--' | append: block.id | append: ', .link--' | append: block.id -%}
+
+{%- style -%}
+  {%- if block.settings.kokoro_btn_size_desktop != blank -%}
+    @media screen and (min-width: 750px) {
+      {{ btn }} {
+        font-size: {{ block.settings.kokoro_btn_size_desktop }};
+      }
+    }
+  {%- endif -%}
+
+  {%- if block.settings.kokoro_btn_size_mobile != blank -%}
+    @media screen and (max-width: 749px) {
+      {{ btn }} {
+        font-size: {{ block.settings.kokoro_btn_size_mobile }};
+      }
+    }
+  {%- endif -%}
+
+  {%- if block.settings.kokoro_btn_padding_block > 0 or block.settings.kokoro_btn_padding_inline > 0 -%}
+    {{ btn }} {
+      {%- if block.settings.kokoro_btn_padding_block > 0 -%}
+        padding-block: {{ block.settings.kokoro_btn_padding_block }}px;
+      {%- endif -%}
+      {%- if block.settings.kokoro_btn_padding_inline > 0 -%}
+        padding-inline: {{ block.settings.kokoro_btn_padding_inline }}px;
+      {%- endif -%}
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+  {%- endif -%}
+
+  {%- if block.settings.kokoro_btn_radius > 0 -%}
+    {{ btn }} {
+      border-radius: {{ block.settings.kokoro_btn_radius }}px;
+    }
+  {%- endif -%}
+{%- endstyle -%}
+
+{%- if block.settings.match_cart_button -%}
+  {%- comment -%}
+    Zwei Stufen:
+    1. Der Knopf bekommt immer die Klasse des Primaer-Buttons - das ist
+       dieselbe Gestaltung, aus der auch der Warenkorb-Knopf gebaut ist.
+       Damit wirkt die Einstellung auch auf Seiten ohne Kaufknopf.
+    2. Gibt es auf der Seite einen echten Warenkorb-Knopf, werden dessen
+       tatsaechliche Werte zusaetzlich uebernommen.
+    Eine eigene Eckenrundung oben gewinnt, weil sie per CSS greift.
+  {%- endcomment -%}
+  <script>
+    (function () {
+      window.kokoroBtnIds = window.kokoroBtnIds || [];
+      if (window.kokoroBtnIds.indexOf('{{ block.id }}') === -1) {
+        window.kokoroBtnIds.push('{{ block.id }}');
+      }
+
+      var OWN_RADIUS = {{ block.settings.kokoro_btn_radius | default: 0 }};
+
+      var CART_BUTTON = [
+        'form[data-type="add-to-cart-form"] button',
+        'add-to-cart-component button',
+        'button[name="add"]',
+        '.product-details .button'
+      ].join(', ');
+
+      var COPIED = [
+        'border-radius',
+        'font-family',
+        'font-size',
+        'font-weight',
+        'letter-spacing',
+        'text-transform'
+      ];
+
+      function apply() {
+        try {
+          var source = document.querySelector(CART_BUTTON);
+          var styles = source ? window.getComputedStyle(source) : null;
+
+          (window.kokoroBtnIds || []).forEach(function (id) {
+            var targets = document.querySelectorAll(
+              '.button--' + id + ', .button-secondary--' + id + ', .link--' + id
+            );
+
+            targets.forEach(function (target) {
+              if (target === source) return;
+
+              target.classList.remove('link');
+              target.classList.remove('button-secondary');
+              target.classList.add('button');
+
+              if (!styles) return;
+              COPIED.forEach(function (property) {
+                if (property === 'border-radius' && OWN_RADIUS > 0) return;
+                var value = styles.getPropertyValue(property);
+                if (value) target.style.setProperty(property, value);
+              });
+            });
+          });
+        } catch (error) {
+          /* Im Zweifel bleibt der Knopf so, wie das Theme ihn gebaut hat. */
+        }
+      }
+
+      apply();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', apply);
+      }
+
+      if (!window.kokoroBtnObserver) {
+        var pending = null;
+        window.kokoroBtnObserver = new MutationObserver(function () {
+          window.clearTimeout(pending);
+          pending = window.setTimeout(apply, 80);
+        });
+        window.kokoroBtnObserver.observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+        });
+      }
+    })();
+  </script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "t:names.button",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "label",
+      "label": "t:settings.label",
+      "default": "t:text_defaults.button_label"
+    },
+    {
+      "type": "url",
+      "id": "link",
+      "label": "t:settings.link"
+    },
+    {
+      "type": "checkbox",
+      "id": "open_in_new_tab",
+      "label": "t:settings.open_new_tab",
+      "default": false
+    },
+    {
+      "type": "select",
+      "id": "style_class",
+      "label": "t:settings.style",
+      "options": [
+        {
+          "value": "button",
+          "label": "t:options.primary"
+        },
+        {
+          "value": "button-secondary",
+          "label": "t:options.secondary"
+        },
+        {
+          "value": "link",
+          "label": "t:options.link"
+        }
+      ],
+      "default": "button"
+    },
+    {
+      "type": "checkbox",
+      "id": "match_cart_button",
+      "label": "Aussehen wie der Warenkorb-Button",
+      "default": false,
+      "info": "Der Knopf bekommt die Gestaltung des Kaufknopfes – auf jeder Seite, auch ohne Produkt. Der eingestellte Stil (Primär/Sekundär/Link) wird dabei überschrieben."
+    },
+    {
+      "type": "header",
+      "content": "Form"
+    },
+    {
+      "type": "range",
+      "id": "kokoro_btn_radius",
+      "label": "Eckenrundung",
+      "min": 0,
+      "max": 100,
+      "step": 2,
+      "unit": "px",
+      "default": 0,
+      "info": "0 = wie im Theme. 100 ergibt eine Pillenform."
+    },
+    {
+      "type": "header",
+      "content": "Schriftgröße"
+    },
+    {
+      "type": "select",
+      "id": "kokoro_btn_size_desktop",
+      "label": "Am Computer",
+      "info": "Gilt ab 750 px Bildschirmbreite.",
+      "options": [
+        { "value": "", "label": "Wie im Theme" },
+        { "value": "0.75rem", "label": "12px" },
+        { "value": "0.875rem", "label": "14px" },
+        { "value": "1rem", "label": "16px" },
+        { "value": "1.125rem", "label": "18px" },
+        { "value": "1.25rem", "label": "20px" },
+        { "value": "1.5rem", "label": "24px" },
+        { "value": "1.75rem", "label": "28px" },
+        { "value": "2rem", "label": "32px" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "kokoro_btn_size_mobile",
+      "label": "Auf dem Handy",
+      "info": "Gilt unter 750 px Bildschirmbreite.",
+      "options": [
+        { "value": "", "label": "Wie am Computer" },
+        { "value": "0.75rem", "label": "12px" },
+        { "value": "0.875rem", "label": "14px" },
+        { "value": "1rem", "label": "16px" },
+        { "value": "1.125rem", "label": "18px" },
+        { "value": "1.25rem", "label": "20px" },
+        { "value": "1.5rem", "label": "24px" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "header",
+      "content": "Innenabstand"
+    },
+    {
+      "type": "range",
+      "id": "kokoro_btn_padding_block",
+      "label": "Oben und unten",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 0,
+      "info": "0 = wie im Theme. Macht den Knopf höher und damit besser klickbar."
+    },
+    {
+      "type": "range",
+      "id": "kokoro_btn_padding_inline",
+      "label": "Links und rechts",
+      "min": 0,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 0,
+      "info": "0 = wie im Theme."
+    },
+    {
+      "type": "select",
+      "id": "sticky_on_scroll",
+      "label": "t:settings.sticky_on_scroll",
+      "options": [
+        {
+          "value": "none",
+          "label": "t:options.sticky_bottom_no"
+        },
+        {
+          "value": "mobile",
+          "label": "t:options.sticky_bottom_mob"
+        },
+        {
+          "value": "desktop",
+          "label": "t:options.sticky_bottom_desk"
+        },
+        {
+          "value": "both",
+          "label": "t:options.sticky_bottom_both"
+        }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "header",
+      "content": "t:content.size"
+    },
+    {
+      "type": "select",
+      "id": "width",
+      "label": "t:settings.width_desktop",
+      "options": [
+        {
+          "value": "fit-content",
+          "label": "t:options.fit_content"
+        },
+        {
+          "value": "custom",
+          "label": "t:options.custom"
+        }
+      ],
+      "default": "fit-content"
+    },
+    {
+      "type": "range",
+      "id": "custom_width",
+      "label": "t:settings.custom_width",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "default": 100,
+      "visible_if": "{{ block.settings.width == \"custom\" }}"
+    },
+    {
+      "type": "select",
+      "id": "width_mobile",
+      "label": "t:settings.width_mobile",
+      "options": [
+        {
+          "value": "fit-content",
+          "label": "t:options.fit_content"
+        },
+        {
+          "value": "custom",
+          "label": "t:options.custom"
+        }
+      ],
+      "default": "fit-content"
+    },
+    {
+      "type": "range",
+      "id": "custom_width_mobile",
+      "label": "t:settings.custom_width",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "default": 100,
+      "visible_if": "{{ block.settings.width_mobile == \"custom\" }}"
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.button",
+      "category": "t:categories.basic",
+      "settings": {
+        "link": "shopify://collections/all"
+      }
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,261 @@
+{% assign block_settings = block.settings %}
+
+<script
+  src="{{ 'vertical-text-scroll.js' | asset_url }}"
+  type="module"
+  fetchpriority="low"
+></script>
+
+<vertical-text-scroll
+  class="vts spacing-style{% if block_settings.inherit_color_scheme == false %} color-{{ block_settings.color_scheme }}{% endif %}"
+  style="
+    {%- render 'spacing-style', settings: block_settings -%}
+    --vts-speed: {{ block_settings.speed }}s;
+    --vts-font-size: {{ block_settings.font_size }}px;
+    --vts-font-size-mobile: {{ block_settings.font_size_mobile | default: 36 }}px;
+  "
+  {{ block.shopify_attributes }}
+>
+  {%- if block_settings.eyebrow != blank -%}
+    <p class="vts__eyebrow">{{ block_settings.eyebrow | escape }}</p>
+  {%- endif -%}
+
+  <div class="vts__viewport">
+    <div class="vts__fade vts__fade--top"></div>
+    <div
+      class="vts__track"
+      ref="track"
+    >
+      {% content_for 'blocks' %}
+    </div>
+    <div class="vts__fade vts__fade--bottom"></div>
+  </div>
+</vertical-text-scroll>
+
+{% stylesheet %}
+  vertical-text-scroll {
+    display: block;
+    text-align: center;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .vts__eyebrow {
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-block-end: 1.5rem;
+    opacity: 0.75;
+  }
+
+  .vts__viewport {
+    position: relative;
+    height: calc(var(--vts-item-height, 80px) * 5);
+    overflow: hidden;
+    padding-inline: var(--padding-xs, 0.75rem);
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  @media screen and (min-width: 750px) {
+    .vts__viewport {
+      padding-inline: 0;
+    }
+  }
+
+  .vts__track {
+    display: flex;
+    flex-direction: column;
+    will-change: transform;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .vts__track {
+      animation: vts-scroll var(--vts-speed, 8s) linear infinite;
+    }
+  }
+
+  @keyframes vts-scroll {
+    0% {
+      transform: translateY(0);
+    }
+
+    100% {
+      transform: translateY(calc(var(--vts-total-height, 400px) * -1));
+    }
+  }
+
+  .vts__item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-block: 0.15em;
+    line-height: 1.05;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: clip;
+  }
+
+  .vts__item span {
+    font-size: var(--vts-font-size, 72px);
+    font-weight: 700;
+    display: block;
+    white-space: nowrap;
+  }
+
+  @media screen and (max-width: 749px) {
+    .vts__item span {
+      font-size: var(--vts-font-size-mobile, var(--vts-font-size, 72px));
+    }
+  }
+
+  /* Gradient fade masks at top and bottom */
+  .vts__fade {
+    position: absolute;
+    inset-inline: 0;
+    height: 35%;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .vts__fade--top {
+    top: 0;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-background, #f5f3ee) 100%, transparent),
+      color-mix(in srgb, var(--color-background, #f5f3ee) 0%, transparent)
+    );
+  }
+
+  .vts__fade--bottom {
+    bottom: 0;
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--color-background, #f5f3ee) 100%, transparent),
+      color-mix(in srgb, var(--color-background, #f5f3ee) 0%, transparent)
+    );
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.vertical_text_scroll",
+  "tag": null,
+  "blocks": [
+    {
+      "type": "_vertical-text-scroll-item"
+    }
+  ],
+  "settings": [
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Top label",
+      "default": "Inspired by mindfulness"
+    },
+    {
+      "type": "range",
+      "id": "font_size",
+      "label": "Font size (px)",
+      "min": 32,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 72
+    },
+    {
+      "type": "range",
+      "id": "font_size_mobile",
+      "label": "Mobile font size (px)",
+      "min": 20,
+      "max": 96,
+      "step": 2,
+      "unit": "px",
+      "default": 36,
+      "info": "Used on screens up to 749px wide."
+    },
+    {
+      "type": "range",
+      "id": "speed",
+      "label": "Scroll speed (seconds per loop)",
+      "min": 3,
+      "max": 30,
+      "step": 1,
+      "default": 8
+    },
+    {
+      "type": "checkbox",
+      "id": "inherit_color_scheme",
+      "label": "t:settings.inherit_color_scheme",
+      "default": false
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:settings.color_scheme",
+      "default": "scheme-1",
+      "visible_if": "{{ block.settings.inherit_color_scheme == false }}"
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.vertical_text_scroll",
+      "category": "t:categories.text",
+      "blocks": {
+        "item_1": {
+          "type": "_vertical-text-scroll-item",
+          "settings": { "text": "Reversible" }
+        },
+        "item_2": {
+          "type": "_vertical-text-scroll-item",
+          "settings": { "text": "Packs Small" }
+        },
+        "item_3": {
+          "type": "_vertical-text-scroll-item",
+          "settings": { "text": "Breathable" }
+        },
+        "item_4": {
+          "type": "_vertical-text-scroll-item",
+          "settings": { "text": "Ultralight" }
+        },
+        "item_5": {
+          "type": "_vertical-text-scroll-item",
+          "settings": { "text": "Woven" }
+        }
+      },
+      "block_order": ["item_1", "item_2", "item_3", "item_4", "item_5"]
+    }
+  ]
+}
+{% endschema %}

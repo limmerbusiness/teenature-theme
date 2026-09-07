@@ -1,0 +1,230 @@
+{% render 'lumin-review-rating-summary', block: block, section: section %}
+
+{% schema %}
+{
+  "name": "t:sections.lumin-review.rating_summary",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "t:sections.lumin-review.rating_summary_content"
+    },
+    {
+      "type": "text",
+      "id": "rating_summary_score",
+      "label": "t:sections.lumin-review.overall_rating_score",
+      "default": "4.8"
+    },
+    {
+      "type": "text",
+      "id": "rating_summary_total",
+      "label": "t:sections.lumin-review.total_reviews_text",
+      "default": "731 Reviews"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.lumin-review.five_star_rating_bar"
+    },
+    {
+      "type": "range",
+      "id": "rating_bar_5_width",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "label": "t:sections.lumin-review.five_star_bar_width",
+      "default": 85
+    },
+    {
+      "type": "text",
+      "id": "rating_bar_5_count",
+      "label": "t:sections.lumin-review.five_star_count",
+      "default": "624"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.lumin-review.four_star_rating_bar"
+    },
+    {
+      "type": "range",
+      "id": "rating_bar_4_width",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "label": "t:sections.lumin-review.four_star_bar_width",
+      "default": 14
+    },
+    {
+      "type": "text",
+      "id": "rating_bar_4_count",
+      "label": "t:sections.lumin-review.four_star_count",
+      "default": "104"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.lumin-review.three_star_rating_bar"
+    },
+    {
+      "type": "range",
+      "id": "rating_bar_3_width",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "label": "t:sections.lumin-review.three_star_bar_width",
+      "default": 1
+    },
+    {
+      "type": "text",
+      "id": "rating_bar_3_count",
+      "label": "t:sections.lumin-review.three_star_count",
+      "default": "3"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.lumin-review.two_star_rating_bar"
+    },
+    {
+      "type": "range",
+      "id": "rating_bar_2_width",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "label": "t:sections.lumin-review.two_star_bar_width",
+      "default": 0
+    },
+    {
+      "type": "text",
+      "id": "rating_bar_2_count",
+      "label": "t:sections.lumin-review.two_star_count",
+      "default": "0"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.lumin-review.one_star_rating_bar"
+    },
+    {
+      "type": "range",
+      "id": "rating_bar_1_width",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "label": "t:sections.lumin-review.one_star_bar_width",
+      "default": 0
+    },
+    {
+      "type": "text",
+      "id": "rating_bar_1_count",
+      "label": "t:sections.lumin-review.one_star_count",
+      "default": "0"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.lumin-review.rating_summary_colors"
+    },
+    {
+      "type": "range",
+      "id": "rating_summary_border_radius",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "label": "t:settings.border_radius",
+      "default": 12
+    },
+    {
+      "type": "color",
+      "id": "rating_summary_bg",
+      "label": "t:sections.lumin-review.background_color",
+      "default": "#fafafa"
+    },
+    {
+      "type": "color",
+      "id": "rating_summary_score_color",
+      "label": "t:sections.lumin-review.score_color",
+      "default": "#333"
+    },
+    {
+      "type": "color",
+      "id": "rating_summary_text_color",
+      "label": "t:sections.lumin-review.text_color",
+      "default": "#666"
+    },
+    {
+      "type": "color",
+      "id": "rating_bar_bg",
+      "label": "t:sections.lumin-review.progress_bar_background",
+      "default": "#e5e5e5"
+    },
+    {
+      "type": "color",
+      "id": "rating_bar_fill",
+      "label": "t:sections.lumin-review.progress_bar_fill",
+      "default": "#333"
+    },
+    {
+      "type": "color",
+      "id": "rating_summary_border_color",
+      "label": "t:sections.lumin-review.filter_icon_border",
+      "default": "#ddd"
+    },
+    {
+      "type": "select",
+      "id": "rating_summary_border_style",
+      "label": "Border Style",
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "solid",
+          "label": "Solid"
+        },
+        {
+          "value": "dashed",
+          "label": "Dashed"
+        },
+        {
+          "value": "dotted",
+          "label": "Dotted"
+        },
+        {
+          "value": "double",
+          "label": "Double"
+        },
+        {
+          "value": "groove",
+          "label": "Groove"
+        },
+        {
+          "value": "ridge",
+          "label": "Ridge"
+        },
+        {
+          "value": "inset",
+          "label": "Inset"
+        },
+        {
+          "value": "outset",
+          "label": "Outset"
+        }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "range",
+      "id": "rating_summary_border_width",
+      "label": "Border Width",
+      "min": 0,
+      "max": 10,
+      "step": 1,
+      "unit": "px",
+      "default": 1
+    }
+  ]
+}
+{% endschema %}

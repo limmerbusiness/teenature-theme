@@ -1,0 +1,79 @@
+{%- doc -%}
+  Setzt nur Werte fuer die Quantity Breaks. Die eigentlichen Regeln stehen
+  in assets/kokoro-custom.css und assets/kokoro-custom.js und greifen auf
+  diese Werte zu. So bleibt die grosse Quantity-Breaks-Datei unangetastet.
+{%- enddoc -%}
+
+{% style %}
+  :root {
+    --qb-active-border-color: {{ block.settings.active_border_color }};
+    --qb-active-border-width: {{ block.settings.active_border_width }}px;
+    --qb-active-background: {{ block.settings.active_background }};
+    --qb-badge-color: {{ block.settings.badge_color }};
+    --qb-badge-text-color: {{ block.settings.badge_text_color }};
+    --qb-currency-right: {% if block.settings.currency_right %}1{% else %}0{% endif %};
+  }
+{% endstyle %}
+
+{% if request.design_mode %}
+  <div {{ block.shopify_attributes }} style="display:none"></div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Quantity Breaks: Stil",
+  "tag": null,
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Steuert das Aussehen der Paket-Auswahl. Dieser Block ist im Shop unsichtbar – einmal einfügen genügt."
+    },
+    {
+      "type": "color",
+      "id": "active_border_color",
+      "label": "Rahmenfarbe (ausgewählt)",
+      "default": "#111827"
+    },
+    {
+      "type": "range",
+      "id": "active_border_width",
+      "label": "Rahmendicke (ausgewählt)",
+      "min": 1,
+      "max": 6,
+      "step": 1,
+      "unit": "px",
+      "default": 2
+    },
+    {
+      "type": "color",
+      "id": "active_background",
+      "label": "Hintergrund (ausgewählt)",
+      "default": "#F6F6F6"
+    },
+    {
+      "type": "color",
+      "id": "badge_color",
+      "label": "Farbe Empfehlungs-Badge",
+      "default": "#16A34A"
+    },
+    {
+      "type": "color",
+      "id": "badge_text_color",
+      "label": "Schriftfarbe Badge",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "checkbox",
+      "id": "currency_right",
+      "label": "Währungszeichen rechts",
+      "default": true,
+      "info": "Schiebt ein vorangestelltes € hinter den Betrag, z. B. „59,99 €“. Nötig, weil der Quantity-Breaks-Block seine Preise selbst formatiert und die Shopify-Einstellung dabei ignoriert."
+    }
+  ],
+  "presets": [
+    {
+      "name": "Quantity Breaks: Stil"
+    }
+  ]
+}
+{% endschema %}

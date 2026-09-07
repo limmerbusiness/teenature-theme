@@ -1,0 +1,721 @@
+{% liquid
+  assign block_settings = block.settings
+  assign timeline_style = block_settings.timeline_style | default: 'icon'
+  assign color_mode = block_settings.color_mode | default: 'native'
+  assign start_number = block_settings.start_number | default: 1
+  assign counter_start = start_number | minus: 1
+  assign number_scale = 0.42
+  if start_number >= 1000
+    assign number_scale = 0.28
+  elsif start_number >= 100
+    assign number_scale = 0.32
+  elsif start_number >= 10
+    assign number_scale = 0.36
+  endif
+  assign number_size = block_settings.icon_size | times: number_scale
+%}
+
+<scroll-reveal-timeline
+  class="scroll-timeline scroll-timeline--style-{{ timeline_style }} color-{{ block_settings.color_scheme }}"
+  style="
+    --timeline-max-width: {{ block_settings.max_width }}px;
+    --timeline-gap: {{ block_settings.item_gap }}px;
+    --timeline-icon-size: {{ block_settings.icon_size }}px;
+    --timeline-marker-size: var(--timeline-icon-size);
+    --timeline-number-size: {{ number_size }}px;
+    --timeline-counter-start: {{ counter_start }};
+    --timeline-track-width: {{ block_settings.line_width }}px;
+    --timeline-title-size: {{ block_settings.title_size }}px;
+    --timeline-title-line-height: {{ block_settings.title_line_height }}%;
+    --timeline-text-size: {{ block_settings.text_size }}px;
+    --timeline-text-line-height: {{ block_settings.text_line_height }}%;
+    --timeline-padding-top: {{ block_settings.padding_top }}px;
+    --timeline-padding-bottom: {{ block_settings.padding_bottom }}px;
+    {% if color_mode == 'custom' %}
+      --timeline-background: {{ block_settings.background_color }};
+      --timeline-title-color: {{ block_settings.title_color }};
+      --timeline-text-color: {{ block_settings.text_color }};
+      --timeline-left-text-color: {{ block_settings.left_text_color }};
+      --timeline-badge-color: {{ block_settings.badge_color }};
+      --timeline-icon-color: {{ block_settings.icon_color }};
+      --timeline-icon-background: {{ block_settings.icon_background }};
+      --timeline-icon-no-bg-color: {{ block_settings.icon_color }};
+      --timeline-dot-color: {{ block_settings.icon_color }};
+      --timeline-line-color: {{ block_settings.line_color }};
+    {% else %}
+      --timeline-background: var(--color-background);
+      --timeline-title-color: var(--color-foreground);
+      --timeline-text-color: var(--color-foreground);
+      --timeline-left-text-color: var(--color-foreground);
+      --timeline-badge-color: var(--color-foreground);
+      --timeline-icon-color: var(--color-background);
+      --timeline-icon-background: var(--color-foreground);
+      --timeline-icon-no-bg-color: var(--color-foreground);
+      --timeline-dot-color: var(--color-foreground);
+      --timeline-line-color: var(--color-foreground);
+    {% endif %}
+  "
+  data-scroll-timeline
+  {{ block.shopify_attributes }}
+>
+  <div class="scroll-timeline__inner">
+    {% if block_settings.heading != blank or block_settings.subheading != blank %}
+      <header class="scroll-timeline__header">
+        {% if block_settings.heading != blank %}
+          <h2 class="scroll-timeline__heading">{{ block_settings.heading }}</h2>
+        {% endif %}
+        {% if block_settings.subheading != blank %}
+          <div class="scroll-timeline__subheading rte">{{ block_settings.subheading }}</div>
+        {% endif %}
+      </header>
+    {% endif %}
+
+    <div class="scroll-timeline__list" role="list">
+      <span class="scroll-timeline__track" data-timeline-track aria-hidden="true"></span>
+      {% content_for 'blocks' %}
+    </div>
+  </div>
+</scroll-reveal-timeline>
+
+{% stylesheet %}
+  .scroll-timeline {
+    display: block;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: var(--timeline-background);
+    color: var(--color-foreground);
+  }
+
+  .scroll-timeline__inner {
+    width: min(calc(100% - 40px), var(--timeline-max-width));
+    margin-inline: auto;
+    padding-block: var(--timeline-padding-top) var(--timeline-padding-bottom);
+  }
+
+  .scroll-timeline__header {
+    max-width: 720px;
+    margin-block-end: clamp(36px, 6vw, 72px);
+  }
+
+  .scroll-timeline__heading {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    line-height: 1.05;
+  }
+
+  .scroll-timeline__subheading {
+    margin-block-start: 14px;
+    opacity: 0.72;
+  }
+
+  .scroll-timeline__list {
+    position: relative;
+    display: grid;
+    grid-template-columns: max-content var(--timeline-marker-size) minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .scroll-timeline__track {
+    --track-fill: 0;
+    position: absolute;
+    z-index: 0;
+    top: calc(var(--timeline-marker-size) / 2);
+    bottom: 0;
+    left: calc((var(--timeline-marker-size) - var(--timeline-track-width)) / 2);
+    width: var(--timeline-track-width);
+    height: auto;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--timeline-line-color) 20%, transparent);
+  }
+
+  .scroll-timeline__track::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--timeline-line-color);
+    transform: scaleY(var(--track-fill));
+    transform-origin: top;
+    will-change: transform;
+  }
+
+  .scroll-timeline__item {
+    --reveal-progress: 0;
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    transform: translateY(calc((1 - var(--reveal-progress)) * 10px));
+    transition: transform 140ms linear;
+    will-change: transform;
+  }
+
+  .scroll-timeline__rail {
+    display: grid;
+    grid-template-rows: 0 var(--timeline-marker-size) 1fr;
+    justify-items: center;
+    min-height: 100%;
+  }
+
+  .scroll-timeline__left-text {
+    align-self: start;
+    max-width: min(220px, 26vw);
+    padding-block-start: 2px;
+    padding-inline-end: clamp(12px, 2vw, 28px);
+    color: var(--timeline-left-text-color);
+    font-size: var(--timeline-left-text-size);
+    line-height: var(--timeline-title-line-height);
+    text-align: end;
+    opacity: calc(0.18 + (var(--reveal-progress) * 0.82));
+    filter: grayscale(calc(1 - var(--reveal-progress))) blur(calc((1 - var(--reveal-progress)) * 0.45px));
+    transition: opacity 140ms linear, filter 140ms linear;
+    will-change: opacity, filter;
+  }
+
+  .scroll-timeline__left-text:empty {
+    padding-inline-end: 0;
+  }
+
+  .scroll-timeline__line {
+    display: none;
+  }
+
+  .scroll-timeline__icon {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: var(--timeline-marker-size);
+    height: var(--timeline-marker-size);
+    border-radius: 50%;
+    color: var(--timeline-icon-color);
+    background: var(--timeline-icon-background);
+  }
+
+  .scroll-timeline__icon::before {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--timeline-background);
+    opacity: calc(0.82 - (var(--reveal-progress) * 0.82));
+    pointer-events: none;
+  }
+
+  .scroll-timeline__icon--no-background {
+    color: var(--timeline-icon-no-bg-color);
+    background: var(--timeline-background);
+  }
+
+  .scroll-timeline__icon--no-background::before {
+    display: none;
+  }
+
+  .scroll-timeline__icon svg,
+  .scroll-timeline__custom-icon {
+    position: relative;
+    z-index: 1;
+    width: 58%;
+    height: 58%;
+  }
+
+  .scroll-timeline__custom-icon {
+    object-fit: contain;
+  }
+
+  .scroll-timeline__icon--no-background :is(svg, .scroll-timeline__custom-icon) {
+    width: 100%;
+    height: 100%;
+    opacity: calc(0.18 + (var(--reveal-progress) * 0.82));
+    filter: grayscale(calc(1 - var(--reveal-progress)));
+  }
+
+  .scroll-timeline--style-simple .scroll-timeline__list {
+    counter-reset: timeline-step var(--timeline-counter-start);
+  }
+
+  .scroll-timeline--style-simple .scroll-timeline__item {
+    counter-increment: timeline-step;
+  }
+
+  .scroll-timeline--style-simple .scroll-timeline__icon {
+    color: var(--timeline-icon-color);
+    background: var(--timeline-icon-background);
+  }
+
+  .scroll-timeline--style-simple .scroll-timeline__icon::before {
+    display: block;
+    inset: 0;
+  }
+
+  .scroll-timeline--style-simple .scroll-timeline__icon::after {
+    content: counter(timeline-step);
+    position: relative;
+    z-index: 1;
+    font-size: var(--timeline-number-size);
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .scroll-timeline--style-simple .scroll-timeline__icon :is(svg, .scroll-timeline__custom-icon) {
+    display: none;
+  }
+
+  .scroll-timeline--style-dots .scroll-timeline__icon {
+    color: var(--timeline-dot-color);
+    background: var(--timeline-background);
+    border: 2px solid color-mix(in srgb, var(--timeline-dot-color) 22%, transparent);
+  }
+
+  .scroll-timeline--style-dots .scroll-timeline__icon::before {
+    display: block;
+    inset: 28%;
+    background: var(--timeline-dot-color);
+    opacity: calc(0.16 + (var(--reveal-progress) * 0.84));
+  }
+
+  .scroll-timeline--style-dots .scroll-timeline__icon :is(svg, .scroll-timeline__custom-icon) {
+    display: none;
+  }
+
+  .scroll-timeline__content {
+    margin-inline-start: clamp(16px, 2.5vw, 30px);
+    padding-block: 1px calc(var(--timeline-gap) + 18px);
+    opacity: calc(0.18 + (var(--reveal-progress) * 0.82));
+    filter: grayscale(calc(1 - var(--reveal-progress))) blur(calc((1 - var(--reveal-progress)) * 0.45px));
+    transition: opacity 140ms linear, filter 140ms linear;
+    will-change: opacity, filter;
+  }
+
+  .scroll-timeline__badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 25px;
+    padding: 3px 14px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    color: var(--timeline-badge-color);
+    font-size: 0.78rem;
+    line-height: 1;
+  }
+
+  .scroll-timeline__title {
+    margin: 12px 0 0;
+    color: var(--timeline-title-color);
+    font-size: var(--timeline-title-size);
+    line-height: var(--timeline-title-line-height);
+  }
+
+  .scroll-timeline__text {
+    max-width: 920px;
+    margin-block-start: 10px;
+    color: var(--timeline-text-color);
+    font-size: var(--timeline-text-size);
+    line-height: var(--timeline-text-line-height);
+    opacity: 0.76;
+  }
+
+  .scroll-timeline__image {
+    display: block;
+    width: 100%;
+    max-width: 920px;
+    height: auto;
+    margin-block-start: 16px;
+    border-radius: var(--timeline-image-radius);
+  }
+
+  .scroll-timeline__text > :first-child,
+  .scroll-timeline__subheading > :first-child {
+    margin-block-start: 0;
+  }
+
+  .scroll-timeline__text > :last-child,
+  .scroll-timeline__subheading > :last-child {
+    margin-block-end: 0;
+  }
+
+  @media screen and (max-width: 749px) {
+    .scroll-timeline__inner {
+      width: min(calc(100% - 28px), var(--timeline-max-width));
+    }
+
+    .scroll-timeline__content {
+      padding-block-end: calc(var(--timeline-gap) + 12px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-timeline__item {
+      transform: none;
+      transition: none;
+    }
+
+    .scroll-timeline__content {
+      opacity: 1;
+      filter: none;
+      transition: none;
+    }
+
+    .scroll-timeline__left-text {
+      opacity: 1;
+      filter: none;
+      transition: none;
+    }
+
+    .scroll-timeline__icon::before {
+      opacity: 0;
+    }
+
+    .scroll-timeline__track {
+      --track-fill: 1 !important;
+    }
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  if (!customElements.get('scroll-reveal-timeline')) {
+    class ScrollRevealTimeline extends HTMLElement {
+      connectedCallback() {
+        this.items = Array.from(this.querySelectorAll('[data-timeline-item]'));
+        this.track = this.querySelector('[data-timeline-track]');
+        this.icons = Array.from(this.querySelectorAll('.scroll-timeline__icon'));
+        this.frame = null;
+        this.update = this.update.bind(this);
+        this.queueUpdate = this.queueUpdate.bind(this);
+        window.addEventListener('scroll', this.queueUpdate, { passive: true });
+        window.addEventListener('resize', this.queueUpdate, { passive: true });
+        this.update();
+      }
+
+      disconnectedCallback() {
+        window.removeEventListener('scroll', this.queueUpdate);
+        window.removeEventListener('resize', this.queueUpdate);
+        if (this.frame) cancelAnimationFrame(this.frame);
+      }
+
+      queueUpdate() {
+        if (this.frame) return;
+        this.frame = requestAnimationFrame(this.update);
+      }
+
+      update() {
+        this.frame = null;
+        const viewportHeight = window.innerHeight;
+        const clearLine = viewportHeight * 0.68;
+        const fadeLine = viewportHeight * 0.94;
+        const range = fadeLine - clearLine;
+
+        this.items.forEach((item) => {
+          const center = item.getBoundingClientRect().top + Math.min(item.offsetHeight * 0.25, 48);
+          const progress = Math.max(0, Math.min(1, (fadeLine - center) / range));
+          item.style.setProperty('--reveal-progress', progress.toFixed(3));
+        });
+
+        if (this.track && this.icons.length > 1) {
+          const listRect = this.track.parentElement.getBoundingClientRect();
+          const firstRect = this.icons[0].getBoundingClientRect();
+          const lastRect = this.icons[this.icons.length - 1].getBoundingClientRect();
+          const trackTop = firstRect.top + (firstRect.height / 2);
+          const trackBottom = lastRect.top + (lastRect.height / 2);
+          const trackHeight = Math.max(0, trackBottom - trackTop);
+          const trackLeft = firstRect.left + (firstRect.width / 2);
+          const progress = trackHeight > 0
+            ? Math.max(0, Math.min(1, (clearLine - trackTop) / trackHeight))
+            : 0;
+
+          this.track.style.top = `${trackTop - listRect.top}px`;
+          this.track.style.left = `${trackLeft - listRect.left - (this.track.offsetWidth / 2)}px`;
+          this.track.style.height = `${trackHeight}px`;
+          this.track.style.setProperty('--track-fill', progress.toFixed(3));
+        }
+      }
+    }
+
+    customElements.define('scroll-reveal-timeline', ScrollRevealTimeline);
+  }
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "Scroll reveal timeline",
+  "tag": null,
+  "blocks": [
+    {
+      "type": "_scroll-timeline-milestone"
+    }
+  ],
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading"
+    },
+    {
+      "type": "richtext",
+      "id": "subheading",
+      "label": "Subheading"
+    },
+    {
+      "type": "select",
+      "id": "color_mode",
+      "label": "Colors",
+      "options": [
+        {
+          "value": "native",
+          "label": "Native"
+        },
+        {
+          "value": "custom",
+          "label": "Custom"
+        }
+      ],
+      "default": "native"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "Color scheme",
+      "default": "scheme-1",
+      "visible_if": "{{ block.settings.color_mode == 'native' }}"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#ffffff",
+      "visible_if": "{{ block.settings.color_mode == 'custom' }}"
+    },
+    {
+      "type": "color",
+      "id": "title_color",
+      "label": "Title color",
+      "default": "#121212",
+      "visible_if": "{{ block.settings.color_mode == 'custom' }}"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#555555",
+      "visible_if": "{{ block.settings.color_mode == 'custom' }}"
+    },
+    {
+      "type": "color",
+      "id": "left_text_color",
+      "label": "Left text color",
+      "default": "#121212",
+      "visible_if": "{{ block.settings.color_mode == 'custom' }}"
+    },
+    {
+      "type": "color",
+      "id": "badge_color",
+      "label": "Time label color",
+      "default": "#121212",
+      "visible_if": "{{ block.settings.color_mode == 'custom' }}"
+    },
+    {
+      "type": "color",
+      "id": "icon_color",
+      "label": "Icon color",
+      "default": "#ffffff",
+      "visible_if": "{{ block.settings.color_mode == 'custom' }}"
+    },
+    {
+      "type": "color",
+      "id": "icon_background",
+      "label": "Icon background",
+      "default": "#121212",
+      "visible_if": "{{ block.settings.color_mode == 'custom' }}"
+    },
+    {
+      "type": "color",
+      "id": "line_color",
+      "label": "Timeline color",
+      "default": "#121212",
+      "visible_if": "{{ block.settings.color_mode == 'custom' }}"
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "label": "Content width",
+      "min": 700,
+      "max": 1600,
+      "step": 50,
+      "unit": "px",
+      "default": 1400
+    },
+    {
+      "type": "select",
+      "id": "timeline_style",
+      "label": "Timeline style",
+      "options": [
+        {
+          "value": "icon",
+          "label": "Icon"
+        },
+        {
+          "value": "simple",
+          "label": "Numbers"
+        },
+        {
+          "value": "dots",
+          "label": "Dots"
+        }
+      ],
+      "default": "icon"
+    },
+    {
+      "type": "number",
+      "id": "start_number",
+      "label": "Start number",
+      "default": 1,
+      "visible_if": "{{ block.settings.timeline_style == 'simple' }}"
+    },
+    {
+      "type": "range",
+      "id": "icon_size",
+      "label": "Icon size",
+      "min": 20,
+      "max": 56,
+      "step": 2,
+      "unit": "px",
+      "default": 38
+    },
+    {
+      "type": "range",
+      "id": "line_width",
+      "label": "Timeline thickness",
+      "min": 1,
+      "max": 8,
+      "step": 1,
+      "unit": "px",
+      "default": 3
+    },
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "range",
+      "id": "title_size",
+      "label": "Title size",
+      "min": 16,
+      "max": 64,
+      "step": 1,
+      "unit": "px",
+      "default": 28
+    },
+    {
+      "type": "range",
+      "id": "title_line_height",
+      "label": "Title line height",
+      "min": 90,
+      "max": 160,
+      "step": 5,
+      "unit": "%",
+      "default": 115
+    },
+    {
+      "type": "range",
+      "id": "text_size",
+      "label": "Description size",
+      "min": 12,
+      "max": 30,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "text_line_height",
+      "label": "Description line height",
+      "min": 100,
+      "max": 220,
+      "step": 5,
+      "unit": "%",
+      "default": 155
+    },
+    {
+      "type": "header",
+      "content": "Spacing"
+    },
+    {
+      "type": "range",
+      "id": "item_gap",
+      "label": "Space between milestones",
+      "min": 8,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Top padding",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Bottom padding",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "Scroll reveal timeline",
+      "category": "Storytelling",
+      "blocks": {
+        "week_1": {
+          "type": "_scroll-timeline-milestone",
+          "settings": {
+            "icon": "bolt",
+            "badge": "Week 1",
+            "title": "A Daily Boost",
+            "text": "<p>You’ll start to experience a rise in your daily energy levels. A simple daily ritual helps you tackle fatigue and stay more alert.</p>"
+          }
+        },
+        "week_2": {
+          "type": "_scroll-timeline-milestone",
+          "settings": {
+            "icon": "spark",
+            "badge": "Week 2",
+            "title": "Brighter Mood",
+            "text": "<p>Your mood brightens and balances as your new routine brings a growing sense of calm and clarity.</p>"
+          }
+        },
+        "month_1": {
+          "type": "_scroll-timeline-milestone",
+          "settings": {
+            "icon": "target",
+            "badge": "1 Month",
+            "title": "Finding Your Rhythm",
+            "text": "<p>After a month of regular use, your body adjusts and you may feel a renewed sense of balance and wellbeing.</p>"
+          }
+        },
+        "month_3": {
+          "type": "_scroll-timeline-milestone",
+          "settings": {
+            "icon": "heart",
+            "badge": "3 Months",
+            "title": "Complete Vitality",
+            "text": "<p>The ongoing benefits feel more consistent, leaving you confident, energized, and reconnected.</p>"
+          }
+        }
+      },
+      "block_order": ["week_1", "week_2", "month_1", "month_3"]
+    }
+  ]
+}
+{% endschema %}

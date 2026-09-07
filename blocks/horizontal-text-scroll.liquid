@@ -1,0 +1,322 @@
+{% assign block_settings = block.settings %}
+
+<script
+  src="{{ 'horizontal-text-scroll.js' | asset_url }}"
+  type="module"
+  fetchpriority="low"
+></script>
+
+<horizontal-text-scroll
+  class="hts spacing-style{% if block_settings.inherit_color_scheme == false %} color-{{ block_settings.color_scheme }}{% endif %}"
+  style="
+    {%- render 'spacing-style', settings: block_settings -%}
+    --hts-speed: {{ block_settings.speed }}s;
+    --hts-font-size: {{ block_settings.font_size }}px;
+    --hts-font-size-mobile: {{ block_settings.font_size_mobile | default: 28 }}px;
+    --hts-gap: {{ block_settings.gap }}px;
+    --hts-direction: {{ block_settings.movement_direction }};
+    --hts-border-radius: {{ block_settings.border_radius }}px;
+    --hts-eyebrow-gap: {{ block_settings.eyebrow_gap }}px;
+    --hts-fade-width: {{ block_settings.fade_width }}px;
+  "
+  {{ block.shopify_attributes }}
+>
+  {%- if block_settings.eyebrow != blank -%}
+    <p class="hts__eyebrow">{{ block_settings.eyebrow | escape }}</p>
+  {%- endif -%}
+
+  <div class="hts__viewport">
+    <div class="hts__fade hts__fade--start"></div>
+    <div
+      class="hts__track"
+      ref="track"
+    >
+      {% content_for 'blocks' %}
+    </div>
+    <div class="hts__fade hts__fade--end"></div>
+  </div>
+</horizontal-text-scroll>
+
+{% stylesheet %}
+  horizontal-text-scroll {
+    display: block;
+    text-align: center;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
+    border-radius: var(--hts-border-radius, 0);
+    overflow: hidden;
+    contain: inline-size;
+    box-sizing: border-box;
+  }
+
+  .hts__eyebrow {
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-block-end: var(--hts-eyebrow-gap, 24px);
+    opacity: 0.75;
+    overflow-wrap: anywhere;
+  }
+
+  .hts__viewport {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  .hts__track {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: max-content;
+    max-width: none;
+    gap: var(--hts-gap, 48px);
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hts__track {
+      animation: hts-scroll var(--hts-speed, 20s) linear infinite var(--hts-direction, normal);
+    }
+
+    horizontal-text-scroll:hover .hts__track {
+      animation-play-state: paused;
+    }
+  }
+
+  @keyframes hts-scroll {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(calc(var(--hts-total-width, 50%) * -1));
+    }
+  }
+
+  .hts__item {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    line-height: 1.05;
+    box-sizing: border-box;
+  }
+
+  .hts__item span {
+    font-size: var(--hts-font-size, 64px);
+    font-weight: 700;
+    display: block;
+    white-space: nowrap;
+  }
+
+  @media screen and (max-width: 749px) {
+    .hts__item span {
+      font-size: var(--hts-font-size-mobile, var(--hts-font-size, 64px));
+    }
+  }
+
+  .hts__fade {
+    position: absolute;
+    inset-block: 0;
+    width: var(--hts-fade-width, 80px);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .hts__fade--start {
+    inset-inline-start: 0;
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-background, #f5f3ee) 100%, transparent),
+      color-mix(in srgb, var(--color-background, #f5f3ee) 0%, transparent)
+    );
+  }
+
+  .hts__fade--end {
+    inset-inline-end: 0;
+    background: linear-gradient(
+      to left,
+      color-mix(in srgb, var(--color-background, #f5f3ee) 100%, transparent),
+      color-mix(in srgb, var(--color-background, #f5f3ee) 0%, transparent)
+    );
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.horizontal_text_scroll",
+  "tag": null,
+  "blocks": [
+    {
+      "type": "_horizontal-text-scroll-item"
+    }
+  ],
+  "settings": [
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Top label"
+    },
+    {
+      "type": "range",
+      "id": "eyebrow_gap",
+      "label": "Top label spacing",
+      "min": 0,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "t:settings.border_radius",
+      "min": 0,
+      "max": 100,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "fade_width",
+      "label": "Fade width",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 80,
+      "info": "Set to 0 to remove the fade."
+    },
+    {
+      "type": "range",
+      "id": "font_size",
+      "label": "Font size (px)",
+      "min": 24,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "font_size_mobile",
+      "label": "Mobile font size (px)",
+      "min": 16,
+      "max": 72,
+      "step": 2,
+      "unit": "px",
+      "default": 20,
+      "info": "Used on screens up to 749px wide."
+    },
+    {
+      "type": "range",
+      "id": "speed",
+      "label": "Scroll speed (seconds per loop)",
+      "min": 5,
+      "max": 60,
+      "step": 1,
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "label": "t:settings.gap",
+      "min": 16,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 48
+    },
+    {
+      "type": "select",
+      "id": "movement_direction",
+      "label": "t:settings.motion_direction",
+      "options": [
+        {
+          "value": "normal",
+          "label": "t:options.forward"
+        },
+        {
+          "value": "reverse",
+          "label": "t:options.reverse"
+        }
+      ],
+      "default": "normal"
+    },
+    {
+      "type": "checkbox",
+      "id": "inherit_color_scheme",
+      "label": "t:settings.inherit_color_scheme",
+      "default": false
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:settings.color_scheme",
+      "default": "scheme-1",
+      "visible_if": "{{ block.settings.inherit_color_scheme == false }}"
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.horizontal_text_scroll",
+      "category": "t:categories.text",
+      "blocks": {
+        "item_1": {
+          "type": "_horizontal-text-scroll-item",
+          "settings": { "text": "Reversible" }
+        },
+        "item_2": {
+          "type": "_horizontal-text-scroll-item",
+          "settings": { "text": "Packs Small" }
+        },
+        "item_3": {
+          "type": "_horizontal-text-scroll-item",
+          "settings": { "text": "Breathable" }
+        },
+        "item_4": {
+          "type": "_horizontal-text-scroll-item",
+          "settings": { "text": "Ultralight" }
+        },
+        "item_5": {
+          "type": "_horizontal-text-scroll-item",
+          "settings": { "text": "Woven" }
+        }
+      },
+      "block_order": ["item_1", "item_2", "item_3", "item_4", "item_5"]
+    }
+  ]
+}
+{% endschema %}

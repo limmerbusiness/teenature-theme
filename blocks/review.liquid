@@ -1,0 +1,146 @@
+{%- liquid
+  assign review_index = 0
+
+  for review_block in section.blocks
+    if review_block.type == 'review' or review_block.type == '_lumin-review' or review_block.id contains 'review_'
+      assign review_index = review_index | plus: 1
+      if review_block.id == block.id
+        break
+      endif
+    endif
+  endfor
+-%}
+
+{% render 'lumin-review-item',
+  block: block,
+  section: section,
+  review_index: review_index,
+  product: product
+%}
+
+{% schema %}
+{
+  "name": "t:sections.lumin-review.review",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "t:sections.lumin-review.product_selection"
+    },
+    {
+      "type": "product",
+      "id": "selected_product",
+      "label": "t:sections.lumin-review.product",
+      "info": "t:sections.lumin-review.product_info"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.lumin-review.review_content"
+    },
+    {
+      "type": "image_picker",
+      "id": "img_block",
+      "label": "t:sections.lumin-review.image"
+    },
+    {
+      "type": "image_picker",
+      "id": "img_block2",
+      "label": "t:sections.lumin-review.image"
+    },
+    {
+      "type": "range",
+      "id": "star_rating",
+      "min": 1,
+      "max": 5,
+      "step": 0.5,
+      "label": "t:sections.lumin-review.star_rating",
+      "default": 5
+    },
+    {
+      "type": "checkbox",
+      "id": "show_verified_buyer",
+      "label": "t:sections.lumin-review.show_verified_buyer",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "name_text",
+      "label": "t:sections.lumin-review.name",
+      "default": "Johan D."
+    },
+    {
+      "type": "image_picker",
+      "id": "customer_image",
+      "label": "t:sections.lumin-review.customer_image",
+      "info": "t:sections.lumin-review.customer_image_info"
+    },
+    {
+      "type": "text",
+      "id": "country_code",
+      "label": "t:sections.lumin-review.country_code",
+      "default": "US",
+      "info": "t:sections.lumin-review.country_code_info"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_country_flag",
+      "label": "t:sections.lumin-review.show_country_flag",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "date_text",
+      "label": "t:sections.lumin-review.date",
+      "default": "June 2025"
+    },
+    {
+      "type": "text",
+      "id": "review_head",
+      "label": "t:sections.lumin-review.review_title",
+      "default": "Nice Product"
+    },
+    {
+      "type": "text",
+      "id": "review_text",
+      "label": "t:sections.lumin-review.review_text",
+      "default": "Nice Product. I'm happy with my purchase."
+    },
+    {
+      "type": "range",
+      "id": "like_size",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "label": "t:sections.lumin-review.likes",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "dislike_size",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "label": "t:sections.lumin-review.dislikes",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "feature_font_size",
+      "min": 10,
+      "max": 50,
+      "step": 1,
+      "unit": "px",
+      "label": "t:sections.lumin-review.font_size",
+      "default": 16
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:sections.lumin-review.review",
+      "category": "Lumin Sections"
+    }
+  ]
+}
+{% endschema %}

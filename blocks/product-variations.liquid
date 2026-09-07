@@ -1,0 +1,173 @@
+
+{% liquid
+  assign current_product = closest.product
+  if request.visual_preview_mode and current_product == blank
+    assign current_product = collections.all.products.first
+  endif
+
+  assign variation_products = block.settings.products
+  assign show_block = false
+
+  if current_product != blank and variation_products != blank and variation_products.size > 0
+    for variation_product in variation_products
+      if variation_product.id == current_product.id
+        assign show_block = true
+        break
+      endif
+    endfor
+  endif
+%}
+
+{% if show_block %}
+  {% render 'product-variations-picker',
+    current_product: current_product,
+    variation_products: variation_products,
+    block: block
+  %}
+{% endif %}
+
+{% schema %}
+{
+  "name": "t:names.product_variations",
+  "tag": null,
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "t:content.resource_reference_product_variations"
+    },
+    {
+      "type": "product_list",
+      "id": "products",
+      "label": "t:sections.product-variations.products",
+      "limit": 12,
+      "info": "t:sections.product-variations.products_info"
+    },
+    {
+      "type": "text",
+      "id": "option_label",
+      "label": "t:sections.product-variations.option_label",
+      "default": "Style"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_selected_variation_name",
+      "label": "t:sections.product-variations.show_selected_variation_name",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "selector_style",
+      "label": "t:settings.style",
+      "options": [
+        {
+          "value": "buttons",
+          "label": "t:options.buttons"
+        },
+        {
+          "value": "dropdowns",
+          "label": "t:options.dropdowns"
+        },
+        {
+          "value": "color_swatches",
+          "label": "t:sections.product-variations.color_swatches"
+        },
+        {
+          "value": "image_swatches",
+          "label": "t:sections.product-variations.image_swatches"
+        }
+      ],
+      "default": "buttons"
+    },
+    {
+      "type": "range",
+      "id": "swatch_size",
+      "label": "t:settings.swatch_size",
+      "min": 16,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 30,
+      "visible_if": "{{ block.settings.selector_style == 'color_swatches' or block.settings.selector_style == 'image_swatches' }}"
+    },
+    {
+      "type": "range",
+      "id": "swatch_border_radius",
+      "label": "t:settings.border_radius",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 100,
+      "visible_if": "{{ block.settings.selector_style == 'color_swatches' or block.settings.selector_style == 'image_swatches' }}"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.product-variations.metafield_header"
+    },
+    {
+      "type": "text",
+      "id": "metafield",
+      "label": "t:sections.product-variations.metafield",
+      "default": "custom.variation",
+      "placeholder": "custom.variation",
+      "info": "t:sections.product-variations.metafield_info"
+    },
+    {
+      "type": "text_alignment",
+      "id": "alignment",
+      "label": "t:settings.alignment",
+      "default": "left"
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-start",
+      "label": "t:settings.left",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-end",
+      "label": "t:settings.right",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.product_variations",
+      "category": "t:categories.product"
+    }
+  ]
+}
+{% endschema %}

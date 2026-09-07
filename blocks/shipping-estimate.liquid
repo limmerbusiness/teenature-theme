@@ -1,0 +1,617 @@
+{% liquid
+  assign block_id = block.id | replace: '_', '' | downcase
+  assign s = block.settings
+  assign days_min = s.days_from_today | default: 1
+  assign days_max = s.days_to_max | default: days_min
+  if days_max < days_min
+    assign days_max = days_min
+  endif
+  assign seconds_per_day = 86400
+  assign now_epoch = 'now' | date: '%s'
+  assign start_epoch = seconds_per_day | times: days_min | plus: now_epoch
+  assign end_epoch = seconds_per_day | times: days_max | plus: now_epoch
+  assign start_fallback = start_epoch | date: '%a, %d.%m.'
+  assign end_fallback = end_epoch | date: '%a, %d.%m.'
+  assign cutoff_fallback = s.cutoff_hour | default: 13
+
+  assign icon_plain = s.icon | strip_html | strip
+
+  assign ships_by_prefix_plain = s.ships_by_prefix | strip_html
+  assign shipping_template_plain = s.shipping_label_template | strip_html
+  assign fallback_country_plain = s.fallback_country_code | strip_html | strip
+
+  assign country_code = localization.country.iso_code | default: fallback_country_plain | default: 'DE'
+  assign country_code = country_code | upcase
+
+  assign ships_label_html = s.ships_by_prefix
+  assign ships_label_html = ships_label_html | replace: '{date}', start_fallback
+  assign ships_label_html = ships_label_html | replace: '{start}', start_fallback
+  assign ships_label_html = ships_label_html | replace: '{end}', end_fallback
+  assign ships_label_html = ships_label_html | replace: '{cutoff}', cutoff_fallback
+
+  comment
+    Ausrichtung: der rechte Bereich erzwingt space-between, sonst richtet sich
+    die Zeile nach der Einstellung. text-align sorgt dafuer, dass auch die
+    zweite Zeile eines Umbruchs mitzieht.
+  endcomment
+  assign align = s.alignment | default: 'flex-start'
+  assign align_mobile = s.alignment_mobile | default: 'inherit'
+  if align_mobile == 'inherit'
+    assign align_mobile = align
+  endif
+
+  assign text_align = 'left'
+  if align == 'center'
+    assign text_align = 'center'
+  elsif align == 'flex-end'
+    assign text_align = 'right'
+  endif
+
+  assign text_align_mobile = 'left'
+  if align_mobile == 'center'
+    assign text_align_mobile = 'center'
+  elsif align_mobile == 'flex-end'
+    assign text_align_mobile = 'right'
+  endif
+%}
+
+{% style %}
+  .shipping-estimate-{{ block_id }} {
+    display: flex;
+    align-items: center;
+    justify-content: {% if s.show_fast_shipping %}space-between{% else %}{{ align }}{% endif %};
+    text-align: {{ text_align }};
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: {{ s.background_color }};
+    border-radius: {{ s.border_radius }}px;
+    padding: {{ s.padding_vertical }}px {{ s.padding_horizontal }}px;
+    margin-top: {{ s.margin_top }}px;
+    margin-bottom: {{ s.margin_bottom }}px;
+    font-size: {{ s.text_size }}px;
+    color: {{ s.text_color }};
+    line-height: 1.3;
+  }
+
+  @media screen and (max-width: 749px) {
+    .shipping-estimate-{{ block_id }} {
+      justify-content: {% if s.show_fast_shipping %}space-between{% else %}{{ align_mobile }}{% endif %};
+      text-align: {{ text_align_mobile }};
+    }
+  }
+
+  .shipping-estimate-{{ block_id }} .shipping-estimate__ships {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .shipping-estimate-{{ block_id }} .shipping-estimate__status-dot {
+    position: relative;
+    flex-shrink: 0;
+    width: {{ s.status_dot_size }}px;
+    height: {{ s.status_dot_size }}px;
+    border-radius: 50%;
+    background-color: {{ s.status_dot_color }};
+  }
+
+  {% if s.pulse_dot %}
+    /*
+     * Sauberer Puls: der Punkt selbst bleibt scharf, nur ein weicher Ring
+     * waechst nach aussen und verschwindet. Kein Aufblaehen des Punktes.
+     */
+    .shipping-estimate-{{ block_id }} .shipping-estimate__status-dot::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background-color: {{ s.status_dot_color }};
+      opacity: 0.35;
+      animation: shipping-estimate-ring-{{ block_id }} 2s ease-out infinite;
+    }
+
+    @keyframes shipping-estimate-ring-{{ block_id }} {
+      0% {
+        transform: scale(1);
+        opacity: 0.35;
+      }
+      70%,
+      100% {
+        transform: scale(2.4);
+        opacity: 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .shipping-estimate-{{ block_id }} .shipping-estimate__status-dot::after {
+        animation: none;
+        opacity: 0.25;
+        transform: scale(1.6);
+      }
+    }
+  {% endif %}
+
+  .shipping-estimate-{{ block_id }} .shipping-estimate__icon {
+    flex-shrink: 0;
+    font-size: {{ s.icon_size }}px;
+    line-height: 1;
+  }
+
+  .shipping-estimate-{{ block_id }} .shipping-estimate__ships-text {
+    white-space: normal;
+  }
+
+  .shipping-estimate-{{ block_id }} .shipping-estimate__fast {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .shipping-estimate-{{ block_id }} .shipping-estimate__flag {
+    font-size: {{ s.flag_size }}px;
+    line-height: 1;
+  }
+{% endstyle %}
+
+<shipping-estimate-{{ block_id }}
+  class="shipping-estimate shipping-estimate-{{ block_id }}"
+  data-days-min="{{ days_min }}"
+  data-days-max="{{ days_max }}"
+  data-cutoff-hour="{{ s.cutoff_hour | default: 13 }}"
+  data-skip-weekends="{% if s.skip_weekends %}true{% else %}false{% endif %}"
+  data-ships-template="{{ ships_by_prefix_plain | escape }}"
+  data-ships-template-html="{{ s.ships_by_prefix | escape }}"
+  data-shipping-template="{{ shipping_template_plain | escape }}"
+  data-shipping-template-html="{{ s.shipping_label_template | escape }}"
+  data-fallback-country="{{ fallback_country_plain | default: 'DE' | upcase }}"
+  data-initial-country="{{ country_code }}"
+  {{ block.shopify_attributes }}
+>
+  <div class="shipping-estimate__ships">
+    {% if s.show_status_dot %}
+      <span class="shipping-estimate__status-dot" aria-hidden="true"></span>
+    {% endif %}
+    {% if icon_plain != blank %}
+      <span class="shipping-estimate__icon" aria-hidden="true">{{ icon_plain }}</span>
+    {% endif %}
+    <span class="shipping-estimate__ships-text" data-ships-text>{{ ships_label_html }}</span>
+  </div>
+  {% if s.show_fast_shipping %}
+    <div class="shipping-estimate__fast" data-fast-shipping>
+      {% if s.show_country_flag %}
+        <span class="shipping-estimate__flag" data-country-flag aria-hidden="true"></span>
+      {% endif %}
+      <span data-shipping-label></span>
+    </div>
+  {% endif %}
+</shipping-estimate-{{ block_id }}>
+
+<script>
+  (function() {
+    function localeTag() {
+      return document.documentElement.lang || 'de-DE';
+    }
+
+    function isWeekend(date) {
+      const day = date.getDay();
+      return day === 0 || day === 6;
+    }
+
+    /* Adds days, skipping Saturday and Sunday when asked to. */
+    function addDays(base, amount, skipWeekends) {
+      const date = new Date(base.getTime());
+      if (!skipWeekends) {
+        date.setDate(date.getDate() + amount);
+        return date;
+      }
+      let remaining = amount;
+      while (remaining > 0) {
+        date.setDate(date.getDate() + 1);
+        if (!isWeekend(date)) remaining -= 1;
+      }
+      while (isWeekend(date)) {
+        date.setDate(date.getDate() + 1);
+      }
+      return date;
+    }
+
+    function formatDate(date) {
+      const weekday = date.toLocaleDateString(localeTag(), { weekday: 'short' });
+      return `${weekday}, ${date.getDate()}.${date.getMonth() + 1}.`;
+    }
+
+    function countryCodeToFlag(code) {
+      if (!code || code.length !== 2) return '';
+      const upper = code.toUpperCase();
+      return [...upper]
+        .map((char) => String.fromCodePoint(0x1f1e6 + char.charCodeAt(0) - 65))
+        .join('');
+    }
+
+    function applyPlaceholders(template, replacements) {
+      let result = template;
+      Object.entries(replacements).forEach(([key, value]) => {
+        result = result.replace(new RegExp(`\\{${key}\\}`, 'gi'), value);
+      });
+      return result;
+    }
+
+    class ShippingEstimate{{ block_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.daysMin = parseInt(this.dataset.daysMin, 10) || 1;
+        this.daysMax = parseInt(this.dataset.daysMax, 10) || this.daysMin;
+        this.cutoffHour = parseInt(this.dataset.cutoffHour, 10);
+        this.skipWeekends = this.dataset.skipWeekends === 'true';
+        this.shipsTemplate = this.dataset.shipsTemplate || '';
+        this.shipsTemplateHtml = this.dataset.shipsTemplateHtml || '';
+        this.shippingTemplate = this.dataset.shippingTemplate || '';
+        this.shippingTemplateHtml = this.dataset.shippingTemplateHtml || '';
+        this.fallbackCountry = (this.dataset.fallbackCountry || 'DE').toUpperCase();
+        this.countryCode = (this.dataset.initialCountry || this.fallbackCountry).toUpperCase();
+        this.shipsTextEl = this.querySelector('[data-ships-text]');
+        this.flagEl = this.querySelector('[data-country-flag]');
+        this.labelEl = this.querySelector('[data-shipping-label]');
+      }
+
+      connectedCallback() {
+        this.updateDisplay();
+        this.detectCountry();
+        document.addEventListener('localization:country:changed', this.handleCountryChange);
+      }
+
+      disconnectedCallback() {
+        document.removeEventListener('localization:country:changed', this.handleCountryChange);
+      }
+
+      handleCountryChange = (event) => {
+        const code = event?.detail?.country?.iso_code;
+        if (code) {
+          this.setCountry(code);
+        }
+      };
+
+      async detectCountry() {
+        const root = window.Shopify?.routes?.root || '/';
+        try {
+          const response = await fetch(`${root}browsing_context_suggestions.json`);
+          if (!response.ok) return;
+          const data = await response.json();
+          const detected =
+            data?.detected_values?.country?.handle ||
+            data?.suggestions?.[0]?.parts?.country?.handle;
+          if (detected) {
+            this.setCountry(detected);
+          }
+        } catch (_error) {
+          /* Keep Liquid / localization fallback */
+        }
+      }
+
+      setCountry(code) {
+        const normalized = String(code).toUpperCase().slice(0, 2);
+        if (!normalized || normalized === this.countryCode) return;
+        this.countryCode = normalized;
+        this.updateDisplay();
+      }
+
+      /* Orders placed after the cutoff hour ship one day later. */
+      baseDate() {
+        const now = new Date();
+        const base = new Date();
+        base.setHours(12, 0, 0, 0);
+        if (!isNaN(this.cutoffHour) && now.getHours() >= this.cutoffHour) {
+          base.setDate(base.getDate() + 1);
+        }
+        return base;
+      }
+
+      updateDisplay() {
+        const base = this.baseDate();
+        const start = addDays(base, this.daysMin, this.skipWeekends);
+        const end = addDays(base, this.daysMax, this.skipWeekends);
+        const replacements = {
+          date: formatDate(start),
+          start: formatDate(start),
+          end: formatDate(end),
+          cutoff: isNaN(this.cutoffHour) ? '' : String(this.cutoffHour),
+          country: this.countryCode,
+        };
+
+        if (this.shipsTextEl) {
+          const template = this.shipsTemplateHtml || this.shipsTemplate;
+          this.shipsTextEl.innerHTML = applyPlaceholders(template, replacements);
+        }
+        if (this.flagEl) {
+          this.flagEl.textContent = countryCodeToFlag(this.countryCode);
+        }
+        if (this.labelEl) {
+          const template = this.shippingTemplateHtml || this.shippingTemplate;
+          this.labelEl.innerHTML = applyPlaceholders(template, replacements);
+        }
+      }
+    }
+
+    if (!customElements.get('shipping-estimate-{{ block_id }}')) {
+      customElements.define('shipping-estimate-{{ block_id }}', ShippingEstimate{{ block_id }});
+    }
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "t:sections.shipping-estimate.name",
+  "tag": "div",
+  "settings": [
+    {
+      "type": "header",
+      "content": "t:sections.shipping-estimate.ship_date"
+    },
+    {
+      "type": "range",
+      "id": "days_from_today",
+      "label": "Lieferzeit ab (Tage)",
+      "min": 0,
+      "max": 60,
+      "step": 1,
+      "default": 1
+    },
+    {
+      "type": "range",
+      "id": "days_to_max",
+      "label": "Lieferzeit bis (Tage)",
+      "min": 0,
+      "max": 60,
+      "step": 1,
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "cutoff_hour",
+      "label": "Bestellschluss (Uhr)",
+      "min": 0,
+      "max": 23,
+      "step": 1,
+      "default": 13,
+      "info": "Nach dieser Uhrzeit verschiebt sich der Zeitraum automatisch um einen Tag."
+    },
+    {
+      "type": "checkbox",
+      "id": "skip_weekends",
+      "label": "Wochenenden überspringen",
+      "default": true
+    },
+    {
+      "type": "inline_richtext",
+      "id": "ships_by_prefix",
+      "label": "Text",
+      "default": "Bestelle vor {cutoff} Uhr und erhalte deine Bestellung zwischen {start} & {end}",
+      "info": "Platzhalter: {cutoff} = Uhrzeit, {start} = frühestes Datum, {end} = spätestes Datum"
+    },
+    {
+      "type": "header",
+      "content": "Icon"
+    },
+    {
+      "type": "text",
+      "id": "icon",
+      "label": "Icon (Emoji)",
+      "default": "🚚",
+      "info": "Leer lassen, um kein Icon anzuzeigen."
+    },
+    {
+      "type": "range",
+      "id": "icon_size",
+      "label": "Icon-Größe",
+      "min": 10,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "header",
+      "content": "t:sections.shipping-estimate.fast_shipping"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_fast_shipping",
+      "label": "Rechten Bereich anzeigen",
+      "default": false,
+      "info": "Solange dieser Bereich an ist, steht die Zeile immer auseinandergezogen – die Ausrichtung wirkt dann nicht."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_country_flag",
+      "label": "Länderflagge anzeigen",
+      "default": false,
+      "info": "Windows zeigt Flaggen-Emojis als Länderkürzel (z. B. DE) an."
+    },
+    {
+      "type": "inline_richtext",
+      "id": "shipping_label_template",
+      "label": "t:sections.shipping-estimate.shipping_label_template",
+      "default": "Schneller Versand",
+      "info": "t:sections.shipping-estimate.shipping_label_template_info"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "fallback_country_code",
+      "label": "t:sections.shipping-estimate.fallback_country_code",
+      "default": "DE",
+      "info": "t:sections.shipping-estimate.fallback_country_code_info"
+    },
+    {
+      "type": "header",
+      "content": "t:settings.colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "t:sections.shipping-estimate.background_color",
+      "default": "#f3f3f3"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "t:sections.shipping-estimate.text_color",
+      "default": "#1a1a1a"
+    },
+    {
+      "type": "color",
+      "id": "status_dot_color",
+      "label": "t:sections.shipping-estimate.status_dot_color",
+      "default": "#22c55e"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.shipping-estimate.layout"
+    },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "Ausrichtung (Desktop)",
+      "options": [
+        { "value": "flex-start", "label": "Links" },
+        { "value": "center", "label": "Mittig" },
+        { "value": "flex-end", "label": "Rechts" }
+      ],
+      "default": "flex-start"
+    },
+    {
+      "type": "select",
+      "id": "alignment_mobile",
+      "label": "Ausrichtung (Handy)",
+      "options": [
+        { "value": "inherit", "label": "Wie Desktop" },
+        { "value": "flex-start", "label": "Links" },
+        { "value": "center", "label": "Mittig" },
+        { "value": "flex-end", "label": "Rechts" }
+      ],
+      "default": "inherit"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_status_dot",
+      "label": "t:sections.shipping-estimate.show_status_dot",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "pulse_dot",
+      "label": "Statuspunkt pulsieren lassen",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "status_dot_size",
+      "label": "t:sections.shipping-estimate.status_dot_size",
+      "min": 6,
+      "max": 14,
+      "step": 1,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "t:settings.border_radius",
+      "min": 0,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "padding_vertical",
+      "label": "t:sections.shipping-estimate.padding_vertical",
+      "min": 0,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "padding_horizontal",
+      "label": "t:sections.shipping-estimate.padding_horizontal",
+      "min": 0,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "margin_top",
+      "label": "Außenabstand oben",
+      "min": -30,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "margin_bottom",
+      "label": "Außenabstand unten",
+      "min": -30,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 0,
+      "info": "Negative Werte ziehen die Zeile näher an den Warenkorb-Button."
+    },
+    {
+      "type": "range",
+      "id": "text_size",
+      "label": "t:sections.timer.text_size",
+      "min": 10,
+      "max": 18,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "flag_size",
+      "label": "t:sections.shipping-estimate.flag_size",
+      "min": 14,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 18
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:sections.shipping-estimate.name",
+      "category": "t:categories.product",
+      "settings": {
+        "days_from_today": 1,
+        "days_to_max": 4,
+        "cutoff_hour": 13,
+        "skip_weekends": true,
+        "ships_by_prefix": "Bestelle vor {cutoff} Uhr und erhalte deine Bestellung zwischen {start} & {end}",
+        "icon": "🚚",
+        "show_fast_shipping": false,
+        "show_country_flag": false,
+        "show_status_dot": false,
+        "pulse_dot": true,
+        "alignment": "flex-start",
+        "alignment_mobile": "inherit",
+        "shipping_label_template": "Schneller Versand",
+        "fallback_country_code": "DE",
+        "background_color": "#f3f3f3",
+        "text_color": "#1a1a1a",
+        "status_dot_color": "#22c55e"
+      }
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,424 @@
+{% liquid
+  assign bid = block.id | replace: '_', '' | downcase
+  assign s = block.settings
+  assign target = s.target_id | strip | default: '.jdgm-review-widget'
+  assign link_href = '#'
+  assign first_char = target | slice: 0
+  if first_char == '#'
+    assign link_href = target
+  endif
+
+  assign has_avatar = false
+  if s.avatar_1 != blank or s.avatar_2 != blank or s.avatar_3 != blank or s.avatar_4 != blank
+    assign has_avatar = true
+  endif
+
+  comment
+    Judge.me writes the shop rating into Shopify's standard review metafields,
+    so the badge can read the live average and count from the product itself.
+  endcomment
+  assign product_resource = product | default: closest.product
+  assign rating_data = product_resource.metafields.reviews.rating.value
+  assign rating_count = product_resource.metafields.reviews.rating_count.value
+
+  assign rating_display = s.fallback_rating
+  assign count_display = s.fallback_count
+  assign stars_to_show = s.star_count
+
+  if s.auto_rating and rating_data != blank and rating_data.rating != blank
+    assign rating_rounded = rating_data.rating | times: 1.0 | round: 1
+    assign rating_display = rating_rounded | append: '' | replace: '.', ','
+    assign stars_to_show = rating_data.rating | round
+    if stars_to_show < 1
+      assign stars_to_show = 1
+    endif
+  endif
+
+  if s.auto_rating and rating_count != blank and rating_count > 0
+    assign count_display = rating_count
+  endif
+
+  assign score_output = s.score_text | replace: '{rating}', rating_display | replace: '{count}', count_display
+  assign count_output = s.count_text | replace: '{rating}', rating_display | replace: '{count}', count_display
+%}
+
+{% style %}
+  .review-badge-{{ bid }} {
+    display: flex;
+    align-items: center;
+    gap: {{ s.gap }}px;
+    justify-content: {{ s.alignment }};
+    margin-top: {{ s.margin_top }}px;
+    margin-bottom: {{ s.margin_bottom }}px;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .review-badge-{{ bid }}__avatars {
+    display: flex;
+    flex-shrink: 0;
+  }
+
+  .review-badge-{{ bid }}__avatars img {
+    width: {{ s.avatar_size }}px;
+    height: {{ s.avatar_size }}px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid {{ s.avatar_ring_color }};
+    display: block;
+  }
+
+  .review-badge-{{ bid }}__avatars img + img {
+    margin-inline-start: -{{ s.avatar_size | divided_by: 3 }}px;
+  }
+
+  .review-badge-{{ bid }}__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .review-badge-{{ bid }}__top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .review-badge-{{ bid }}__stars {
+    display: flex;
+    gap: 1px;
+    color: {{ s.star_color }};
+  }
+
+  .review-badge-{{ bid }}__stars svg {
+    width: {{ s.star_size }}px;
+    height: {{ s.star_size }}px;
+    display: block;
+  }
+
+  .review-badge-{{ bid }}__score {
+    font-size: {{ s.score_size }}px;
+    font-weight: {{ s.score_weight }};
+    color: {{ s.score_color }};
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .review-badge-{{ bid }}__count {
+    font-size: {{ s.count_size }}px;
+    font-weight: {{ s.count_weight }};
+    color: {{ s.count_color }};
+    line-height: 1.2;
+  }
+{% endstyle %}
+
+<a
+  class="review-badge-{{ bid }}"
+  href="{{ link_href }}"
+  data-review-badge
+  data-target="{{ target | escape }}"
+  {{ block.shopify_attributes }}
+>
+  {% if has_avatar %}
+    <span class="review-badge-{{ bid }}__avatars">
+      {% if s.avatar_1 != blank %}<img src="{{ s.avatar_1 | image_url: width: 160 }}" alt="" loading="lazy" width="{{ s.avatar_size }}" height="{{ s.avatar_size }}">{% endif %}
+      {% if s.avatar_2 != blank %}<img src="{{ s.avatar_2 | image_url: width: 160 }}" alt="" loading="lazy" width="{{ s.avatar_size }}" height="{{ s.avatar_size }}">{% endif %}
+      {% if s.avatar_3 != blank %}<img src="{{ s.avatar_3 | image_url: width: 160 }}" alt="" loading="lazy" width="{{ s.avatar_size }}" height="{{ s.avatar_size }}">{% endif %}
+      {% if s.avatar_4 != blank %}<img src="{{ s.avatar_4 | image_url: width: 160 }}" alt="" loading="lazy" width="{{ s.avatar_size }}" height="{{ s.avatar_size }}">{% endif %}
+    </span>
+  {% endif %}
+
+  <span class="review-badge-{{ bid }}__body">
+    <span class="review-badge-{{ bid }}__top">
+      <span class="review-badge-{{ bid }}__stars" aria-hidden="true">
+        {% for i in (1..stars_to_show) %}
+          <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.826 1.608 8.144L12 18.896l-7.544 4.38 1.608-8.144L.587 9.306l8.332-1.151z"/>
+          </svg>
+        {% endfor %}
+      </span>
+      {% if score_output != blank %}
+        <span class="review-badge-{{ bid }}__score">{{ score_output }}</span>
+      {% endif %}
+    </span>
+    {% if count_output != blank %}
+      <span class="review-badge-{{ bid }}__count">{{ count_output }}</span>
+    {% endif %}
+  </span>
+</a>
+
+<script>
+  (function () {
+    /*
+     * Bound once on the document rather than per block: the theme editor
+     * re-renders blocks through the Section Rendering API, and inline scripts
+     * inside that markup never run again, which would kill a per-block handler.
+     */
+    if (window.__reviewBadgeBound) return;
+    window.__reviewBadgeBound = true;
+
+    /* Covers the ids and classes Judge.me uses across widget versions. */
+    const FALLBACKS = [
+      '#judgeme_product_reviews',
+      '.jdgm-review-widget',
+      '.jdgm-rev-widg',
+      '.jdgm-widget',
+      '[class*="jdgm"]',
+    ];
+
+    function findTarget(link) {
+      const configured = link.dataset.target;
+      const candidates = configured ? [configured].concat(FALLBACKS) : FALLBACKS;
+      for (const selector of candidates) {
+        try {
+          const found = document.querySelector(selector);
+          if (found) return found;
+        } catch (_error) {
+          /* Ignore an invalid selector and keep trying the fallbacks. */
+        }
+      }
+      return null;
+    }
+
+    document.addEventListener('click', function (event) {
+      const link = event.target.closest('[data-review-badge]');
+      if (!link) return;
+      const target = findTarget(link);
+      if (!target) return;
+      event.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Bewertungs-Badge",
+  "tag": "div",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Bewertungen"
+    },
+    {
+      "type": "checkbox",
+      "id": "auto_rating",
+      "label": "Zahlen automatisch aus Judge.me",
+      "default": true,
+      "info": "Liest Schnitt und Anzahl live vom Produkt. Benötigt, dass Judge.me die Shopify-Bewertungs-Metafelder befüllt (Standard)."
+    },
+    {
+      "type": "text",
+      "id": "score_text",
+      "label": "Zeile 1",
+      "default": "Ø {rating}/5",
+      "info": "Platzhalter: {rating} = Schnitt, {count} = Anzahl"
+    },
+    {
+      "type": "text",
+      "id": "count_text",
+      "label": "Zeile 2",
+      "default": "{count} Bewertungen"
+    },
+    {
+      "type": "text",
+      "id": "fallback_rating",
+      "label": "Ersatzwert Schnitt",
+      "default": "4,8",
+      "info": "Wird genutzt, solange Judge.me noch keine Daten liefert."
+    },
+    {
+      "type": "text",
+      "id": "fallback_count",
+      "label": "Ersatzwert Anzahl",
+      "default": "122"
+    },
+    {
+      "type": "header",
+      "content": "Kundenbilder"
+    },
+    {
+      "type": "image_picker",
+      "id": "avatar_1",
+      "label": "Bild 1"
+    },
+    {
+      "type": "image_picker",
+      "id": "avatar_2",
+      "label": "Bild 2"
+    },
+    {
+      "type": "image_picker",
+      "id": "avatar_3",
+      "label": "Bild 3"
+    },
+    {
+      "type": "image_picker",
+      "id": "avatar_4",
+      "label": "Bild 4"
+    },
+    {
+      "type": "range",
+      "id": "avatar_size",
+      "label": "Bildgröße",
+      "min": 20,
+      "max": 64,
+      "step": 2,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "color",
+      "id": "avatar_ring_color",
+      "label": "Rand um die Bilder",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "header",
+      "content": "Sterne"
+    },
+    {
+      "type": "range",
+      "id": "star_count",
+      "label": "Anzahl Sterne (manuell)",
+      "min": 1,
+      "max": 5,
+      "step": 1,
+      "default": 5
+    },
+    {
+      "type": "range",
+      "id": "star_size",
+      "label": "Sterngröße",
+      "min": 10,
+      "max": 28,
+      "step": 1,
+      "unit": "px",
+      "default": 15
+    },
+    {
+      "type": "color",
+      "id": "star_color",
+      "label": "Sternfarbe",
+      "default": "#22C55E"
+    },
+    {
+      "type": "header",
+      "content": "Textgrößen"
+    },
+    {
+      "type": "range",
+      "id": "score_size",
+      "label": "Größe Zeile 1",
+      "min": 10,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "score_weight",
+      "label": "Dicke Zeile 1",
+      "min": 100,
+      "max": 900,
+      "step": 100,
+      "default": 500
+    },
+    {
+      "type": "color",
+      "id": "score_color",
+      "label": "Farbe Zeile 1",
+      "default": "#4B5563"
+    },
+    {
+      "type": "range",
+      "id": "count_size",
+      "label": "Größe Zeile 2",
+      "min": 10,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "count_weight",
+      "label": "Dicke Zeile 2",
+      "min": 100,
+      "max": 900,
+      "step": 100,
+      "default": 700
+    },
+    {
+      "type": "color",
+      "id": "count_color",
+      "label": "Farbe Zeile 2",
+      "default": "#111827"
+    },
+    {
+      "type": "header",
+      "content": "Verlinkung"
+    },
+    {
+      "type": "text",
+      "id": "target_id",
+      "label": "Sprungziel",
+      "default": ".jdgm-review-widget",
+      "info": "Der Badge sucht das Judge.me-Widget selbst. Alternativ eine ID mit # oder eine CSS-Klasse mit . eintragen."
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "Ausrichtung",
+      "options": [
+        { "value": "flex-start", "label": "Links" },
+        { "value": "center", "label": "Mittig" },
+        { "value": "flex-end", "label": "Rechts" }
+      ],
+      "default": "flex-start"
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "label": "Abstand Bilder-Text",
+      "min": 0,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 10
+    },
+    {
+      "type": "range",
+      "id": "margin_top",
+      "label": "Außenabstand oben",
+      "min": -30,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "margin_bottom",
+      "label": "Außenabstand unten",
+      "min": -30,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bewertungs-Badge"
+    }
+  ]
+}
+{% endschema %}

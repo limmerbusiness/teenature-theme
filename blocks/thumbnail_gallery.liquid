@@ -1,0 +1,140 @@
+{% render 'lumin-review-thumbnail-gallery', block: block, section: section %}
+
+{% schema %}
+{
+  "name": "t:sections.lumin-review.thumbnail_gallery",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "t:sections.lumin-review.thumbnail_gallery_settings"
+    },
+    {
+      "type": "select",
+      "id": "thumbnail_align",
+      "label": "t:sections.lumin-review.thumbnail_alignment",
+      "options": [
+        {
+          "value": "left",
+          "label": "t:sections.lumin-review.thumbnail_alignment_left"
+        },
+        {
+          "value": "center",
+          "label": "t:sections.lumin-review.thumbnail_alignment_center"
+        },
+        {
+          "value": "right",
+          "label": "t:sections.lumin-review.thumbnail_alignment_right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "text",
+      "id": "gallery_title",
+      "label": "t:sections.lumin-review.gallery_title",
+      "default": "Customer Reviews",
+      "info": "t:sections.lumin-review.gallery_title_info"
+    },
+    {
+      "type": "color",
+      "id": "gallery_bg",
+      "label": "t:sections.lumin-review.gallery_background",
+      "default": "#f8f8f8"
+    },
+    {
+      "type": "color",
+      "id": "gallery_title_color",
+      "label": "t:sections.lumin-review.title_color",
+      "default": "#333"
+    },
+    {
+      "type": "color",
+      "id": "gallery_accent_color",
+      "label": "t:sections.lumin-review.accent_color",
+      "default": "#000",
+      "info": "t:sections.lumin-review.accent_color_info"
+    },
+    {
+      "type": "range",
+      "id": "border_thickness",
+      "min": 0,
+      "max": 4,
+      "step": 1,
+      "unit": "px",
+      "label": "t:sections.lumin-review.thumbnail_border_thickness",
+      "default": 1
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border Color",
+      "default": "#ddd"
+    },
+    {
+      "type": "select",
+      "id": "border_style",
+      "label": "Border Style",
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "solid",
+          "label": "Solid"
+        },
+        {
+          "value": "dashed",
+          "label": "Dashed"
+        },
+        {
+          "value": "dotted",
+          "label": "Dotted"
+        },
+        {
+          "value": "double",
+          "label": "Double"
+        },
+        {
+          "value": "groove",
+          "label": "Groove"
+        },
+        {
+          "value": "ridge",
+          "label": "Ridge"
+        },
+        {
+          "value": "inset",
+          "label": "Inset"
+        },
+        {
+          "value": "outset",
+          "label": "Outset"
+        }
+      ],
+      "default": "solid"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "label": "t:sections.lumin-review.thumbnail_border_radius",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "image_size",
+      "min": 40,
+      "max": 200,
+      "step": 10,
+      "unit": "px",
+      "label": "t:sections.lumin-review.thumbnail_image_size",
+      "default": 60
+    }
+  ]
+}
+{% endschema %}
