@@ -1,0 +1,1504 @@
+{% assign block_id = block.id | replace: '_', '' | downcase %}
+
+{%- liquid
+  assign vs_slider_type = block.settings.slider_type
+  if vs_slider_type == blank
+    if block.settings.autoplay_smooth
+      assign vs_slider_type = 'smooth'
+    elsif block.settings.autoplay
+      assign vs_slider_type = 'interval'
+    else
+      assign vs_slider_type = 'none'
+    endif
+  endif
+
+  assign vs_auto_slide = false
+  assign vs_smooth_scroll = false
+  if vs_slider_type == 'smooth'
+    assign vs_auto_slide = true
+    assign vs_smooth_scroll = true
+  elsif vs_slider_type == 'interval'
+    assign vs_auto_slide = true
+  endif
+  assign vs_smooth_scroll_speed = block.settings.smooth_scroll_speed | default: 65
+  assign vs_loop_slider = block.settings.loop
+  assign vs_show_navigation = block.settings.show_navigation
+  assign vs_enable_popup = block.settings.enable_popup
+  if vs_enable_popup == blank
+    assign vs_enable_popup = false
+  endif
+  assign vs_show_play_overlay = block.settings.show_play_overlay
+  if vs_show_play_overlay == blank
+    assign vs_show_play_overlay = false
+  endif
+  assign vs_autoplay_current_slide = block.settings.autoplay_current_slide_only
+  if vs_autoplay_current_slide == blank
+    assign vs_autoplay_current_slide = true
+  endif
+-%}
+
+{% liquid
+  if block.settings.aspect_ratio == 'auto'
+    assign aspect_ratio_value = 'auto'
+  elsif block.settings.aspect_ratio == 'square'
+    assign aspect_ratio_value = '1 / 1'
+  elsif block.settings.aspect_ratio == 'portrait'
+    assign aspect_ratio_value = '3 / 4'
+  elsif block.settings.aspect_ratio == 'widescreen'
+    assign aspect_ratio_value = '16 / 9'
+  else
+    assign aspect_ratio_value = '16 / 9'
+  endif
+%}
+
+{% style %}
+  .lumin-video-slider-{{ block_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+    cursor: grab;
+    user-select: none;
+    {% if block.settings.background %}
+      background-color: {{ block.settings.background_color | default: '#00000026' }};
+      border-radius: {{ block.settings.corner_radius }}px;
+    {% endif %}
+  }
+
+  .lumin-video-slider-{{ block_id }}:active {
+    cursor: grabbing;
+  }
+
+  .lumin-video-slider-{{ block_id }}[data-dragging] {
+    cursor: grabbing;
+  }
+
+  .lumin-video-slider-container-{{ block_id }} {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .lumin-video-slider-track-{{ block_id }} {
+    display: flex;
+    gap: {{ block.settings.gap }}px;
+    transition: transform 0.4s ease;
+    min-width: 0;
+    will-change: transform;
+  }
+
+  .lumin-video-slider-track-{{ block_id }}.is-smooth-scroll {
+    transition: none;
+  }
+
+  .lumin-video-slider-track-{{ block_id }}.no-transition {
+    transition: none;
+  }
+
+  .lumin-video-slider-heading-{{ block_id }} {
+    margin-bottom: 8px;
+    font-size: {{ block.settings.heading_size | default: 20 }}px;
+    line-height: 1.2;
+  }
+
+  .lumin-video-slider-caption-{{ block_id }} {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 4px;
+    border-bottom-left-radius: {{ block.settings.video_border_radius }}px;
+    border-bottom-right-radius: {{ block.settings.video_border_radius }}px;
+    background: {{ block.settings.caption_background | default: '#000000' | color_modify: 'alpha', block.settings.caption_opacity | default: 0.5 }};
+    color: #fff;
+    text-align: center;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .lumin-video-slider-caption-title-{{ block_id }} {
+    font-size: {{ block.settings.caption_title_size | default: 18 }}px;
+    font-weight: bold;
+    margin-bottom: 3px;
+    line-height: 1.2;
+  }
+
+  .lumin-video-slider-caption-text-{{ block_id }} {
+    font-size: {{ block.settings.caption_text_size | default: 14 }}px;
+    line-height: 1.2;
+  }
+
+  .lumin-video-slider-play-overlay-{{ block_id }} {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .lumin-video-slider-play-overlay-{{ block_id }}.is-hidden {
+    display: none;
+    pointer-events: none;
+  }
+
+  .lumin-video-slider-play-overlay-button-{{ block_id }} {
+    background-color: {{ block.settings.play_button_color }};
+    border-radius: 50%;
+    color: {{ block.settings.play_button_icon_color }};
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: {{ block.settings.play_button_size }}px;
+    height: {{ block.settings.play_button_size }}px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: transform 0.15s ease, background-color 0.3s ease;
+    opacity: {{ block.settings.play_button_opacity | divided_by: 100.0 }};
+  }
+
+  .lumin-video-slider-play-overlay-{{ block_id }}:hover .lumin-video-slider-play-overlay-button-{{ block_id }} {
+    background-color: {{ block.settings.play_button_hover_color }};
+    transform: scale(1.08);
+    opacity: 1;
+  }
+
+  .lumin-video-slider-play-overlay-button-{{ block_id }} svg {
+    width: calc({{ block.settings.play_button_size }}px * 0.4);
+    height: calc({{ block.settings.play_button_size }}px * 0.4);
+  }
+
+  body.modal-open-{{ block_id }} .shopify-section-group-header-group,
+  body.modal-open-{{ block_id }} .header,
+  body.modal-open-{{ block_id }} .section-header.shopify-section-group-header-group {
+    z-index: 1 !important;
+  }
+
+  .lumin-video-slider-modal-{{ block_id }} {
+    position: fixed !important;
+    z-index: 2147483647 !important;
+    left: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    isolation: isolate;
+  }
+
+  .lumin-video-slider-modal-{{ block_id }}[style*="display: flex"] {
+    display: flex !important;
+  }
+
+  .lumin-video-slider-modal-overlay-{{ block_id }} {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1;
+  }
+
+  .lumin-video-slider-modal-content-{{ block_id }} {
+    position: relative;
+    z-index: 2;
+    max-width: 90vw;
+    max-height: 90vh;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 0;
+  }
+
+  .lumin-video-slider-modal-close-{{ block_id }} {
+    background: #fff;
+    border: 1px solid;
+    border-radius: 50%;
+    font-size: 3rem;
+    width: 40px;
+    height: 40px;
+    color: #000;
+    cursor: pointer;
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 3;
+    opacity: 0.45;
+  }
+
+  .lumin-video-slider-modal-prev-{{ block_id }},
+  .lumin-video-slider-modal-next-{{ block_id }} {
+    background: #fff;
+    border: 1px solid #000000;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    color: #333;
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    opacity: 0.45;
+  }
+
+  .lumin-video-slider-modal-prev-{{ block_id }} {
+    left: 0.5rem;
+  }
+
+  .lumin-video-slider-modal-next-{{ block_id }} {
+    right: 0.5rem;
+  }
+
+  .lumin-video-slider-modal-video-container-{{ block_id }} video {
+    max-width: 100%;
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    background: #000;
+    border-radius: 12px;
+    display: block;
+  }
+
+  .lumin-video-slider-slide-{{ block_id }} {
+    flex: 0 0 calc((100% - ({{ block.settings.slides_per_view_desktop | minus: 1 }} * {{ block.settings.gap }}px)) / {{ block.settings.slides_per_view_desktop }});
+    position: relative;
+    background-color: {{ block.settings.video_background_color }};
+    border-radius: {{ block.settings.video_border_radius }}px;
+    overflow: hidden;
+  }
+
+  .lumin-video-slider-slide-{{ block_id }}.hidden {
+    display: none;
+  }
+
+  .lumin-video-slider-slide-{{ block_id }} video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .lumin-video-slider-slide-{{ block_id }} iframe {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border: none;
+  }
+
+  .lumin-video-slider-slide-{{ block_id }} .lumin-video-wrapper-{{ block_id }} {
+    position: relative;
+    width: 100%;
+    {% if block.settings.aspect_ratio == 'auto' %}
+      height: auto;
+    {% else %}
+      aspect-ratio: {{ aspect_ratio_value }};
+    {% endif %}
+  }
+
+  .lumin-video-slider-slide-{{ block_id }} .lumin-video-wrapper-{{ block_id }}.playing {
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="black" stroke-width="1"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>') 16 16, pointer;
+  }
+
+  .lumin-video-slider-slide-{{ block_id }} .lumin-video-placeholder-{{ block_id }} {
+    width: 100%;
+    {% if block.settings.aspect_ratio == 'auto' %}
+      aspect-ratio: 16 / 9;
+    {% else %}
+      aspect-ratio: {{ aspect_ratio_value }};
+    {% endif %}
+    background-color: #f4f4f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .lumin-video-slider-slide-{{ block_id }} .lumin-video-placeholder-{{ block_id }} svg {
+    width: 100%;
+    height: 100%;
+    opacity: 0.3;
+  }
+
+  .lumin-video-empty-state-{{ block_id }} {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 20px;
+    font-size: 14px;
+    color: #666;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .lumin-video-play-button-{{ block_id }} {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: {{ block.settings.play_button_size }}px;
+    height: {{ block.settings.play_button_size }}px;
+    background-color: {{ block.settings.play_button_color }};
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
+    opacity: {{ block.settings.play_button_opacity | divided_by: 100.0 }};
+  }
+
+  .lumin-video-play-button-{{ block_id }}:hover {
+    background-color: {{ block.settings.play_button_hover_color }};
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+  }
+
+  .lumin-video-play-button-{{ block_id }}.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .lumin-video-play-button-{{ block_id }} .icon-play {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  .lumin-video-play-button-{{ block_id }} .icon-play svg {
+    width: calc({{ block.settings.play_button_size }}px * 0.4);
+    height: calc({{ block.settings.play_button_size }}px * 0.4);
+    color: {{ block.settings.play_button_icon_color }};
+  }
+
+  .lumin-video-mute-button-{{ block_id }} {
+    position: absolute;
+    top: {{ block.settings.mute_button_offset }}px;
+    right: {{ block.settings.mute_button_offset }}px;
+    width: {{ block.settings.mute_button_size }}px;
+    height: {{ block.settings.mute_button_size }}px;
+    background-color: {{ block.settings.mute_button_color }};
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    transition: opacity 0.3s ease, background-color 0.3s ease;
+    opacity: {{ block.settings.mute_button_opacity | divided_by: 100.0 }};
+  }
+
+  .lumin-video-mute-button-{{ block_id }}:hover {
+    background-color: {{ block.settings.mute_button_hover_color }};
+    opacity: 1;
+  }
+
+  .lumin-video-mute-button-{{ block_id }}[hidden] {
+    display: none !important;
+    pointer-events: none;
+  }
+
+  .lumin-video-wrapper-{{ block_id }}.is-audio-active .lumin-video-mute-button-{{ block_id }} {
+    pointer-events: auto;
+  }
+
+  .lumin-video-mute-button-{{ block_id }} svg {
+    width: calc({{ block.settings.mute_button_size }}px * 0.5);
+    height: calc({{ block.settings.mute_button_size }}px * 0.5);
+    fill: {{ block.settings.mute_button_icon_color }};
+  }
+
+  .lumin-video-slider-nav-{{ block_id }} {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: {{ block.settings.nav_button_color }};
+    color: {{ block.settings.nav_button_icon_color }};
+    border: none;
+    width: {{ block.settings.nav_button_size }}px;
+    height: {{ block.settings.nav_button_size }}px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: opacity 0.3s ease, background-color 0.3s ease;
+    opacity: {{ block.settings.nav_button_opacity | divided_by: 100.0 }};
+  }
+
+  .lumin-video-slider-nav-{{ block_id }}:hover {
+    background-color: {{ block.settings.nav_button_hover_color }};
+    opacity: 1;
+  }
+
+  .lumin-video-slider-nav-{{ block_id }}:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .lumin-video-slider-nav-{{ block_id }}.lumin-video-slider-prev-{{ block_id }} {
+    left: {{ block.settings.nav_button_offset }}px;
+  }
+
+  .lumin-video-slider-nav-{{ block_id }}.lumin-video-slider-next-{{ block_id }} {
+    right: {{ block.settings.nav_button_offset }}px;
+  }
+
+  .lumin-video-slider-nav-{{ block_id }} svg {
+    width: calc({{ block.settings.nav_button_size }}px * 0.5);
+    height: calc({{ block.settings.nav_button_size }}px * 0.5);
+  }
+
+  .lumin-video-slider-dots-{{ block_id }} {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: {{ block.settings.dots_margin_top }}px;
+    height: calc({{ block.settings.dot_size }}px + 2px);
+  }
+
+  .lumin-video-slider-dot-{{ block_id }} {
+    width: {{ block.settings.dot_size }}px;
+    height: {{ block.settings.dot_size }}px;
+    border-radius: 50%;
+    background-color: {{ block.settings.dot_color }};
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    padding: 0;
+  }
+
+  .lumin-video-slider-dot-{{ block_id }}.active {
+    background-color: {{ block.settings.dot_active_color }};
+    transform: scale(1.2);
+  }
+
+  @media screen and (max-width: 749px) {
+    .lumin-video-slider-slide-{{ block_id }} {
+      flex: 0 0 calc((100% - ({{ block.settings.slides_per_view_mobile | minus: 1 }} * {{ block.settings.gap }}px)) / {{ block.settings.slides_per_view_mobile }});
+    }
+
+    .lumin-video-slider-nav-{{ block_id }} {
+      width: calc({{ block.settings.nav_button_size }}px * 0.8);
+      height: calc({{ block.settings.nav_button_size }}px * 0.8);
+    }
+
+    .lumin-video-slider-nav-{{ block_id }}.lumin-video-slider-prev-{{ block_id }} {
+      left: calc({{ block.settings.nav_button_offset }}px * 0.5);
+    }
+
+    .lumin-video-slider-nav-{{ block_id }}.lumin-video-slider-next-{{ block_id }} {
+      right: calc({{ block.settings.nav_button_offset }}px * 0.5);
+    }
+
+    .lumin-video-play-button-{{ block_id }} {
+      width: calc({{ block.settings.play_button_size }}px * 0.8);
+      height: calc({{ block.settings.play_button_size }}px * 0.8);
+    }
+
+    .lumin-video-mute-button-{{ block_id }} {
+      width: calc({{ block.settings.mute_button_size }}px * 0.8);
+      height: calc({{ block.settings.mute_button_size }}px * 0.8);
+      top: calc({{ block.settings.mute_button_offset }}px * 0.5);
+      right: calc({{ block.settings.mute_button_offset }}px * 0.5);
+    }
+  }
+{% endstyle %}
+
+{% if block.settings.heading != blank %}
+  <div class="lumin-video-slider-heading-{{ block_id }}">{{ block.settings.heading }}</div>
+{% endif %}
+
+<video-slider-{{ block_id }}
+  class="lumin-video-slider-{{ block_id }} spacing-style"
+  style="{% render 'spacing-style', settings: block.settings %}"
+  data-slides-desktop="{{ block.settings.slides_per_view_desktop }}"
+  data-slides-mobile="{{ block.settings.slides_per_view_mobile }}"
+  data-loop="{{ vs_loop_slider }}"
+  data-video-autoplay="{{ block.settings.video_autoplay }}"
+  data-auto-slide="{% if vs_auto_slide %}true{% else %}false{% endif %}"
+  data-auto-slide-delay="{{ vs_auto_slide_delay | times: 1000 }}"
+  data-smooth-scroll="{% if vs_smooth_scroll %}true{% else %}false{% endif %}"
+  data-smooth-scroll-speed="{{ vs_smooth_scroll_speed }}"
+  data-autoplay-reverse="{{ block.settings.autoplay_reverse }}"
+  data-enable-popup="{% if vs_enable_popup %}true{% else %}false{% endif %}"
+  data-show-play-overlay="{% if vs_show_play_overlay %}true{% else %}false{% endif %}"
+  data-autoplay-current-slide="{% if vs_autoplay_current_slide %}true{% else %}false{% endif %}"
+  data-block-id="{{ block_id }}"
+>
+  <div class="lumin-video-slider-container-{{ block_id }}">
+    <div class="lumin-video-slider-track-{{ block_id }}">
+      {% for i in (1..6) %}
+        {% liquid
+          assign video_url_key = 'video_url_' | append: i
+          assign video_shopify_key = 'video_shopify_' | append: i
+          assign video_enabled_key = 'video_enabled_' | append: i
+          assign title_key = 'title_' | append: i
+          assign caption_key = 'caption_' | append: i
+          assign video_url = block.settings[video_url_key]
+          assign video_shopify = block.settings[video_shopify_key]
+          assign video_enabled = block.settings[video_enabled_key]
+          assign slide_title = block.settings[title_key]
+          assign slide_caption = block.settings[caption_key]
+        %}
+        
+        <div class="lumin-video-slider-slide-{{ block_id }} {% unless video_enabled %}hidden{% endunless %}" data-slide-index="{{ forloop.index0 }}">
+          {% if video_shopify %}
+            <div class="lumin-video-wrapper-{{ block_id }}" data-video-type="shopify">
+              {{
+                video_shopify
+                | video_tag:
+                  image_size: '1100x',
+                  controls: false,
+                  muted: true,
+                  loop: block.settings.loop_videos,
+                  autoplay: false
+              }}
+              {% unless block.settings.video_autoplay %}
+                <button class="lumin-video-play-button-{{ block_id }}" type="button" aria-label="{{ 'accessibility.play_video' | t }}">
+                  <span class="icon-play">
+                    <span class="visually-hidden">{{ 'accessibility.play_video' | t }}</span>
+                    {{- 'icon-play.svg' | inline_asset_content -}}
+                  </span>
+                </button>
+              {% endunless %}
+              {% if vs_show_play_overlay %}
+                <button
+                  type="button"
+                  class="lumin-video-slider-play-overlay-{{ block_id }}"
+                  data-video-play
+                  aria-label="{{ 'accessibility.play_video' | t }}"
+                >
+                  <span class="lumin-video-slider-play-overlay-button-{{ block_id }}">
+                    {{- 'icon-play.svg' | inline_asset_content -}}
+                  </span>
+                </button>
+              {% endif %}
+              {% unless vs_enable_popup %}
+                <button class="lumin-video-mute-button-{{ block_id }}" aria-label="Toggle mute" hidden>
+                  <svg class="lumin-mute-icon-{{ block_id }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="display: none;">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                  </svg>
+                  <svg class="lumin-unmute-icon-{{ block_id }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                  </svg>
+                </button>
+              {% endunless %}
+            </div>
+          {% elsif video_url %}
+            <div class="lumin-video-wrapper-{{ block_id }}" data-video-type="external">
+              {% if video_url.type == 'youtube' %}
+                <iframe
+                  src="https://www.youtube.com/embed/{{ video_url.id }}?controls=0&mute=1&loop={{ block.settings.loop_videos | default: 0 }}&playlist={{ video_url.id }}&enablejsapi=1"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                  loading="lazy"
+                ></iframe>
+              {% elsif video_url.type == 'vimeo' %}
+                <iframe
+                  src="https://player.vimeo.com/video/{{ video_url.id }}?controls=0&muted=1&loop={{ block.settings.loop_videos | default: 0 }}"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowfullscreen
+                  loading="lazy"
+                ></iframe>
+              {% endif %}
+            </div>
+          {% else %}
+            <div class="lumin-video-placeholder-{{ block_id }}">
+              {{ 'collection-1' | placeholder_svg_tag: 'placeholder-video' }}
+              {% if forloop.first %}
+                <div class="lumin-video-empty-state-{{ block_id }}">
+                </div>
+              {% endif %}
+            </div>
+          {% endif %}
+          {% if slide_title != blank or slide_caption != blank %}
+            <div class="lumin-video-slider-caption-{{ block_id }}">
+              {% if slide_title != blank %}
+                <div class="lumin-video-slider-caption-title-{{ block_id }}">{{ slide_title }}</div>
+              {% endif %}
+              {% if slide_caption != blank %}
+                <div class="lumin-video-slider-caption-text-{{ block_id }}">{{ slide_caption }}</div>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if vs_show_navigation %}
+      <button
+        class="lumin-video-slider-nav-{{ block_id }} lumin-video-slider-prev-{{ block_id }}"
+        aria-label="Previous slide"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <button
+        class="lumin-video-slider-nav-{{ block_id }} lumin-video-slider-next-{{ block_id }}"
+        aria-label="Next slide"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    {% endif %}
+  </div>
+
+  {% if block.settings.show_dots %}
+    <div class="lumin-video-slider-dots-{{ block_id }}"></div>
+  {% endif %}
+</video-slider-{{ block_id }}>
+
+{% if vs_enable_popup %}
+<div id="lumin-video-slider-modal-{{ block_id }}" class="lumin-video-slider-modal-{{ block_id }}" style="display:none;">
+  <div class="lumin-video-slider-modal-overlay-{{ block_id }}"></div>
+  <div class="lumin-video-slider-modal-content-{{ block_id }}">
+    <button type="button" class="lumin-video-slider-modal-close-{{ block_id }}" aria-label="Close">&times;</button>
+    <button type="button" class="lumin-video-slider-modal-prev-{{ block_id }}" aria-label="Previous" style="display:none;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+      </svg>
+    </button>
+    <button type="button" class="lumin-video-slider-modal-next-{{ block_id }}" aria-label="Next" style="display:none;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+      </svg>
+    </button>
+    <div class="lumin-video-slider-modal-video-container-{{ block_id }}"></div>
+  </div>
+</div>
+{% endif %}
+
+<script>
+  (function() {
+    class VideoSlider{{ block_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.currentIndex = 0;
+        this.lastDirection = 'next';
+        this.allVideos = [];
+        this.realVideos = [];
+        this.autoSlideInterval = null;
+        this.smoothScrollActive = false;
+        this.smoothScrollOffset = 0;
+        this.smoothScrollRaf = null;
+        this.lastSmoothScrollTime = null;
+        this.isAutoSlidePaused = false;
+        this.sliderStoppedByUserAudio = false;
+        this.userAudioActive = false;
+        this.activeAudioRealIndex = null;
+        this.currentModalVideoIndex = null;
+        this.playOverlayHiddenRealIndex = null;
+        this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      }
+
+      readSettings() {
+        this.slidesDesktop = parseInt(this.dataset.slidesDesktop, 10) || 3;
+        this.slidesMobile = parseInt(this.dataset.slidesMobile, 10) || 2;
+        this.loop = this.dataset.loop === 'true';
+        this.videoAutoplay = this.dataset.videoAutoplay === 'true';
+        this.autoSlideEnabled = this.dataset.autoSlide === 'true';
+        this.autoSlideDelay = parseInt(this.dataset.autoSlideDelay, 10) || 5000;
+        this.smoothScroll = this.dataset.smoothScroll === 'true';
+        this.smoothScrollSpeed = parseInt(this.dataset.smoothScrollSpeed, 10) || 65;
+        this.autoplayReverse = this.dataset.autoplayReverse === 'true';
+        this.enablePopup = this.dataset.enablePopup === 'true';
+        this.showPlayOverlay = this.dataset.showPlayOverlay === 'true';
+        this.autoplayCurrentSlide = this.dataset.autoplayCurrentSlide === 'true';
+        this.blockId = this.dataset.blockId || '{{ block_id }}';
+        this.infiniteMode = this.loop;
+      }
+
+      connectedCallback() {
+        this.readSettings();
+        this.track = this.querySelector('.lumin-video-slider-track-{{ block_id }}');
+        this.allSlides = this.querySelectorAll('.lumin-video-slider-slide-{{ block_id }}');
+        this.slides = Array.from(this.allSlides).filter(slide => !slide.classList.contains('hidden'));
+        this.prevButton = this.querySelector('.lumin-video-slider-prev-{{ block_id }}');
+        this.nextButton = this.querySelector('.lumin-video-slider-next-{{ block_id }}');
+        this.dotsContainer = this.querySelector('.lumin-video-slider-dots-{{ block_id }}');
+        this.boundOnTransitionEnd = this.onTransitionEnd.bind(this);
+
+        if (this.enablePopup) {
+          this.modal = document.getElementById('lumin-video-slider-modal-{{ block_id }}');
+          this.modalVideoContainer = this.modal?.querySelector('.lumin-video-slider-modal-video-container-{{ block_id }}');
+          this.modalPrevBtn = this.modal?.querySelector('.lumin-video-slider-modal-prev-{{ block_id }}');
+          this.modalNextBtn = this.modal?.querySelector('.lumin-video-slider-modal-next-{{ block_id }}');
+          if (this.modal && this.modal.parentElement !== document.body) {
+            document.body.appendChild(this.modal);
+          }
+        }
+        
+        if (this.infiniteMode && this.slides.length > 1) {
+          this.slides.forEach(slide => {
+            const suffixClone = slide.cloneNode(true);
+            suffixClone.classList.add('lumin-video-slider-clone-{{ block_id }}');
+            this.track.appendChild(suffixClone);
+          });
+          this.slides.forEach(slide => {
+            const prefixClone = slide.cloneNode(true);
+            prefixClone.classList.add('lumin-video-slider-clone-{{ block_id }}');
+            this.track.insertBefore(prefixClone, this.track.firstChild);
+          });
+          this.currentIndex = this.slides.length;
+          this.track.addEventListener('transitionend', this.boundOnTransitionEnd);
+        }
+
+        this.updateSlidesPerView();
+        this.setupEventListeners();
+        this.setupVideoControls();
+        this.setupVideoClickDelegation();
+        this.setupModalEventListeners();
+        this.createDots();
+        this.updateSlider(false);
+        this.syncVideoPlayback();
+        this.startSliderAutoplay();
+      }
+
+      getEffectiveIndex() {
+        if (!this.infiniteMode) return this.currentIndex;
+        return ((this.currentIndex % this.slides.length) + this.slides.length) % this.slides.length;
+      }
+
+      getSlideStep() {
+        const firstSlide = this.infiniteMode ? this.track.children[this.slides.length] : this.slides[0];
+        const slideWidth = (firstSlide || this.slides[0])?.offsetWidth || 0;
+        return slideWidth + {{ block.settings.gap }};
+      }
+
+      getSetWidth() {
+        if (this.slides.length <= 1) return 0;
+        const start = this.infiniteMode ? this.slides.length * this.getSlideStep() : 0;
+        return this.slides.length * this.getSlideStep();
+      }
+
+      updateSlidesPerView() {
+        this.slidesPerView = window.innerWidth <= 749 ? this.slidesMobile : this.slidesDesktop;
+        this.maxIndex = this.infiniteMode
+          ? this.slides.length * 2
+          : Math.max(0, this.slides.length - this.slidesPerView);
+      }
+
+      setupEventListeners() {
+        if (this.prevButton) {
+          this.prevButton.addEventListener('click', () => {
+            this.onManualSlide();
+            this.prev();
+          });
+        }
+        
+        if (this.nextButton) {
+          this.nextButton.addEventListener('click', () => {
+            this.onManualSlide();
+            this.next();
+          });
+        }
+
+        this.setupDragScroll();
+
+        this.addEventListener('mouseenter', () => {
+          this.isAutoSlidePaused = true;
+        });
+
+        this.addEventListener('mouseleave', () => {
+          if (!this.sliderStoppedByUserAudio) {
+            this.isAutoSlidePaused = false;
+          }
+        });
+
+        window.addEventListener('resize', () => {
+          this.updateSlidesPerView();
+          if (this.smoothScrollActive) {
+            this.smoothScrollOffset = -(this.currentIndex * this.getSlideStep());
+          }
+          this.updateSlider(false);
+          this.createDots();
+        });
+      }
+
+      onManualSlide() {
+        this.stopAutoSlide();
+        this.stopSmoothScroll();
+        if (this.autoSlideEnabled && !this.sliderStoppedByUserAudio && !this.prefersReducedMotion) {
+          this.startSliderAutoplay();
+        }
+      }
+
+      startSliderAutoplay() {
+        this.stopAutoSlide();
+        this.stopSmoothScroll();
+        if (this.sliderStoppedByUserAudio || !this.autoSlideEnabled || this.prefersReducedMotion || this.slides.length <= 1) {
+          return;
+        }
+        if (this.smoothScroll) {
+          this.startSmoothScroll();
+        } else {
+          this.startAutoSlide();
+        }
+      }
+
+      startAutoSlide() {
+        this.autoSlideInterval = setInterval(() => {
+          if (this.isAutoSlidePaused) return;
+          if (this.autoplayReverse) {
+            this.prev(false);
+          } else {
+            this.next(false);
+          }
+        }, this.autoSlideDelay);
+      }
+
+      stopAutoSlide() {
+        if (this.autoSlideInterval) {
+          clearInterval(this.autoSlideInterval);
+          this.autoSlideInterval = null;
+        }
+      }
+
+      startSmoothScroll() {
+        this.smoothScrollActive = true;
+        this.smoothScrollOffset = -(this.currentIndex * this.getSlideStep());
+        this.lastSmoothScrollTime = null;
+        this.track.classList.add('is-smooth-scroll');
+
+        const tick = (time) => {
+          if (!this.smoothScrollActive) return;
+          this.smoothScrollRaf = requestAnimationFrame(tick);
+          if (this.isAutoSlidePaused) {
+            this.lastSmoothScrollTime = time;
+            return;
+          }
+          if (this.lastSmoothScrollTime === null) {
+            this.lastSmoothScrollTime = time;
+            return;
+          }
+
+          const delta = time - this.lastSmoothScrollTime;
+          this.lastSmoothScrollTime = time;
+          const setWidth = this.getSetWidth();
+          if (!setWidth) return;
+
+          const direction = this.autoplayReverse ? -1 : 1;
+          this.smoothScrollOffset -= direction * (this.smoothScrollSpeed * delta) / 1000;
+
+          const minOffset = this.infiniteMode ? this.slides.length * this.getSlideStep() : 0;
+          while (this.smoothScrollOffset <= -minOffset - setWidth) {
+            this.smoothScrollOffset += setWidth;
+          }
+          while (this.smoothScrollOffset >= -minOffset + setWidth) {
+            this.smoothScrollOffset -= setWidth;
+          }
+
+          this.track.style.transform = `translate3d(${Math.round(this.smoothScrollOffset)}px, 0, 0)`;
+          this.updateIndexFromOffset(-this.smoothScrollOffset);
+        };
+
+        this.smoothScrollRaf = requestAnimationFrame(tick);
+      }
+
+      stopSmoothScroll() {
+        this.smoothScrollActive = false;
+        this.lastSmoothScrollTime = null;
+        if (this.smoothScrollRaf) {
+          cancelAnimationFrame(this.smoothScrollRaf);
+          this.smoothScrollRaf = null;
+        }
+        this.track.classList.remove('is-smooth-scroll');
+      }
+
+      updateIndexFromOffset(offset) {
+        const step = this.getSlideStep();
+        if (!step) return;
+        const newIndex = Math.round(offset / step);
+        const clamped = this.infiniteMode
+          ? Math.max(0, Math.min(this.slides.length * 2, newIndex))
+          : Math.max(0, Math.min(this.maxIndex, newIndex));
+        if (clamped !== this.currentIndex) {
+          this.currentIndex = clamped;
+          this.syncVideoPlayback();
+          this.updateDots();
+        }
+      }
+
+      setupDragScroll() {
+        const DRAG_THRESHOLD = 12;
+        const MIN_DRAG_DISTANCE = 15;
+        let startX = 0;
+        let startOffset = 0;
+        let moved = false;
+        let totalDragDistance = 0;
+
+        const getTrackOffset = () => {
+          const style = getComputedStyle(this.track);
+          const transform = style.transform;
+          if (!transform || transform === 'none') return 0;
+          const m = transform.match(/matrix\(([^)]+)\)/);
+          if (m) {
+            const parts = m[1].split(',').map(parseFloat);
+            return parts[4] ?? 0;
+          }
+          return 0;
+        };
+
+        const getBounds = () => {
+          const container = this.querySelector('.lumin-video-slider-container-{{ block_id }}');
+          const containerWidth = container?.offsetWidth || this.offsetWidth;
+          const trackWidth = this.track.scrollWidth;
+          const maxOffset = 0;
+          const minOffset = -Math.max(0, trackWidth - containerWidth);
+          return { maxOffset, minOffset };
+        };
+
+        const onPointerDown = (e) => {
+          if (e.button !== 0 && e.pointerType === 'mouse') return;
+          if (e.target.closest('.lumin-video-play-button-{{ block_id }}') || e.target.closest('.lumin-video-mute-button-{{ block_id }}')) return;
+          if (e.target.closest('[data-video-play]')) return;
+          if (e.target.closest('.lumin-video-slider-nav-{{ block_id }}, .lumin-video-slider-dots-{{ block_id }}')) return;
+          if (this.enablePopup && e.target.closest('.lumin-video-wrapper-{{ block_id }}')) return;
+          if (!this.enablePopup && e.target.closest('.lumin-video-wrapper-{{ block_id }}')) return;
+          if (this.slides.length <= 1) return;
+
+          e.preventDefault();
+          startX = e.clientX;
+          startOffset = getTrackOffset();
+          moved = false;
+          totalDragDistance = 0;
+          this.setPointerCapture(e.pointerId);
+
+          const onPointerMove = (e) => {
+            const delta = e.clientX - startX;
+            if (!moved && Math.abs(delta) >= DRAG_THRESHOLD) {
+              moved = true;
+              this.setAttribute('data-dragging', '');
+              this.track.style.transition = 'none';
+            }
+            if (!moved) return;
+
+            const { maxOffset, minOffset } = getBounds();
+            const newOffset = Math.min(maxOffset, Math.max(minOffset, startOffset + delta));
+            this.track.style.transform = `translateX(${newOffset}px)`;
+          };
+
+          const onPointerUp = (e) => {
+            this.releasePointerCapture(e.pointerId);
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
+
+            totalDragDistance = Math.abs(e.clientX - startX);
+            if (!moved || totalDragDistance < MIN_DRAG_DISTANCE) {
+              if (moved) {
+                this.track.style.transition = '';
+                this.removeAttribute('data-dragging');
+                this.updateSlider();
+              }
+              return;
+            }
+
+            this._justDragged = true;
+            setTimeout(() => { this._justDragged = false; }, 0);
+            this.removeAttribute('data-dragging');
+            this.track.style.transition = '';
+
+            const firstSlide = this.infiniteMode ? this.track.children[this.slides.length] : this.slides[0];
+            const slideWidth = (firstSlide || this.slides[0])?.offsetWidth || 0;
+            const gap = {{ block.settings.gap }};
+            const step = slideWidth + gap;
+            const currentOffset = getTrackOffset();
+
+            if (this.infiniteMode) {
+              const totalSlides = this.track.children.length;
+              const logicalIndex = Math.round(-currentOffset / step);
+              this.currentIndex = Math.max(0, Math.min(totalSlides - 1, logicalIndex));
+            } else {
+              this.currentIndex = Math.round(-currentOffset / step);
+              this.currentIndex = Math.max(0, Math.min(this.maxIndex, this.currentIndex));
+            }
+
+            this.onManualSlide();
+            this.updateSlider();
+            this.track.style.transition = '';
+          };
+
+          document.addEventListener('pointermove', onPointerMove);
+          document.addEventListener('pointerup', onPointerUp);
+          document.addEventListener('pointercancel', onPointerUp);
+        };
+
+        this.addEventListener('pointerdown', onPointerDown);
+      }
+
+      muteAllOtherVideos(currentVideo) {
+        this.allVideos.forEach((videoData) => {
+          if (videoData.video !== currentVideo && !videoData.video.muted) {
+            videoData.video.muted = true;
+            if (videoData.muteIcon && videoData.unmuteIcon) {
+              videoData.muteIcon.style.display = 'block';
+              videoData.unmuteIcon.style.display = 'none';
+            }
+          }
+        });
+      }
+
+      setupVideoControls() {
+        this.realVideos = [];
+        const seenRealIndexes = new Set();
+        const allSlidesInTrack = this.track.querySelectorAll('.lumin-video-slider-slide-{{ block_id }}');
+        allSlidesInTrack.forEach((slide) => {
+          const wrapper = slide.querySelector('.lumin-video-wrapper-{{ block_id }}');
+          if (!wrapper || wrapper.dataset.videoType !== 'shopify') return;
+
+          const video = wrapper.querySelector('video');
+          const playButton = wrapper.querySelector('.lumin-video-play-button-{{ block_id }}');
+          const muteButton = wrapper.querySelector('.lumin-video-mute-button-{{ block_id }}');
+          const muteIcon = muteButton?.querySelector('.lumin-mute-icon-{{ block_id }}');
+          const unmuteIcon = muteButton?.querySelector('.lumin-unmute-icon-{{ block_id }}');
+          if (!video) return;
+
+          let realIndex = parseInt(slide.dataset.realIndex, 10);
+          if (Number.isNaN(realIndex)) {
+            realIndex = parseInt(slide.dataset.slideIndex, 10);
+            slide.dataset.realIndex = realIndex;
+          }
+
+          if (!seenRealIndexes.has(realIndex)) {
+            seenRealIndexes.add(realIndex);
+            this.realVideos[realIndex] = video;
+          }
+
+          this.allVideos.push({ video, muteIcon, unmuteIcon, realIndex, wrapper, playButton });
+        });
+        this.realVideos = this.realVideos.filter(Boolean);
+      }
+
+      setupVideoClickDelegation() {
+        const container = this.querySelector('.lumin-video-slider-container-{{ block_id }}');
+        if (!container) return;
+
+        container.addEventListener('click', (e) => {
+          if (e.target.closest('.lumin-video-mute-button-{{ block_id }}')) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.muteActiveAudio();
+            return;
+          }
+
+          const overlay = e.target.closest('[data-video-play]');
+          const wrapper = e.target.closest('.lumin-video-wrapper-{{ block_id }}');
+          const videoEl = e.target.closest('.lumin-video-wrapper-{{ block_id }} video');
+          if (!overlay && !wrapper && !videoEl) return;
+          if (this._justDragged) return;
+
+          const slide = (overlay || wrapper || videoEl)?.closest('.lumin-video-slider-slide-{{ block_id }}');
+          const realIndex = parseInt(slide?.dataset.realIndex ?? slide?.dataset.slideIndex, 10);
+          const clickedVideo = slide?.querySelector('video');
+          this.handleVideoInteraction(realIndex, e, clickedVideo);
+        });
+      }
+
+      playVideoWithAudio(video) {
+        if (video.ended) {
+          video.currentTime = 0;
+        }
+        video.muted = false;
+        video.play().catch(() => {
+          video.muted = true;
+          video.play().catch(() => {});
+        });
+      }
+
+      setActiveAudioVideo(realIndex, preferredVideo = null) {
+        this.userAudioActive = true;
+        this.activeAudioRealIndex = realIndex;
+
+        let audioVideo = preferredVideo;
+        if (!audioVideo) {
+          const effectiveIndex = this.getEffectiveIndex();
+          if (effectiveIndex === realIndex) {
+            const visibleSlide = this.infiniteMode
+              ? this.track.children[this.currentIndex]
+              : this.slides[this.currentIndex];
+            audioVideo = visibleSlide?.querySelector('video') || null;
+          }
+        }
+        if (!audioVideo) {
+          audioVideo = this.realVideos[realIndex] || null;
+        }
+
+        this.track.querySelectorAll('.lumin-video-slider-slide-{{ block_id }}').forEach((slide) => {
+          const video = slide.querySelector('video');
+          const wrapper = slide.querySelector('.lumin-video-wrapper-{{ block_id }}');
+          const playButton = slide.querySelector('.lumin-video-play-button-{{ block_id }}');
+          const muteIcon = slide.querySelector('.lumin-mute-icon-{{ block_id }}');
+          const unmuteIcon = slide.querySelector('.lumin-unmute-icon-{{ block_id }}');
+          if (!video) return;
+
+          if (video === audioVideo) {
+            this.playVideoWithAudio(video);
+            wrapper?.classList.add('playing');
+            playButton?.classList.add('hidden');
+            if (muteIcon && unmuteIcon) {
+              muteIcon.style.display = 'none';
+              unmuteIcon.style.display = 'block';
+            }
+          } else {
+            video.muted = true;
+            video.pause();
+            wrapper?.classList.remove('playing');
+            playButton?.classList.remove('hidden');
+            if (muteIcon && unmuteIcon) {
+              muteIcon.style.display = 'block';
+              unmuteIcon.style.display = 'none';
+            }
+          }
+        });
+
+        this.updateMuteButtons();
+        this.updatePlayOverlays();
+      }
+
+      muteActiveAudio() {
+        this.resetUserAudioState();
+      }
+
+      updateMuteButtons() {
+        if (this.enablePopup) return;
+
+        this.track.querySelectorAll('.lumin-video-mute-button-{{ block_id }}').forEach((button) => {
+          const slide = button.closest('.lumin-video-slider-slide-{{ block_id }}');
+          const slideIndex = parseInt(slide?.dataset.realIndex ?? slide?.dataset.slideIndex, 10);
+          button.hidden = !(this.userAudioActive && slideIndex === this.activeAudioRealIndex);
+        });
+
+        this.track.querySelectorAll('.lumin-video-wrapper-{{ block_id }}').forEach((wrapper) => {
+          const slide = wrapper.closest('.lumin-video-slider-slide-{{ block_id }}');
+          const slideIndex = parseInt(slide?.dataset.realIndex ?? slide?.dataset.slideIndex, 10);
+          wrapper.classList.toggle(
+            'is-audio-active',
+            this.userAudioActive && slideIndex === this.activeAudioRealIndex
+          );
+        });
+      }
+
+      stopSliderForUserAudio() {
+        if (this.sliderStoppedByUserAudio) return;
+        this.sliderStoppedByUserAudio = true;
+        this.isAutoSlidePaused = true;
+        this.stopAutoSlide();
+        this.stopSmoothScroll();
+      }
+
+      handleVideoInteraction(realIndex, event, clickedVideo = null) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+
+        if (Number.isNaN(realIndex) || realIndex < 0 || realIndex >= this.realVideos.length) return;
+
+        if (this.enablePopup) {
+          if (this.currentModalVideoIndex === realIndex && this.modal?.style.display === 'flex') {
+            this.closeModal();
+            return;
+          }
+          this.openModal(realIndex, clickedVideo);
+          return;
+        }
+
+        if (this.userAudioActive && this.activeAudioRealIndex === realIndex) {
+          this.resetUserAudioState();
+          return;
+        }
+
+        this.stopSliderForUserAudio();
+        this.setActiveAudioVideo(realIndex, clickedVideo);
+      }
+
+      resetUserAudioState() {
+        this.allVideos.forEach(({ video, muteIcon, unmuteIcon, wrapper, playButton }) => {
+          video.muted = true;
+          if (muteIcon && unmuteIcon) {
+            muteIcon.style.display = 'block';
+            unmuteIcon.style.display = 'none';
+          }
+          wrapper?.classList.remove('playing');
+          playButton?.classList.remove('hidden');
+        });
+
+        this.userAudioActive = false;
+        this.activeAudioRealIndex = null;
+        this.sliderStoppedByUserAudio = false;
+        this.isAutoSlidePaused = false;
+        this.updateMuteButtons();
+        this.syncVideoPlayback();
+        this.updatePlayOverlays();
+        this.startSliderAutoplay();
+      }
+
+      getSlideVideosForRealIndex(realIndex) {
+        const videos = [];
+        this.track.querySelectorAll('.lumin-video-slider-slide-{{ block_id }}').forEach((slide) => {
+          const slideRealIndex = parseInt(slide.dataset.realIndex ?? slide.dataset.slideIndex, 10);
+          if (slideRealIndex !== realIndex) return;
+          const video = slide.querySelector('video');
+          if (video) videos.push(video);
+        });
+        return videos;
+      }
+
+      syncVideoPlayback() {
+        if (this.enablePopup && this.currentModalVideoIndex !== null) return;
+        if (!this.enablePopup && this.userAudioActive && this.activeAudioRealIndex !== null) return;
+
+        const effectiveIndex = this.getEffectiveIndex();
+        this.realVideos.forEach((_, index) => {
+          const shouldPlay = this.videoAutoplay || (this.autoplayCurrentSlide && index === effectiveIndex);
+          this.getSlideVideosForRealIndex(index).forEach((video) => {
+            const wrapper = video.closest('.lumin-video-wrapper-{{ block_id }}');
+            const playButton = wrapper?.querySelector('.lumin-video-play-button-{{ block_id }}');
+
+            if (shouldPlay) {
+              video.muted = true;
+              video.play().catch(() => {});
+              wrapper?.classList.add('playing');
+              playButton?.classList.add('hidden');
+            } else {
+              video.pause();
+              wrapper?.classList.remove('playing');
+              playButton?.classList.remove('hidden');
+            }
+          });
+        });
+        this.updateMuteButtons();
+        this.updatePlayOverlays();
+      }
+
+      updatePlayOverlays() {
+        if (!this.showPlayOverlay) return;
+        const hiddenIndex = this.enablePopup
+          ? this.playOverlayHiddenRealIndex
+          : (this.userAudioActive ? this.activeAudioRealIndex : null);
+
+        this.querySelectorAll('[data-video-play]').forEach((overlay) => {
+          const slide = overlay.closest('.lumin-video-slider-slide-{{ block_id }}');
+          const realIndex = parseInt(slide?.dataset.realIndex, 10);
+          overlay.classList.toggle('is-hidden', hiddenIndex !== null && realIndex === hiddenIndex);
+        });
+      }
+
+      setupModalEventListeners() {
+        if (!this.enablePopup || !this.modal) return;
+
+        this.modal.querySelector('.lumin-video-slider-modal-overlay-{{ block_id }}')?.addEventListener('click', () => this.closeModal());
+        this.modal.querySelector('.lumin-video-slider-modal-close-{{ block_id }}')?.addEventListener('click', () => this.closeModal());
+        this.modalPrevBtn?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.navigateModal(-1);
+        });
+        this.modalNextBtn?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.navigateModal(1);
+        });
+        this.escKeyHandler = (e) => {
+          if (e.key === 'Escape') this.closeModal();
+        };
+        document.addEventListener('keydown', this.escKeyHandler);
+      }
+
+      openModal(index, sourceVideo) {
+        if (!this.modal || !this.modalVideoContainer) return;
+        this.stopAutoSlide();
+        this.stopSmoothScroll();
+        this.realVideos.forEach((video) => video.pause());
+        this.currentModalVideoIndex = index;
+        this.playOverlayHiddenRealIndex = index;
+        this.showModalVideo(index, sourceVideo);
+        document.body.classList.add('modal-open-{{ block_id }}');
+        this.modal.style.display = 'flex';
+        this.updatePlayOverlays();
+        this.updateModalNavButtons();
+      }
+
+      showModalVideo(index, sourceVideo) {
+        this.modalVideoContainer.innerHTML = '';
+        const origVideo = sourceVideo || this.realVideos[index];
+        if (!origVideo) return;
+        const modalVideo = origVideo.cloneNode(true);
+        modalVideo.controls = true;
+        modalVideo.muted = false;
+        modalVideo.autoplay = true;
+        modalVideo.currentTime = origVideo.currentTime;
+        this.modalVideoContainer.appendChild(modalVideo);
+        modalVideo.play().catch(() => {});
+      }
+
+      updateModalNavButtons() {
+        if (!this.modalPrevBtn || !this.modalNextBtn) return;
+        const show = this.realVideos.length > 1;
+        this.modalPrevBtn.style.display = show ? 'block' : 'none';
+        this.modalNextBtn.style.display = show ? 'block' : 'none';
+      }
+
+      navigateModal(direction) {
+        if (this.realVideos.length < 2) return;
+        this.currentModalVideoIndex = (this.currentModalVideoIndex + direction + this.realVideos.length) % this.realVideos.length;
+        this.playOverlayHiddenRealIndex = this.currentModalVideoIndex;
+        this.showModalVideo(this.currentModalVideoIndex);
+        this.updatePlayOverlays();
+      }
+
+      closeModal() {
+        if (!this.modal) return;
+        document.body.classList.remove('modal-open-{{ block_id }}');
+        this.modal.querySelector('video')?.pause();
+        this.modal.style.display = 'none';
+        this.modalVideoContainer.innerHTML = '';
+        this.currentModalVideoIndex = null;
+        this.playOverlayHiddenRealIndex = null;
+        this.syncVideoPlayback();
+        this.startSliderAutoplay();
+      }
+
+      createDots() {
+        if (!this.dotsContainer) return;
+        
+        this.dotsContainer.innerHTML = '';
+        const totalDots = this.infiniteMode ? this.slides.length : this.maxIndex + 1;
+        
+        for (let i = 0; i < totalDots; i++) {
+          const dot = document.createElement('button');
+          dot.className = 'lumin-video-slider-dot-{{ block_id }}';
+          dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+          dot.addEventListener('click', () => {
+            this.onManualSlide();
+            this.goToSlide(i);
+          });
+          this.dotsContainer.appendChild(dot);
+        }
+        
+        this.updateDots();
+      }
+
+      updateDots() {
+        if (!this.dotsContainer) return;
+        
+        const dots = this.dotsContainer.querySelectorAll('.lumin-video-slider-dot-{{ block_id }}');
+        const effectiveIndex = this.infiniteMode ? this.currentIndex % this.slides.length : this.currentIndex;
+        dots.forEach((dot, index) => {
+          dot.classList.toggle('active', index === effectiveIndex);
+        });
+      }
+
+      updateSlider(animate = true) {
+        if (this.slides.length === 0) return;
+        if (this.smoothScrollActive) return;
+
+        const offset = -(this.currentIndex * this.getSlideStep());
+
+        if (!animate) {
+          this.track.classList.add('no-transition');
+        }
+
+        this.track.style.transform = `translate3d(${offset}px, 0, 0)`;
+
+        if (!animate) {
+          void this.track.offsetHeight;
+          this.track.classList.remove('no-transition');
+        }
+        
+        if (this.prevButton) {
+          const atStart = this.infiniteMode ? this.currentIndex === this.slides.length : this.currentIndex === 0;
+          this.prevButton.disabled = !this.loop && atStart;
+        }
+        
+        if (this.nextButton) {
+          this.nextButton.disabled = !this.loop && this.currentIndex >= this.maxIndex;
+        }
+        
+        this.syncVideoPlayback();
+        this.updateDots();
+      }
+
+      prev(fromUser = true) {
+        this.lastDirection = 'prev';
+        if (this.currentIndex > 0) {
+          this.currentIndex--;
+        } else if (this.loop) {
+          this.currentIndex = this.infiniteMode ? this.maxIndex - 1 : this.maxIndex;
+        }
+        this.updateSlider(fromUser);
+      }
+
+      next(fromUser = true) {
+        this.lastDirection = 'next';
+        if (this.currentIndex < this.maxIndex) {
+          this.currentIndex++;
+        } else if (this.loop && !this.infiniteMode) {
+          this.currentIndex = 0;
+        }
+        this.updateSlider(fromUser);
+      }
+
+      goToSlide(index) {
+        this.lastDirection = index > this.currentIndex ? 'next' : 'prev';
+        this.currentIndex = this.infiniteMode ? this.slides.length + index : index;
+        this.updateSlider();
+      }
+
+      onTransitionEnd(e) {
+        if (e.propertyName !== 'transform') return;
+        if (this.infiniteMode && this.lastDirection === 'next' && this.currentIndex === this.slides.length * 2) {
+          this.track.style.transition = 'none';
+          this.currentIndex = this.slides.length;
+          this.updateSlider();
+          this.track.offsetHeight;
+          this.track.style.transition = '';
+          return;
+        }
+        if (this.infiniteMode && this.lastDirection === 'prev' && this.currentIndex === 0) {
+          this.track.style.transition = 'none';
+          this.currentIndex = this.slides.length;
+          this.updateSlider();
+          this.track.offsetHeight;
+          this.track.style.transition = '';
+          return;
+        }
+      }
+
+      disconnectedCallback() {
+        this.stopAutoSlide();
+        this.stopSmoothScroll();
+        if (this.track && this.infiniteMode) {
+          this.track.removeEventListener('transitionend', this.boundOnTransitionEnd);
+        }
+        if (this.escKeyHandler) {
+          document.removeEventListener('keydown', this.escKeyHandler);
+        }
+      }
+    }
+
+    customElements.define('video-slider-{{ block_id }}', VideoSlider{{ block_id }});
+  })();
+</script>

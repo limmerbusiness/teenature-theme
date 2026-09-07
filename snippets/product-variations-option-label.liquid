@@ -1,0 +1,12 @@
+{%- doc -%}
+  @param {object} product
+  @param {object} block_settings
+  @param {string} [selector_style]
+{%- enddoc -%}
+
+{% render 'product-variations-display',
+  product: product,
+  block_settings: block_settings,
+  selector_style: selector_style,
+  mode: 'label'
+%}

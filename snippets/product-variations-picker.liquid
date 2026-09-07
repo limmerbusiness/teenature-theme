@@ -1,0 +1,217 @@
+{%- doc -%}
+  Renders a product-to-product selector (linked products) with variant-picker styling.
+
+  @param {object} current_product - The product on the current page
+  @param {array} variation_products - Products from block settings
+  @param {object} block - The block object
+{%- enddoc -%}
+
+{% liquid
+  assign block_settings = block.settings
+  assign selector_style = block_settings.selector_style | default: 'buttons'
+  assign option_label = block_settings.option_label | default: 'Product'
+
+  assign has_variations = false
+  if variation_products != blank and variation_products.size > 0
+    assign has_variations = true
+  endif
+
+  assign swatch_size = block_settings.swatch_size | default: 30
+  assign swatch_border_radius = block_settings.swatch_border_radius | default: 100
+  assign swatch_style = ''
+  if selector_style == 'color_swatches' or selector_style == 'image_swatches'
+    assign swatch_style = '--variant-picker-swatch-width: ' | append: swatch_size | append: 'px; --variant-picker-swatch-height: ' | append: swatch_size | append: 'px; --variant-picker-swatch-width-unitless: ' | append: swatch_size | append: '; --variant-picker-swatch-height-unitless: ' | append: swatch_size | append: '; --variant-picker-swatch-radius: ' | append: swatch_border_radius | append: 'px;'
+  endif
+
+  assign fieldset_button_class = ''
+  assign option_id_attribute = ''
+  assign fieldset_id = ''
+  assign longest_value = 0
+
+  if selector_style == 'buttons'
+    assign fieldset_button_class = ' variant-option--' | append: settings.variant_button_width
+    if settings.variant_button_width == 'equal-width-buttons'
+      assign fieldset_id = section.id | append: '-product-variations-' | append: block.id
+      assign option_id_attribute = 'data-option-id="' | append: fieldset_id | append: '"'
+    endif
+  endif
+
+%}
+
+{% if block_settings.show_selected_variation_name and current_product != blank %}
+  {% capture selected_variation_label %}
+    {% render 'product-variations-option-label',
+      product: current_product,
+      block_settings: block_settings,
+      selector_style: selector_style
+    %}
+  {% endcapture %}
+  {% assign selected_variation_label = selected_variation_label | strip %}
+{% else %}
+  {% assign selected_variation_label = '' %}
+{% endif %}
+
+{% if has_variations %}
+  <product-variations-picker
+    class="product-variations-picker variant-picker spacing-style variant-picker--{{ block_settings.alignment }}{% if selector_style == 'color_swatches' or selector_style == 'image_swatches' %} product-variations-picker--swatches{% endif %}"
+    style="{{ swatch_style }}{% render 'spacing-style', settings: block_settings %}"
+    {{ block.shopify_attributes }}
+  >
+    {% if selector_style == 'dropdowns' %}
+      <div class="variant-option variant-option--dropdowns product-variations-picker__option">
+        <label for="ProductVariations-{{ block.id }}">
+          {{ option_label | escape }}
+          {% if selected_variation_label != blank %}
+            <span class="variant-option__swatch-value">{{ selected_variation_label | escape }}</span>
+          {% endif %}
+        </label>
+        <div class="variant-option__select-wrapper">
+          <select
+            id="ProductVariations-{{ block.id }}"
+            class="variant-option__select product-variations-picker__select"
+            data-product-variations-select
+          >
+            {% for variation_product in variation_products %}
+              <option
+                value="{{ variation_product.url }}"
+                {% if variation_product.id == current_product.id %}
+                  selected
+                {% endif %}
+              >
+                {% render 'product-variations-option-label',
+                  product: variation_product,
+                  block_settings: block_settings,
+                  selector_style: selector_style
+                %}
+              </option>
+            {% endfor %}
+          </select>
+          <svg aria-hidden="true" focusable="false" class="icon icon-caret" viewBox="0 0 10 6">
+            {%- render 'icon', icon: 'caret' -%}
+          </svg>
+        </div>
+      </div>
+    {% else %}
+      {% if option_id_attribute != blank %}
+        {% for variation_product in variation_products %}
+          {% capture variation_label_capture %}
+            {% render 'product-variations-option-label',
+              product: variation_product,
+              block_settings: block_settings,
+              selector_style: selector_style
+            %}
+          {% endcapture %}
+          {% liquid
+            assign label_length = variation_label_capture | strip | size
+            if label_length > longest_value
+              assign longest_value = label_length
+            endif
+          %}
+        {% endfor %}
+      {% endif %}
+      <fieldset
+        class="variant-option variant-option--buttons{% if selector_style == 'color_swatches' or selector_style == 'image_swatches' %} variant-option--swatches{{ fieldset_button_class }}{% else %}{{ fieldset_button_class }}{% endif %} product-variations-picker__option"
+        {{ option_id_attribute }}
+      >
+        <legend>
+          {{ option_label | escape }}
+          {% if selected_variation_label != blank %}
+            <span class="variant-option__swatch-value">{{ selected_variation_label | escape }}</span>
+          {% endif %}
+        </legend>
+        {% for variation_product in variation_products %}
+          {% render 'product-variations-link',
+            variation_product: variation_product,
+            current_product: current_product,
+            block_settings: block_settings,
+            selector_style: selector_style
+          %}
+        {% endfor %}
+      </fieldset>
+      {% if option_id_attribute != blank and longest_value > 0 %}
+        {% style %}
+          [data-option-id="{{ fieldset_id }}"] {
+            --variant-ch: {{ longest_value | times: 0.65 }}em;
+          }
+        {% endstyle %}
+      {% endif %}
+    {% endif %}
+  </product-variations-picker>
+
+  <script>
+    (() => {
+      const root = document.currentScript?.previousElementSibling;
+      if (!root || root.tagName !== 'PRODUCT-VARIATIONS-PICKER') return;
+      const select = root.querySelector('[data-product-variations-select]');
+      if (!select) return;
+      select.addEventListener('change', () => {
+        const url = select.value;
+        if (url) window.location.assign(url);
+      });
+    })();
+  </script>
+{% endif %}
+
+{% stylesheet %}
+  .product-variations-picker .variant-option__swatch-value {
+    padding-inline-start: var(--padding-xs);
+    color: rgb(var(--color-foreground-rgb) / var(--opacity-70));
+  }
+
+  .product-variations-picker__link {
+    text-decoration: none;
+  }
+
+  .product-variations-picker__link--current {
+    color: var(--color-selected-variant-text);
+    border-color: var(--color-selected-variant-border);
+    background-color: var(--color-selected-variant-background);
+  }
+
+  .product-variations-picker__link--current.variant-option__button-label--has-swatch {
+    background-color: transparent;
+    outline: var(--focus-outline-width) solid var(--color-foreground);
+    outline-offset: var(--focus-outline-offset);
+  }
+
+  .product-variations-picker__link:not(.variant-option__button-label--has-swatch):hover {
+    background-color: var(--color-variant-hover-background);
+    border-color: var(--color-variant-hover-border);
+    color: var(--color-variant-hover-text);
+  }
+
+  .product-variations-picker__link--current:not(.variant-option__button-label--has-swatch):hover {
+    background-color: var(--color-selected-variant-hover-background);
+    border-color: var(--color-selected-variant-hover-border);
+    color: var(--color-selected-variant-hover-text);
+  }
+
+  .product-variations-picker__fallback-label {
+    padding-inline: var(--padding-sm);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .variant-option__button-label--has-swatch .product-variations-picker__fallback-label {
+    margin-top: 0;
+    font-size: 0.75rem;
+  }
+
+  .product-variations-picker--swatches .variant-option__button-label--has-swatch {
+    --focus-outline-radius: var(--variant-picker-swatch-radius);
+    min-width: var(--variant-picker-swatch-width);
+    min-height: var(--variant-picker-swatch-height);
+    border-radius: var(--variant-picker-swatch-radius);
+  }
+
+  .product-variations-picker--swatches .swatch--unscaled {
+    width: var(--variant-picker-swatch-width);
+    height: var(--variant-picker-swatch-height);
+    border-radius: var(--variant-picker-swatch-radius);
+    background-size: var(--variant-picker-swatch-width) var(--variant-picker-swatch-height);
+  }
+
+  .product-variations-picker--swatches .swatch--variant-image {
+    background-size: cover;
+  }
+{% endstylesheet %}

@@ -1,0 +1,44 @@
+{%- doc -%}
+  Returns "true" when the product has at least one custom badge from metafields or tags.
+  Used by card-gallery to set layout classes without re-rendering badges.
+
+  @param {object} product - Product resource
+{%- enddoc -%}
+
+{%- liquid
+  assign has_custom = false
+
+  if settings.show_custom_badge == nil
+    assign show_custom_badge_on = true
+  else
+    assign show_custom_badge_on = settings.show_custom_badge
+  endif
+
+  if product != blank and show_custom_badge_on
+    if settings.custom_badge_from_metafield != false
+      if product.metafields.custom.badge != blank and product.metafields.custom.badge.value != blank
+        assign has_custom = true
+      endif
+    endif
+
+    if has_custom == false and settings.custom_badge_from_tags != false
+      assign tag_prefix = settings.custom_badge_tag_prefix | default: 'badge:' | strip
+      if tag_prefix == blank
+        assign tag_prefix = 'badge:'
+      endif
+      assign prefix_size = tag_prefix | size
+
+      for tag in product.tags
+        assign tag_start = tag | slice: 0, prefix_size
+        if tag_start == tag_prefix
+          assign tag_label = tag | slice: prefix_size, 100 | strip
+          if tag_label != blank
+            assign has_custom = true
+            break
+          endif
+        endif
+      endfor
+    endif
+  endif
+-%}
+{%- if has_custom -%}true{%- endif -%}

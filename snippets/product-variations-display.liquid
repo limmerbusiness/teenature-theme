@@ -1,0 +1,104 @@
+{%- doc -%}
+  Resolves product variation display from metafield first, then product title.
+
+  @param {object} product - The variation product
+  @param {object} block_settings - Block settings
+  @param {string} mode - 'label' or 'swatch'
+  @param {string} [selector_style] - buttons, dropdowns, color_swatches, image_swatches
+{%- enddoc -%}
+
+{% liquid
+  assign display_label = product.title
+  assign label_from_product_title = true
+  assign swatch_value = null
+  assign swatch_is_variant_image = false
+
+  assign metafield_ref = block_settings.metafield | strip
+  if metafield_ref == blank
+    assign legacy_ns = block_settings.metafield_namespace | strip
+    assign legacy_key = block_settings.metafield_key | strip
+    if legacy_ns != blank and legacy_key != blank
+      assign metafield_ref = legacy_ns | append: '.' | append: legacy_key
+    endif
+  endif
+
+  assign ns = ''
+  assign key = ''
+  if metafield_ref contains '.'
+    assign metafield_parts = metafield_ref | split: '.'
+    assign ns = metafield_parts | first
+    assign key = metafield_parts[1]
+    if metafield_parts.size > 2
+      assign key = ''
+      for part in metafield_parts
+        unless forloop.first
+          if key != blank
+            assign key = key | append: '.'
+          endif
+          assign key = key | append: part
+        endunless
+      endfor
+    endif
+  endif
+
+  if ns != blank and key != blank
+    assign variation_metafield = product.metafields[ns][key]
+    if variation_metafield != blank
+      if variation_metafield.value != blank
+        assign mf_value = variation_metafield.value
+      else
+        assign mf_value = variation_metafield
+      endif
+
+      if variation_metafield.type contains 'color'
+        if mf_value.rgb != blank
+          assign swatch_value = 'rgb(' | append: mf_value.rgb | append: ')'
+        endif
+      elsif variation_metafield.type contains 'file_reference' or variation_metafield.type contains 'file'
+        if mf_value != blank
+          if selector_style == 'color_swatches' or selector_style == 'image_swatches'
+            assign swatch_size_px = block_settings.swatch_size | default: settings.variant_swatch_width | default: 30
+            assign swatch_image_width = swatch_size_px | times: 2
+            assign swatch_image_url = mf_value | image_url: width: swatch_image_width
+            assign swatch_value = 'url(' | append: swatch_image_url | append: ')'
+            assign swatch_is_variant_image = true
+          endif
+        endif
+      else
+        assign mf_text = mf_value | strip
+        if mf_text != blank
+          assign display_label = mf_text
+          assign label_from_product_title = false
+          if selector_style == 'color_swatches'
+            assign swatch_value = mf_text
+          endif
+        endif
+      endif
+    endif
+  endif
+
+  if mode == 'swatch' and swatch_value == null
+    if selector_style == 'color_swatches' or selector_style == 'image_swatches'
+      if product.featured_media != blank
+        assign swatch_size_px = block_settings.swatch_size | default: settings.variant_swatch_width | default: 30
+        assign swatch_image_width = swatch_size_px | times: 2
+        assign swatch_image_url = product.featured_media | image_url: width: swatch_image_width
+        assign swatch_value = 'url(' | append: swatch_image_url | append: ')'
+        assign swatch_is_variant_image = true
+      endif
+    endif
+  endif
+
+  if label_from_product_title and display_label.size > 12
+    assign display_label = display_label | slice: 0, 12 | append: '...'
+  endif
+%}
+
+{% if mode == 'label' %}
+  {{- display_label | escape -}}
+{% elsif mode == 'swatch' %}
+  <span
+    class="swatch swatch--unscaled{% if swatch_value == null %} swatch--unavailable{% endif %}{% if swatch_is_variant_image %} swatch--variant-image{% endif %}"
+    style="--swatch-background: {{ swatch_value }};"
+  ></span>
+{% endif %}

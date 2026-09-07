@@ -1,0 +1,294 @@
+{% comment %}
+  Renders N variant picker rows for quantity break options.
+  Each row shows separate selects per product option (e.g. Color, Size, Material).
+  @param product - The product
+  @param variant - The currently selected variant (for default selection)
+  @param option_index - The option index (1-6)
+  @param option_quantity - The quantity for this option (1-10)
+  @param image_url_width - Image width for variant images
+  @param show_color_swatches - Whether to show color swatches when available (default: true)
+  @param show_variant_pickers_heading - Whether to show option names in one line above the selects (default: true)
+  @param show_variant_picker_row_numbers - Whether to show #1, #2 labels before each row (default: true)
+  @param hide_sold_out_variants - When true, sold-out values are omitted from dropdowns (default: true)
+
+  Reihenfolge der Swatch-Quellen bewusst: zuerst das Bild der jeweiligen
+  Variante, danach Bild und Farbe aus dem Metaobjekt. Das Metaobjekt "Farbe"
+  gilt shopweit - ein Bild darin wuerde sonst bei jedem Produkt auftauchen,
+  das dieselbe Farbe verwendet (Fusswaermer mit Waermflaschen-Foto).
+{% endcomment %}
+{% liquid
+  if show_variant_pickers_heading == nil
+    assign show_variant_pickers_heading = true
+  endif
+  if show_variant_picker_row_numbers == nil
+    assign show_variant_picker_row_numbers = true
+  endif
+  if hide_sold_out_variants == nil
+    assign hide_sold_out_variants = true
+  endif
+
+  assign swatch_option = nil
+  for opt in product.options_with_values
+    assign sc = opt.values | map: 'swatch' | compact | size
+    if sc > 0
+      assign swatch_option = opt
+      break
+    endif
+  endfor
+
+  assign show_swatches = false
+  if show_color_swatches != false and swatch_option
+    assign show_swatches = true
+  endif
+
+  assign swatch_opt_key = ''
+  assign initial_swatch_bg = ''
+  if swatch_option
+    assign swatch_opt_key = 'option' | append: swatch_option.position
+    assign val_name = variant[swatch_opt_key]
+    for ov in swatch_option.values
+      if ov.name == val_name
+        if variant.featured_media != blank and variant.featured_media.preview_image != blank
+          assign img_url = variant.featured_media.preview_image | image_url: width: 120
+          assign initial_swatch_bg = 'url(' | append: img_url | append: ')'
+        elsif ov.swatch.image
+          assign img_url = ov.swatch.image | image_url: width: 120
+          assign initial_swatch_bg = 'url(' | append: img_url | append: ')'
+        elsif ov.swatch.color
+          assign initial_swatch_bg = 'rgb(' | append: ov.swatch.color.rgb | append: ')'
+        endif
+        break
+      endif
+    endfor
+  endif
+
+  assign selectable_options_count = 0
+  assign option_names_heading = ''
+  for opt in product.options_with_values
+    if opt.values.size > 1
+      assign selectable_options_count = selectable_options_count | plus: 1
+      if option_names_heading != blank
+        assign option_names_heading = option_names_heading | append: ' / '
+      endif
+      assign option_names_heading = option_names_heading | append: opt.name
+    endif
+  endfor
+%}
+<div
+  class="quantity-breaks__variant-pickers{% if show_variant_picker_row_numbers == false %} quantity-breaks__variant-pickers--no-row-numbers{% endif %}{% if selectable_options_count > 1 %} quantity-breaks__variant-pickers--multi-option{% endif %}"
+  data-quantity-breaks-variant-pickers
+  data-option-index="{{ option_index }}"
+  data-quantity="{{ option_quantity }}"
+  data-picker-count="{{ option_quantity }}"
+  data-has-swatches="{% if show_swatches %}true{% else %}false{% endif %}"
+  data-has-separate-options="{% if selectable_options_count > 1 %}true{% else %}false{% endif %}"
+  data-hide-sold-out-variants="{% if hide_sold_out_variants %}true{% else %}false{% endif %}"
+  onclick="event.stopPropagation()"
+>
+  {% if show_variant_pickers_heading and selectable_options_count > 1 and option_names_heading != blank %}
+  <div class="quantity-breaks__variant-pickers-heading">{{ option_names_heading }}</div>
+  {% endif %}
+  <script type="application/json" class="quantity-breaks__variant-data">
+    {
+      "variants": [
+        {%- for v in product.variants -%}
+          {
+            "id": {{ v.id }},
+            "price": {{ v.price }},
+            "compare_at_price": {{ v.compare_at_price | default: v.price }},
+            "available": {{ v.available }},
+            "option1": {{ v.option1 | json }},
+            "option2": {{ v.option2 | default: '' | json }},
+            "option3": {{ v.option3 | default: '' | json }}
+            {%- if v.featured_media != blank -%}
+              ,"media_id": {{ v.featured_media.id }}
+              {%- if v.featured_media.preview_image != blank -%}
+                ,"image_url": {{ v.featured_media.preview_image | image_url: width: image_url_width | json }}
+              {%- endif -%}
+            {%- elsif v.featured_image != blank -%}
+              ,"image_url": {{ v.featured_image | image_url: width: image_url_width | json }}
+            {%- endif -%}
+          }{%- unless forloop.last -%},{%- endunless -%}
+        {%- endfor -%}
+      ]
+    }
+  </script>
+
+  {% for i in (1..option_quantity) %}
+  <div
+    class="quantity-breaks__variant-picker-row"
+    data-variant-picker-index="{{ i }}"
+    data-variant-id="{{ variant.id }}"
+  >
+    {% if show_variant_picker_row_numbers %}
+    <span class="quantity-breaks__variant-picker-number">#{{ i }}</span>
+    {% endif %}
+
+    {% if selectable_options_count > 1 %}
+    <div class="quantity-breaks__variant-picker-options">
+      {% for option in product.options_with_values %}
+        {% if option.values.size > 1 %}
+          {% liquid
+            assign option_key = 'option' | append: option.position
+            assign selected_value = variant[option_key]
+            assign is_swatch_option = false
+            if show_swatches and swatch_option and option.position == swatch_option.position
+              assign is_swatch_option = true
+            endif
+          %}
+          <div class="quantity-breaks__variant-option">
+            <div class="quantity-breaks__variant-picker-select-wrapper">
+              {% if is_swatch_option %}
+              <span
+                class="quantity-breaks__variant-swatch"
+                data-variant-swatch
+                aria-hidden="true"
+                {% if initial_swatch_bg != blank %}style="--swatch-background: {{ initial_swatch_bg | escape }}"{% endif %}
+              ></span>
+              {% endif %}
+              <select
+                id="qb-variant-{{ i }}-{{ option_index }}-{{ option.position }}-{{ product.id }}"
+                class="quantity-breaks__variant-select quantity-breaks__variant-option-select{% if is_swatch_option %} quantity-breaks__variant-select--has-swatch{% endif %}"
+                data-variant-option-select
+                data-option-position="{{ option.position }}"
+                data-option-index="{{ option_index }}"
+                data-quantity="{{ option_quantity }}"
+                aria-label="{{ option.name }} {{ i }} for {{ product.title }}"
+              >
+                {% for value in option.values %}
+                  {% liquid
+                    assign test_option1 = variant.option1
+                    assign test_option2 = variant.option2
+                    assign test_option3 = variant.option3
+                    if option.position == 1
+                      assign test_option1 = value
+                    elsif option.position == 2
+                      assign test_option2 = value
+                    elsif option.position == 3
+                      assign test_option3 = value
+                    endif
+
+                    assign value_available = false
+                    assign value_swatch_bg = ''
+                    for v in product.variants
+                      assign matches = true
+                      if v.option1 != test_option1
+                        assign matches = false
+                      endif
+                      if test_option2 != blank and v.option2 != test_option2
+                        assign matches = false
+                      endif
+                      if test_option3 != blank and v.option3 != test_option3
+                        assign matches = false
+                      endif
+                      if matches
+                        if v.available
+                          assign value_available = true
+                        endif
+                        if is_swatch_option and value_swatch_bg == blank
+                          if v.featured_media != blank and v.featured_media.preview_image != blank
+                            assign img_url = v.featured_media.preview_image | image_url: width: 120
+                            assign value_swatch_bg = 'url(' | append: img_url | append: ')'
+                          else
+                            for ov in option.values
+                              if ov.name == value
+                                if ov.swatch.image
+                                  assign img_url = ov.swatch.image | image_url: width: 120
+                                  assign value_swatch_bg = 'url(' | append: img_url | append: ')'
+                                elsif ov.swatch.color
+                                  assign value_swatch_bg = 'rgb(' | append: ov.swatch.color.rgb | append: ')'
+                                endif
+                                break
+                              endif
+                            endfor
+                          endif
+                        endif
+                        if value_available
+                          break
+                        endif
+                      endif
+                    endfor
+                  %}
+                  {%- if hide_sold_out_variants and value_available == false -%}
+                    {%- continue -%}
+                  {%- endif -%}
+                  <option
+                    value="{{ value | escape }}"
+                    {% if value_swatch_bg != blank %}data-swatch-background="{{ value_swatch_bg | escape }}"{% endif %}
+                    {% if value == selected_value %}selected{% endif %}
+                    {% unless value_available %}disabled{% endunless %}
+                  >
+                    {{ value | escape }}{% unless value_available %} - {{ 'content.unavailable' | t }}{% endunless %}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% else %}
+    {% comment %} Single option dimension: one labeled select per row {% endcomment %}
+    {% assign single_option = product.options_with_values | first %}
+    <div class="quantity-breaks__variant-picker-select-wrapper">
+      {% if show_swatches %}
+      <span
+        class="quantity-breaks__variant-swatch"
+        data-variant-swatch
+        aria-hidden="true"
+        {% if initial_swatch_bg != blank %}style="--swatch-background: {{ initial_swatch_bg | escape }}"{% endif %}
+      ></span>
+      {% endif %}
+      <select
+        id="qb-variant-{{ i }}-{{ option_index }}-{{ product.id }}"
+        class="quantity-breaks__variant-select{% if show_swatches %} quantity-breaks__variant-select--has-swatch{% endif %}"
+        data-variant-select
+        data-option-index="{{ option_index }}"
+        data-quantity="{{ option_quantity }}"
+        aria-label="Select variant {{ i }} for {{ product.title }}"
+      >
+        {% for v in product.variants %}
+          {% liquid
+            assign v_swatch_bg = ''
+            if show_swatches and swatch_option
+              if v.featured_media != blank and v.featured_media.preview_image != blank
+                assign img_url = v.featured_media.preview_image | image_url: width: 120
+                assign v_swatch_bg = 'url(' | append: img_url | append: ')'
+              else
+                assign val_name = v[swatch_opt_key]
+                for ov in swatch_option.values
+                  if ov.name == val_name
+                    if ov.swatch.image
+                      assign img_url = ov.swatch.image | image_url: width: 120
+                      assign v_swatch_bg = 'url(' | append: img_url | append: ')'
+                    elsif ov.swatch.color
+                      assign v_swatch_bg = 'rgb(' | append: ov.swatch.color.rgb | append: ')'
+                    endif
+                    break
+                  endif
+                endfor
+              endif
+            endif
+          %}
+          {%- if hide_sold_out_variants and v.available == false -%}
+            {%- continue -%}
+          {%- endif -%}
+          <option
+            value="{{ v.id }}"
+            data-price="{{ v.price }}"
+            data-compare-at-price="{{ v.compare_at_price | default: v.price }}"
+            {% if v_swatch_bg != blank %}data-swatch-background="{{ v_swatch_bg | escape }}"{% endif %}
+            {% if v.featured_media != blank %}data-media-id="{{ v.featured_media.id }}"{% endif %}
+            {% if v.featured_media.preview_image != blank %}data-image-url="{{ v.featured_media.preview_image | image_url: width: image_url_width }}"{% elsif v.featured_image != blank %}data-image-url="{{ v.featured_image | image_url: width: image_url_width }}"{% endif %}
+            {% if v.id == variant.id %}selected{% endif %}
+            {% unless v.available %}disabled{% endunless %}
+          >
+            {{ v.title }}{% unless v.available %} - {{ 'content.unavailable' | t }}{% endunless %}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>

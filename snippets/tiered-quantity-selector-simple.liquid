@@ -1,0 +1,560 @@
+{%- comment -%}
+  Lightweight quantity breaks (up to 6 tiers).
+
+  Accepts:
+  - product: {Product}
+  - block: {Block}
+  - section: {Section}
+  - product_form_id: {String}
+{%- endcomment -%}
+
+{%- liquid
+  assign selected_product = block.settings.selected_product
+  assign selected_collection = block.settings.selected_collection
+  assign all_products_true = block.settings.show_on_all_products
+  assign show_block = false
+
+  if all_products_true
+    assign show_block = true
+  endif
+
+  if selected_product != blank
+    for selected_item in selected_product
+      if product.id == selected_item.id
+        assign show_block = true
+        break
+      endif
+    endfor
+  endif
+
+  if selected_collection != blank
+    for collection in product.collections
+      if collection.id == selected_collection.id
+        assign show_block = true
+        break
+      endif
+    endfor
+  endif
+-%}
+
+{%- if show_block -%}
+  {%- liquid
+    assign variant = product.selected_or_first_available_variant
+    assign unit_price = variant.price
+    assign unit_compare_at_price = variant.compare_at_price
+    assign quantity_style = block.settings.quantity_style
+    assign show_strikethrough = block.settings.show_strikethrough
+    assign show_strikethrough_price = block.settings.show_strikethrough_price
+    assign show_per_unit = block.settings.show_per_unit
+    assign show_total_pricing = block.settings.show_total_pricing
+    assign compact_per_unit_under_label = block.settings.compact_per_unit_under_label
+    assign show_quantity_label = block.settings.show_quantity_label
+    assign quantity_label_text = block.settings.quantity_title_text
+    assign option_image_width = block.settings.option_image_size
+    assign bottom_image_width = block.settings.bottom_image_size
+    assign is_vertical = false
+    if quantity_style == 'vertical'
+      assign is_vertical = true
+    endif
+
+    assign use_compact_vertical = false
+    if is_vertical and block.settings.columns_block == '40' and block.settings.vertical_two_column_layout == 'compact'
+      assign use_compact_vertical = true
+    endif
+
+    assign badge_scan_numbers = '1,2,3,4,5,6' | split: ','
+    assign has_vertical_badge = false
+    if is_vertical
+      for i in badge_scan_numbers
+        assign show_label_key = 'option_' | append: i | append: '_show_label'
+        assign badge_enable_key = 'option_' | append: i | append: '_badge_enable'
+        if block.settings[show_label_key] and block.settings[badge_enable_key]
+          assign has_vertical_badge = true
+          break
+        endif
+      endfor
+    endif
+
+    comment
+      Dermawave uses html { font-size: 62.5% } so 1rem = 10px.
+      Booster uses the browser default 16px root, so scale rem settings down.
+    endcomment
+    assign tiered_rem_scale = 0.625
+
+    assign badge_style_raw = block.settings.badge_style | strip
+    assign badge_style_class = badge_style_raw
+    if badge_style_raw == 'ribbon top-short' or badge_style_raw == 'ribbon ribbon-top-short'
+      assign badge_style_class = 'ribbon ribbon-top-short'
+    endif
+    assign is_ribbon_top_short = false
+    if badge_style_class == 'ribbon ribbon-top-short'
+      assign is_ribbon_top_short = true
+    endif
+  -%}
+
+  {%- unless tiered_quantity_css_loaded -%}
+    {%- if quantity_style == 'horizontal' -%}
+      {{ 'tiered-quantity-horizontal.css' | asset_url | stylesheet_tag }}
+    {%- elsif quantity_style == 'horizontal-nogap' -%}
+      {{ 'tiered-quantity-no-gap.css' | asset_url | stylesheet_tag }}
+    {%- else -%}
+      {{ 'tiered-quantity.css' | asset_url | stylesheet_tag }}
+    {%- endif -%}
+    {%- assign tiered_quantity_css_loaded = true -%}
+  {%- endunless -%}
+
+  {%- unless tiered_quantity_js_loaded -%}
+    <script src="{{ 'tiered-quantity.js' | asset_url }}" defer="defer"></script>
+    {%- assign tiered_quantity_js_loaded = true -%}
+  {%- endunless -%}
+
+  {%- style -%}
+    #shopify-block-{{ block.id }} .tiered-quantity-options {
+      --columns_row: {{ block.settings.columns_block }}%;
+      --selected-bg-color: {{ block.settings.selected_button_bg_color }};
+      --selected-dot-color: {{ block.settings.selected_button_dot_color }};
+      --savings-text-color: {{ block.settings.savings_text_color }};
+      --savings-bg-color: {{ block.settings.savings_bg_color }};
+      --border-radius: {{ block.settings.border_radius | times: tiered_rem_scale }}rem;
+      --option-bottom-spacing: {{ block.settings.option_bottom_spacing | times: tiered_rem_scale }}rem;
+      --option-height-spacing: {{ block.settings.option_height_spacing | times: tiered_rem_scale }}rem;
+      --compare-price-font-size: {{ block.settings.compare_price_font_size | times: tiered_rem_scale }}rem;
+      --final-price-font-size: {{ block.settings.final_price_font_size | times: tiered_rem_scale }}rem;
+      --per-unit-font-size: {{ block.settings.per_unit_font_size | times: tiered_rem_scale }}rem;
+      --label-font-size: {{ block.settings.label_font_size | times: tiered_rem_scale }}rem;
+      --text-color-unselected: {{ block.settings.text_color_unselected }};
+      --unselected-dot-color: {{ block.settings.unselected_button_dot_color | default: block.settings.text_color_unselected }};
+      --back-color-unselected: {{ block.settings.back_color_unselected }};
+      --border-color-unselected: {{ block.settings.border_color_unselected }};
+      --border-color-hover-unselected: {{ block.settings.border_color_hover_unselected }};
+      --border-color-selected: {{ block.settings.selected_button_border_color }};
+      --border-color-hover-selected: {{ block.settings.border_color_hover_selected }};
+      --buttons_border_thickness: {{ block.settings.buttons_border_thickness | times: tiered_rem_scale }}rem;
+      --text-color-selected: {{ block.settings.text_color_selected }};
+      --savings-label-font-size: {{ block.settings.savings_label_font_size | times: tiered_rem_scale }}rem;
+      --badge-bg-color: {{ block.settings.badge_bg_color }};
+      --badge-background-gradient: {{ block.settings.badge_background_gradient }};
+      --badge-font-size: {{ block.settings.badge_font_size | times: tiered_rem_scale }}rem;
+      --badge-font-size-mobile: {{ block.settings.badge_font_size_mobile | times: tiered_rem_scale }}rem;
+      --badge-font-color: {{ block.settings.badge_font_color }};
+      --title-color: {{ block.settings.title_color }};
+      --title-font-size: {{ block.settings.title_font_size | times: tiered_rem_scale }}rem;
+      --title_line_color: {{ block.settings.title_line_color }};
+      --compare-font-color: {{ block.settings.compare_font_color }};
+      --promo-text: {{ block.settings.promo_font_color }};
+      --promo-background: {{ block.settings.promo_bg_color }};
+      --promo-border: {{ block.settings.promo_border_color }};
+      --bottom-image-width: {{ bottom_image_width }}px;
+      --bottom-font-size: {{ block.settings.bottom_font_size }}px;
+      --bottom-content-alignment: {{ block.settings.bottom_content_alignment }};
+      --option-height: {{ block.settings.option_height }};
+      --option-image-size: {{ option_image_width }}px;
+      --option-image-radius: {{ block.settings.option_image_radius }}px;
+    }
+
+    #shopify-block-{{ block.id }} .tiered-option-title {
+      --title-color: {{ block.settings.title_color }};
+      --title-font-size: {{ block.settings.title_font_size | times: tiered_rem_scale }}rem;
+      --sub-title-color: {{ block.settings.subtitle_color }};
+      --sub-title-font-size: {{ block.settings.subtitle_font_size | times: tiered_rem_scale }}rem;
+      --title-line-color: {{ block.settings.title_line_color }};
+      --title-text-align: {{ block.settings.title_text_align }};
+      --buttons_border_thickness: {{ block.settings.buttons_border_thickness | times: tiered_rem_scale }}rem;
+      --border-color-unselected: {{ block.settings.border_color_unselected }};
+      --border-radius: {{ block.settings.border_radius | times: tiered_rem_scale }}rem;
+      --title-background: {{ block.settings.title_bg_color }};
+    }
+
+    {%- if block.settings.hide_checkbox -%}
+      #shopify-block-{{ block.id }} .tiered-option:before {
+        display: none;
+      }
+    {%- endif -%}
+
+    {%- if is_vertical and use_compact_vertical == false -%}
+      {%- if block.settings.hide_checkbox -%}
+        #shopify-block-{{ block.id }} .tiered-option {
+          {%- if is_ribbon_top_short -%}
+            padding-top: 1.7em !important;
+          {%- else -%}
+            padding-top: 1em !important;
+          {%- endif -%}
+        }
+      {%- else -%}
+        #shopify-block-{{ block.id }} .tiered-option {
+          {%- if is_ribbon_top_short -%}
+            padding-top: 3.3em !important;
+          {%- else -%}
+            padding-top: 2.7em !important;
+          {%- endif -%}
+        }
+        #shopify-block-{{ block.id }} .tiered-option:before {
+          {%- if is_ribbon_top_short -%}
+            top: 32px !important;
+          {%- else -%}
+            top: 24px !important;
+          {%- endif -%}
+        }
+      {%- endif -%}
+    {%- endif -%}
+
+    {%- if block.settings.show_head_border and quantity_style == 'horizontal-nogap' -%}
+      #shopify-block-{{ block.id }} .tiered-option-wrapper-span {
+        padding: 10px;
+        background: var(--title-background);
+        border: var(--buttons_border_thickness) solid var(--border-color-unselected);
+        border-top-left-radius: var(--border-radius);
+        border-top-right-radius: var(--border-radius);
+        margin-bottom: calc(-1 * var(--buttons_border_thickness));
+        justify-content: center;
+      }
+
+      #shopify-block-{{ block.id }} .tiered-quantity-options {
+        margin-top: 0 !important;
+      }
+    {%- endif -%}
+
+    {%- if show_quantity_label and quantity_style == 'horizontal-nogap' and block.settings.show_head_border -%}
+      #shopify-block-{{ block.id }} .tiered-option-wrapper:first-of-type .tiered-option {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+      }
+    {%- endif -%}
+
+    {%- if block.settings.pill_enable_inner_glow -%}
+      {%- assign pill_glow_blur = block.settings.pill_inner_glow_blur -%}
+      {%- assign pill_glow_spread = block.settings.pill_inner_glow_spread -%}
+      {%- assign pill_glow_opacity = block.settings.pill_inner_glow_opacity | divided_by: 100.0 -%}
+      {%- assign pill_unselected_glow_color = block.settings.pill_unselected_inner_glow_color | color_modify: 'alpha', pill_glow_opacity -%}
+      {%- assign pill_selected_glow_color = block.settings.pill_selected_inner_glow_color | color_modify: 'alpha', pill_glow_opacity -%}
+
+      #shopify-block-{{ block.id }} .tiered-option:not(.tiered-option--active) {
+        box-shadow: inset 0 8px {{ pill_glow_blur }}px {{ pill_glow_spread }}px {{ pill_unselected_glow_color }};
+      }
+
+      #shopify-block-{{ block.id }} .tiered-option--active {
+        box-shadow: inset 0 8px {{ pill_glow_blur }}px {{ pill_glow_spread }}px {{ pill_selected_glow_color }};
+      }
+    {%- endif -%}
+  {%- endstyle -%}
+
+  <div
+    class="tiered-quantity-selector{% if use_compact_vertical %} tiered-quantity-selector--vertical-compact{% endif %}{% if block.settings.hide_checkbox %} tiered-quantity-selector--hide-dot{% endif %}"
+    data-quantity-style="{{ quantity_style }}"
+    data-tiered-quantity-component
+    data-override-product-price="{% if block.settings.override_product_price != false %}true{% else %}false{% endif %}"
+    data-compare-price-type="{{ show_strikethrough_price }}"
+    data-show-strikethrough="{% if show_strikethrough %}true{% else %}false{% endif %}"
+    data-show-total-pricing="{% if show_total_pricing %}true{% else %}false{% endif %}"
+    data-show-per-unit="{% if show_per_unit %}true{% else %}false{% endif %}"
+    data-discount-type="{{ block.settings.discount_type }}"
+    {{ block.shopify_attributes }}
+  >
+    <input
+      type="hidden"
+      id="Tiered-Quantity-{{ block.id }}"
+      value="1"
+      data-tiered-quantity-fallback
+      data-form-id="{{ product_form_id }}"
+    >
+
+    {%- if show_quantity_label -%}
+      <div class="tiered-option-title tiered-option-wrapper-title tiered-option-wrapper-span">
+        {%- unless block.settings.hide_lines -%}<span></span>{%- endunless -%}
+        <div class="tiered-texts">
+          <div class="tiered-heading">
+            {%- render 'fancy-text', text: quantity_label_text -%}
+          </div>
+          <div class="tiered-sub-heading">{{ block.settings.quantity_subtitle_text }}</div>
+        </div>
+        {%- unless block.settings.hide_lines -%}<span></span>{%- endunless -%}
+      </div>
+    {%- endif -%}
+
+    <div
+      class="tiered-quantity-options{% if has_vertical_badge and use_compact_vertical == false %} tiered-quantity-options--has-vertical-badge{% endif %}{% if use_compact_vertical %} tiered-quantity-options--vertical-compact{% if has_vertical_badge %} tiered-quantity-options--has-compact-badge{% endif %}{% endif %}"
+      data-tiered-quantity-block-id="{{ block.id }}"
+      data-preselected="{{ block.settings.preselected }}"
+    >
+      {%- assign option_numbers = '1,2,3,4,5,6' | split: ',' -%}
+      {%- for i in option_numbers -%}
+        {%- liquid
+          assign label_key = 'option_' | append: i | append: '_label'
+          assign show_label_key = 'option_' | append: i | append: '_show_label'
+          assign show_image_key = 'option_' | append: i | append: '_show_image'
+          assign image_key = 'option_' | append: i | append: '_image'
+          assign per_unit_key = 'option_' | append: i | append: '_unit_label'
+          assign quantity_key = 'option_' | append: i | append: '_quantity'
+          assign discount_pct_key = 'option_' | append: i | append: '_discount_percentage'
+          assign badge_enable_key = 'option_' | append: i | append: '_badge_enable'
+          assign badge_text_key = 'option_' | append: i | append: '_badge_text'
+          assign save_text_key = 'option_' | append: i | append: '_save_text'
+          assign promo_key = 'option_' | append: i | append: '_promo'
+          assign bottom_image_key = 'option_' | append: i | append: '_bottom_image'
+          assign fixed_discount_key = 'option_' | append: i | append: '_fixed_discount'
+
+          assign label = block.settings[label_key]
+          assign show_label = block.settings[show_label_key]
+          assign show_image = block.settings[show_image_key]
+          assign image_custom = block.settings[image_key]
+          assign per_unit_label = block.settings[per_unit_key]
+          assign quantity = block.settings[quantity_key] | plus: 0
+          assign discount_number = block.settings[discount_pct_key] | plus: 0
+          assign badge_enable = block.settings[badge_enable_key]
+          assign badge_text = block.settings[badge_text_key]
+          assign save_text = block.settings[save_text_key]
+          assign promo = block.settings[promo_key]
+          assign bottom_image = block.settings[bottom_image_key]
+          assign fixed_discount = block.settings[fixed_discount_key] | plus: 0 | times: 100
+
+          assign label_stripped = label | strip_html | strip
+          assign save_text_stripped = save_text | strip_html | strip
+          assign promo_stripped = promo | strip_html | strip
+          assign discount_pct = discount_number | append: '%'
+        -%}
+
+        {%- if label_stripped != blank and show_label and quantity > 0 -%}
+        {%- liquid
+          assign compare_total_cents = quantity | times: unit_price
+          assign compare_total_cents_2 = quantity | times: unit_compare_at_price
+
+          if block.settings.discount_type == 'price'
+            assign final_price_cents = compare_total_cents | minus: fixed_discount
+            assign per_unit_cents = final_price_cents | divided_by: quantity
+            assign discount_display = fixed_discount | money
+          else
+            assign discount_multiplier = 100 | minus: discount_number
+            assign final_price_cents = compare_total_cents | times: discount_multiplier | divided_by: 100
+            assign per_unit_cents = final_price_cents | divided_by: quantity
+            assign discount_display = discount_number | append: '%'
+          endif
+
+          assign show_compare = false
+          if block.settings.discount_type == 'price'
+            unless fixed_discount == 0
+              if show_strikethrough_price == 'calculated' and show_strikethrough
+                assign show_compare = true
+              endif
+            endunless
+          else
+            unless discount_number == 0
+              if show_strikethrough_price == 'calculated' and show_strikethrough
+                assign show_compare = true
+              endif
+            endunless
+          endif
+
+          assign show_compare_original = false
+          if show_strikethrough_price == 'original' and show_strikethrough
+            assign show_compare_original = true
+          endif
+
+          assign sync_compare_cents = 0
+          if show_compare and compare_total_cents > final_price_cents
+            assign sync_compare_cents = compare_total_cents
+          endif
+          if show_compare_original and unit_compare_at_price > unit_price and compare_total_cents_2 > final_price_cents
+            if compare_total_cents_2 > sync_compare_cents
+              assign sync_compare_cents = compare_total_cents_2
+            endif
+          endif
+
+          assign show_promo = false
+          if promo_stripped != blank
+            assign show_promo = true
+          endif
+
+          assign show_foto = false
+          if show_image
+            if image_custom != blank
+              assign show_foto = true
+              assign image = image_custom
+            else
+              assign show_foto = true
+              assign image = variant.image | default: product.featured_image
+            endif
+          endif
+
+          assign show_foto_bottom = false
+          if bottom_image != blank
+            assign show_foto_bottom = true
+            assign image_bottom = bottom_image
+          endif
+        -%}
+
+        <div class="tiered-option-wrapper{% if badge_enable and use_compact_vertical %} tiered-option-wrapper--has-badge{% endif %}">
+          {%- if badge_enable -%}
+            <span class="{% if use_compact_vertical %}tiered-option__compact-badge {% endif %}{{ badge_style_class }}">{{ badge_text }}</span>
+          {%- endif -%}
+          <button
+            type="button"
+            class="tiered-option{% if show_promo and use_compact_vertical == false %} tiered-option-bottom{% endif %}{% if use_compact_vertical %} tiered-option--compact{% endif %}{% if forloop.index == block.settings.preselected %} tiered-option--active{% endif %}"
+            data-quantity="{{ quantity }}"
+            data-price-cents="{{ final_price_cents }}"
+            data-discount-percent="{{ discount_number }}"
+            data-fixed-discount-cents="{{ fixed_discount }}"
+            {%- if sync_compare_cents > final_price_cents -%}
+              data-compare-cents="{{ sync_compare_cents }}"
+            {%- endif -%}
+          >
+            {%- if use_compact_vertical -%}
+              <div class="tiered-option__compact-inner">
+                <div class="tiered-option__compact-text">
+                  <span class="tiered-option__label tiered-option__compact-title">
+                    {%- render 'tiered-quantity-format-text',
+                      text: label,
+                      percent_value: discount_pct,
+                      per_unit_cents: per_unit_cents
+                    -%}
+                  </span>
+                  {%- if show_per_unit and compact_per_unit_under_label and per_unit_label != blank -%}
+                    <span class="tiered-option__compact-subtitle">
+                      {%- render 'tiered-quantity-format-text',
+                        text: per_unit_label,
+                        percent_value: discount_pct,
+                        per_unit_cents: per_unit_cents
+                      -%}
+                    </span>
+                  {%- endif -%}
+                </div>
+                {%- liquid
+                  assign show_compact_prices = false
+                  if show_compare or show_compare_original or show_total_pricing
+                    assign show_compact_prices = true
+                  elsif show_per_unit and compact_per_unit_under_label == false and per_unit_label != blank
+                    assign show_compact_prices = true
+                  endif
+                -%}
+                {%- if show_compact_prices -%}
+                  <div class="tiered-option__prices tiered-option__compact-prices">
+                    {%- if show_compare -%}
+                      <span class="tiered-option__compare-price">
+                        {%- render 'price-split', context: 'quantity_breaks', cents: compare_total_cents, use_currency: false -%}
+                      </span>
+                    {%- endif -%}
+                    {%- if unit_price < unit_compare_at_price and show_compare_original -%}
+                      <span class="tiered-option__compare-price">
+                        {%- render 'price-split', context: 'quantity_breaks', cents: compare_total_cents_2, use_currency: false -%}
+                      </span>
+                    {%- endif -%}
+                    {%- if show_total_pricing -%}
+                      <span class="tiered-option__final-price">{{ final_price_cents | money }}</span>
+                    {%- endif -%}
+                    {%- if show_per_unit and compact_per_unit_under_label == false and per_unit_label != blank -%}
+                      <div class="tiered-option__per-unit">
+                        {%- render 'tiered-quantity-format-text',
+                          text: per_unit_label,
+                          percent_value: discount_pct,
+                          per_unit_cents: per_unit_cents
+                        -%}
+                      </div>
+                    {%- endif -%}
+                  </div>
+                {%- endif -%}
+              </div>
+            {%- else -%}
+            <div class="tiered-option__content{% unless is_vertical %} tiered-option__horizontal{% endunless %}">
+              {%- if show_foto and image != blank -%}
+                <div class="tiered-image{% if is_vertical %} tiered-image-vertical{% else %} tiered-image-horizontal{% endif %}">
+                  {%- assign image_height = image.width | divided_by: image.aspect_ratio | round -%}
+                  {{
+                    image
+                    | image_url: width: option_image_width
+                    | image_tag: loading: 'lazy', alt: label, width: option_image_width, height: image_height
+                  }}
+                </div>
+              {%- endif -%}
+              <div class="tiered-option-flex-content {% if is_vertical %} tiered-option__content{% else %} tiered-option__horizontal{% endif %}">
+                <div class="tiered-option-flex">
+                  <div class="tiered-option__label-row">
+                    <span class="tiered-option__label">
+                      {%- render 'tiered-quantity-format-text',
+                        text: label,
+                        percent_value: discount_pct,
+                        per_unit_cents: per_unit_cents
+                      -%}
+                    </span>
+                    {%- unless is_vertical -%}
+                      {%- if save_text_stripped != blank -%}
+                        <div class="tiered-option__discount-area">
+                          {%- render 'tiered-quantity-format-text',
+                            text: save_text,
+                            percent_value: discount_display,
+                            per_unit_cents: per_unit_cents
+                          -%}
+                        </div>
+                      {%- endif -%}
+                    {%- endunless -%}
+                  </div>
+                  {%- if show_per_unit and is_vertical == false and per_unit_label != blank -%}
+                    <div class="tiered-option__per-unit">
+                      {%- render 'tiered-quantity-format-text',
+                        text: per_unit_label,
+                        percent_value: discount_pct,
+                        per_unit_cents: per_unit_cents
+                      -%}
+                    </div>
+                  {%- endif -%}
+                </div>
+                <div class="tiered-option__prices">
+                  {%- if show_compare -%}
+                    <span class="tiered-option__compare-price">
+                      {%- render 'price-split', context: 'quantity_breaks', cents: compare_total_cents, use_currency: false -%}
+                    </span>
+                  {%- endif -%}
+                  {%- if unit_price < unit_compare_at_price and show_compare_original -%}
+                    <span class="tiered-option__compare-price">
+                      {%- render 'price-split', context: 'quantity_breaks', cents: compare_total_cents_2, use_currency: false -%}
+                    </span>
+                  {%- endif -%}
+                  {%- if show_total_pricing -%}
+                    <span class="tiered-option__final-price">{{ final_price_cents | money }}</span>
+                  {%- endif -%}
+                  {%- if show_per_unit and is_vertical and per_unit_label != blank -%}
+                    <div class="tiered-option__per-unit">
+                      {%- render 'tiered-quantity-format-text',
+                        text: per_unit_label,
+                        percent_value: discount_pct,
+                        per_unit_cents: per_unit_cents
+                      -%}
+                    </div>
+                  {%- endif -%}
+                </div>
+              </div>
+            </div>
+            {%- if is_vertical and save_text_stripped != blank -%}
+              <div class="tiered-option__discount-area">
+                {%- render 'tiered-quantity-format-text',
+                  text: save_text,
+                  percent_value: discount_display,
+                  per_unit_cents: per_unit_cents
+                -%}
+              </div>
+            {%- endif -%}
+            {%- endif -%}
+          </button>
+          {%- if show_promo and use_compact_vertical == false -%}
+            <div class="tiered-option__discount-area-bottom">
+              {%- if show_foto_bottom -%}
+                {%- assign bottom_image_height = image_bottom.width | divided_by: image_bottom.aspect_ratio | round -%}
+                {{
+                  image_bottom
+                  | image_url: width: bottom_image_width
+                  | image_tag: loading: 'lazy', alt: label, width: bottom_image_width, height: bottom_image_height
+                }}
+              {%- endif -%}
+              <span class="promo-text">
+                {%- render 'tiered-quantity-format-text',
+                  text: promo,
+                  percent_value: discount_pct,
+                  per_unit_cents: per_unit_cents
+                -%}
+              </span>
+            </div>
+          {%- endif -%}
+        </div>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  </div>
+{%- endif -%}

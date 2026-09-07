@@ -1,0 +1,47 @@
+{%- doc -%}
+  Vorbau vor die eigentliche Variantenauswahl.
+
+  Das Original liegt unveraendert in variant-main-picker-original.liquid (eine
+  zweite, unangetastete Sicherung unter variant-main-picker-sicherung.liquid).
+  Es wird hier gerendert und sein HTML danach an genau zwei Stellen angepasst -
+  so bleiben 45 KB Kauflogik unberuehrt.
+
+  Zweck: Ausverkaufte Farben sollen anklickbar sein, damit Kunden ihre Bilder
+  ansehen koennen.
+
+  Warum das noetig ist:
+  Das Original setzt auf nicht lieferbare Werte `disabled`. Ein gesperrtes
+  Auswahlfeld loest im Browser gar kein Klick-Ereignis aus - kein Skript der
+  Welt kann den Klick dann noch abfangen. Deshalb muss das Attribut schon im
+  HTML verschwinden, nicht erst nachtraeglich per JavaScript.
+
+  Was ersetzt wird:
+  - aria-disabled="true"  ->  data-sold-out="true"
+    (zuerst, sonst wuerde der zweite Schritt darin das Wort disabled treffen)
+  - " disabled"           ->  entfernt
+    Bewusst mit fuehrendem Leerzeichen: Klassennamen wie
+    "variant-option--swatches-disabled" enthalten "-disabled" und bleiben so
+    unangetastet.
+
+  Der Kaufknopf ist davon nicht betroffen - fuer eine ausverkaufte Variante
+  zeigt das Theme weiterhin "Ausverkauft".
+
+  Schalter: Block "Variantenauswahl" -> "Ausverkaufte Varianten anklickbar".
+  Steht er aus, wird das Original unveraendert ausgegeben.
+
+  @param {object} product_resource - The product object.
+  @param {object} [block] - The block object
+{%- enddoc -%}
+
+{%- capture kokoro_variant_picker -%}
+  {%- render 'variant-main-picker-original', product_resource: product_resource, block: block -%}
+{%- endcapture -%}
+
+{%- if block.settings.allow_sold_out_selection -%}
+  {%- assign kokoro_variant_picker = kokoro_variant_picker
+    | replace: 'aria-disabled="true"', 'data-sold-out="true"'
+    | replace: ' disabled', ''
+  -%}
+{%- endif -%}
+
+{{ kokoro_variant_picker }}

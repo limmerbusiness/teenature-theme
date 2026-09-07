@@ -1,0 +1,79 @@
+{%- comment -%}
+  Renders the preselected tier price for the add-to-cart button.
+
+  Accepts:
+  - block: {Block} _quantity-breaks-simple block
+  - product: {Product}
+  - price_type: {String} 'total' or 'compare'
+{%- endcomment -%}
+
+{%- liquid
+  assign preselected = block.settings.preselected
+  assign output_price = ''
+
+  if preselected != blank and preselected != 'none'
+    assign show_label_key = 'option_' | append: preselected | append: '_show_label'
+    assign quantity_key = 'option_' | append: preselected | append: '_quantity'
+    assign discount_pct_key = 'option_' | append: preselected | append: '_discount_percentage'
+    assign fixed_discount_key = 'option_' | append: preselected | append: '_fixed_discount'
+
+    assign show_label = block.settings[show_label_key]
+    assign quantity = block.settings[quantity_key] | plus: 0
+    assign discount_number = block.settings[discount_pct_key] | plus: 0
+    assign fixed_discount = block.settings[fixed_discount_key] | plus: 0 | times: 100
+
+    if show_label and quantity > 0
+      assign variant = product.selected_or_first_available_variant
+      assign unit_price = variant.price
+      assign unit_compare_at_price = variant.compare_at_price
+      assign compare_total_cents = quantity | times: unit_price
+      assign compare_total_cents_2 = quantity | times: unit_compare_at_price
+
+      if block.settings.discount_type == 'price'
+        assign final_price_cents = compare_total_cents | minus: fixed_discount
+      else
+        assign discount_multiplier = 100 | minus: discount_number
+        assign final_price_cents = compare_total_cents | times: discount_multiplier | divided_by: 100
+      endif
+
+      assign show_strikethrough = block.settings.show_strikethrough
+      assign show_strikethrough_price = block.settings.show_strikethrough_price
+      assign sync_compare_cents = 0
+
+      if block.settings.discount_type == 'price'
+        unless fixed_discount == 0
+          if show_strikethrough_price == 'calculated' and show_strikethrough
+            if compare_total_cents > final_price_cents
+              assign sync_compare_cents = compare_total_cents
+            endif
+          endif
+        endunless
+      else
+        unless discount_number == 0
+          if show_strikethrough_price == 'calculated' and show_strikethrough
+            if compare_total_cents > final_price_cents
+              assign sync_compare_cents = compare_total_cents
+            endif
+          endif
+        endunless
+      endif
+
+      if show_strikethrough_price == 'original' and show_strikethrough
+        if unit_compare_at_price > unit_price and compare_total_cents_2 > final_price_cents
+          if compare_total_cents_2 > sync_compare_cents
+            assign sync_compare_cents = compare_total_cents_2
+          endif
+        endif
+      endif
+
+      if price_type == 'compare'
+        if sync_compare_cents > final_price_cents
+          assign output_price = sync_compare_cents | money
+        endif
+      else
+        assign output_price = final_price_cents | money
+      endif
+    endif
+  endif
+-%}
+{{- output_price -}}

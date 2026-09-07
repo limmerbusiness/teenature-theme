@@ -1,0 +1,20 @@
+{%- doc -%}
+  @param {object} product
+  @param {object} block_settings
+  @param {string} mode - 'color' or 'image' (maps to selector_style)
+{%- enddoc -%}
+
+{% liquid
+  if mode == 'image'
+    assign selector_style = 'image_swatches'
+  else
+    assign selector_style = 'color_swatches'
+  endif
+%}
+
+{% render 'product-variations-display',
+  product: product,
+  block_settings: block_settings,
+  selector_style: selector_style,
+  mode: 'swatch'
+%}

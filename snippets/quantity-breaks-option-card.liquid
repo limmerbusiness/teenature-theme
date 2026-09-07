@@ -1,0 +1,165 @@
+{%- doc -%}
+  Renders a single quantity-break option card button.
+
+  @param {number}  opt_index              - Option number (1–6)
+  @param {boolean} opt_enabled            - Whether this option is active
+  @param {number}  opt_quantity           - Quantity for this tier
+  @param {boolean} opt_recommended        - Whether to show the "recommended" border/style
+  @param {boolean} opt_sold_out           - Whether this tier is sold out
+  @param {string}  opt_discount_type      - 'percentage' or 'fixed'
+  @param {number}  opt_discount           - Discount percentage value
+  @param {number}  opt_discount_amount    - Fixed discount amount in cents
+  @param {number}  opt_discount_calculated - Resolved discount in cents
+  @param {number}  opt_effective_discount - Display discount percentage
+  @param {number}  opt_final_price        - Final price in cents
+  @param {number}  opt_compare_price      - Compare-at price in cents
+  @param {image}   opt_image              - Image object (or blank)
+  @param {boolean} opt_has_custom_image   - Whether image came from a custom setting
+  @param {number}  opt_gifts_count        - Number of free gifts unlocked at this tier
+  @param {string}  opt_label              - Card title text
+  @param {string}  opt_badge_text         - Top badge text (optional)
+  @param {string}  opt_off_text           - Inline discount badge text (optional)
+  @param {string}  opt_description        - Description paragraph (optional)
+  @param {string}  opt_discount_code      - Discount code to apply (optional)
+  @param {string}  opt_final_price_fmt    - Pre-formatted final price HTML
+  @param {string}  opt_compare_price_fmt  - Pre-formatted compare price HTML
+  @param {string}  opt_per_unit_price_fmt - Pre-formatted per-unit price HTML
+  @param {string}  opt_per_unit_cmp_fmt   - Pre-formatted per-unit compare price HTML
+
+  Inherited from parent scope (passed explicitly):
+  @param {object}  product
+  @param {object}  variant
+  @param {boolean} show_quantity_breaks_radio_indicator
+  @param {boolean} show_images
+  @param {number}  image_size
+  @param {number}  image_url_width
+  @param {boolean} show_variant_picker
+  @param {boolean} product_has_variants
+  @param {boolean} hide_variant_picker_when_quantity_1
+  @param {boolean} show_price_per_unit
+  @param {string}  per_unit_text
+  @param {boolean} show_compare_when_original
+  @param {number}  base_compare_at_price
+  @param {boolean} show_color_swatches
+  @param {boolean} show_variant_pickers_heading
+  @param {boolean} show_variant_picker_row_numbers
+  @param {boolean} hide_sold_out_variants
+{%- enddoc -%}
+{%- liquid
+  if opt_enabled == false or opt_quantity == blank or opt_quantity == 0
+    echo ''
+  else
+    # Decide whether to show variant picker for this card
+    assign show_picker = false
+    if show_variant_picker and product_has_variants and opt_quantity > 0
+      unless hide_variant_picker_when_quantity_1 and opt_quantity == 1
+        assign show_picker = true
+      endunless
+    endif
+
+    # Build discount display value once
+    assign discount_value = opt_effective_discount | round | append: '%'
+
+    # Build saved_amount once
+    capture saved_amount_formatted
+      render 'price-split', context: 'quantity_breaks', cents: opt_discount_calculated
+    endcapture
+  endif
+-%}
+{%- if opt_enabled and opt_quantity > 0 -%}
+<button
+  type="button"
+  class="quantity-breaks__card{% if opt_recommended %} quantity-breaks__card--recommended{% endif %}{% if opt_sold_out %} quantity-breaks__card--sold-out{% endif %}"
+  data-option-index="{{ opt_index }}"
+  {% if opt_sold_out %}disabled aria-label="Sold out"{% endif %}
+  data-quantity="{{ opt_quantity }}"
+  data-variant-id="{{ variant.id }}"
+  {% if show_picker %}data-variant-ids="{% for i in (1..opt_quantity) %}{{ variant.id }}{% unless forloop.last %},{% endunless %}{% endfor %}" data-has-variant-pickers="true" data-variant-picker-count="{{ opt_quantity }}"{% endif %}
+  data-discount="{{ opt_discount }}"
+  data-discount-type="{{ opt_discount_type }}"
+  data-discount-amount="{{ opt_discount_amount }}"
+  data-final-price-cents="{{ opt_final_price }}"
+  data-compare-price-cents="{{ opt_compare_price }}"
+  data-show-per-unit="{% if show_price_per_unit %}true{% else %}false{% endif %}"
+  {% if opt_discount_code != blank %}data-discount-code="{{ opt_discount_code | escape }}"{% endif %}
+  aria-label="Select quantity {{ opt_quantity }}"
+>
+  {%- if opt_sold_out -%}
+    <span class="quantity-breaks__sold-out-badge">{{ 'products.product.sold_out' | t | default: 'Sold out' }}</span>
+  {%- elsif opt_badge_text != blank -%}
+    {%- if opt_effective_discount > 0 -%}
+      <span class="quantity-breaks__recommended-badge">{{ opt_badge_text | replace: '[%]', discount_value | replace: '[amount]', saved_amount_formatted }}</span>
+    {%- else -%}
+      <span class="quantity-breaks__recommended-badge">{{ opt_badge_text | replace: '[%]', '0%' | replace: '[amount]', saved_amount_formatted }}</span>
+    {%- endif -%}
+  {%- elsif opt_gifts_count > 0 -%}
+    <span class="quantity-breaks__free-gifts-badge visually-hidden">{{ opt_gifts_count }} FREE GIFTS</span>
+  {%- endif -%}
+
+  <div class="quantity-breaks__content">
+    {%- if show_quantity_breaks_radio_indicator -%}
+    <span class="quantity-breaks__lumin-radio-indicator"></span>
+    {%- endif -%}
+
+    {%- if show_images and opt_image != blank -%}
+    <div class="quantity-breaks__image-container">
+      <div class="quantity-breaks__product-image">
+        <img
+          src="{{ opt_image | image_url: width: image_url_width }}"
+          alt="{{ opt_image.alt | default: product.title | escape }}"
+          width="{{ image_size }}"
+          height="{{ image_size }}"
+          loading="lazy"
+          data-option-image="{{ opt_index }}"
+          data-custom-image="{% if opt_has_custom_image %}true{% else %}false{% endif %}"
+        >
+      </div>
+    </div>
+    {%- endif -%}
+
+    <div class="quantity-breaks__content-left">
+      <div class="quantity-breaks__title-wrapper">
+        <span class="quantity-breaks__quantity-title">{{ opt_label }}</span>
+        {%- if opt_off_text != blank -%}
+          {%- if opt_effective_discount > 0 -%}
+            <span class="quantity-breaks__discount-badge">{{ opt_off_text | replace: '[%]', discount_value | replace: '[amount]', saved_amount_formatted }}</span>
+          {%- else -%}
+            <span class="quantity-breaks__discount-badge">{{ opt_off_text | replace: '[%]', '0%' | replace: '[amount]', saved_amount_formatted }}</span>
+          {%- endif -%}
+        {%- endif -%}
+      </div>
+
+      {%- if opt_description != blank -%}
+      <p class="quantity-breaks__description">
+        {%- if opt_effective_discount > 0 -%}
+          {{ opt_description | replace: '[%]', discount_value | replace: '[amount]', saved_amount_formatted }}
+        {%- else -%}
+          {{ opt_description | replace: '[%]', '0%' | replace: '[amount]', saved_amount_formatted }}
+        {%- endif -%}
+      </p>
+      {%- endif -%}
+    </div>
+
+    <div class="quantity-breaks__content-right">
+      <div class="quantity-breaks__price-container">
+        {%- if show_price_per_unit -%}
+          <span class="quantity-breaks__price">{{ opt_per_unit_price_fmt }}{%- if per_unit_text != blank %} <span class="quantity-breaks__per-unit-text">{{ per_unit_text }}</span>{%- endif -%}</span>
+          {%- if show_compare_when_original or opt_effective_discount > 0 or opt_discount_type == 'fixed' and opt_discount_calculated > 0 -%}
+            {%- assign compare_per_unit = opt_per_unit_cmp_fmt -%}
+            <span class="quantity-breaks__original-price">{{ compare_per_unit }}{%- if per_unit_text != blank %} <span class="quantity-breaks__per-unit-text">{{ per_unit_text }}</span>{%- endif -%}</span>
+          {%- endif -%}
+        {%- else -%}
+          <span class="quantity-breaks__price">{{ opt_final_price_fmt }}</span>
+          {%- if show_compare_when_original or opt_effective_discount > 0 or opt_discount_type == 'fixed' and opt_discount_calculated > 0 -%}
+            <span class="quantity-breaks__original-price">{{ opt_compare_price_fmt }}</span>
+          {%- endif -%}
+        {%- endif -%}
+      </div>
+    </div>
+
+    {%- if show_picker -%}
+    {% render 'quantity-breaks-variant-pickers', product: product, variant: variant, option_index: opt_index, option_quantity: opt_quantity, image_url_width: image_url_width, show_color_swatches: show_color_swatches, show_variant_pickers_heading: show_variant_pickers_heading, show_variant_picker_row_numbers: show_variant_picker_row_numbers, hide_sold_out_variants: hide_sold_out_variants %}
+    {%- endif -%}
+  </div>
+</button>
+{%- endif -%}

@@ -1,0 +1,46 @@
+{%- doc -%}
+  Renders a single product variation link (button or swatch).
+
+  @param {object} variation_product
+  @param {object} current_product
+  @param {object} block_settings
+  @param {string} selector_style
+{%- enddoc -%}
+
+{% liquid
+  assign is_current = false
+  if variation_product.id == current_product.id
+    assign is_current = true
+  endif
+%}
+
+<a
+  href="{{ variation_product.url }}"
+  class="variant-option__button-label product-variations-picker__link{% if selector_style == 'color_swatches' or selector_style == 'image_swatches' %} variant-option__button-label--has-swatch{% endif %}{% if is_current %} product-variations-picker__link--current{% endif %}"
+  {% if is_current %}
+    aria-current="page"
+  {% endif %}
+  aria-label="{% render 'product-variations-option-label', product: variation_product, block_settings: block_settings, selector_style: selector_style %}"
+>
+  {% if selector_style == 'color_swatches' %}
+    {% render 'product-variations-swatch',
+      product: variation_product,
+      block_settings: block_settings,
+      mode: 'color'
+    %}
+  {% elsif selector_style == 'image_swatches' %}
+    {% render 'product-variations-swatch',
+      product: variation_product,
+      block_settings: block_settings,
+      mode: 'image'
+    %}
+  {% else %}
+    <span class="variant-option__button-label__text">
+      {% render 'product-variations-option-label',
+        product: variation_product,
+        block_settings: block_settings,
+        selector_style: selector_style
+      %}
+    </span>
+  {% endif %}
+</a>

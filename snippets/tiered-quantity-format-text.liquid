@@ -1,0 +1,13 @@
+{%- comment -%}
+  Renders tier text with (%) and ($) placeholders replaced.
+
+  Accepts:
+  - text: {String}
+  - percent_value: {String}
+  - per_unit_cents: {Number}
+{%- endcomment -%}
+
+{%- if text != blank -%}
+  {%- capture per_unit_formatted -%}{{ per_unit_cents | money }}{%- endcapture -%}
+  {{- text | replace: '(%)', percent_value | replace: '($)', per_unit_formatted -}}
+{%- endif -%}

@@ -1,0 +1,131 @@
+{%- doc -%}
+  Renders up to 3 custom product badges from metafields and/or product tags.
+  Metafields are collected first, then tags fill remaining slots up to the max.
+
+  Value format (each metafield line, or tag after prefix):
+  - label
+  - label|text_color|background_color|border_color
+
+  Examples:
+  - New
+  - New|#ffffff|#111111|#cccccc
+  - badge:Hot|#000|#ffcc00|#000000
+
+  Metafield:
+  - custom.badge (multi_line_text_field) — one badge per line (up to 3)
+
+  Tags:
+  - Prefixed tags (default badge:)
+
+  @param {object} product - Product resource
+{%- enddoc -%}
+
+{%- liquid
+  assign badge_count = 0
+  assign max_badges = settings.custom_badge_max | default: 3 | plus: 0
+  if max_badges < 1
+    assign max_badges = 1
+  elsif max_badges > 3
+    assign max_badges = 3
+  endif
+
+  if settings.show_custom_badge == nil
+    assign show_custom_badge_on = true
+  else
+    assign show_custom_badge_on = settings.show_custom_badge
+  endif
+
+  if product == blank or show_custom_badge_on == false
+    assign skip_custom_badge = true
+  else
+    assign skip_custom_badge = false
+  endif
+-%}
+
+{%- unless skip_custom_badge -%}
+  {%- if settings.custom_badge_from_metafield != false -%}
+    {%- liquid
+      assign mf_badge = product.metafields.custom.badge
+      assign badge_lines_raw = ''
+      if mf_badge != blank and mf_badge.value != blank
+        assign badge_lines_raw = mf_badge.value | append: '' | strip
+      endif
+    -%}
+    {%- if badge_lines_raw != blank -%}
+      {%- assign badge_lines = badge_lines_raw | newline_to_br | split: '<br />' -%}
+      {%- for badge_raw in badge_lines -%}
+        {%- if badge_count >= max_badges -%}
+          {%- break -%}
+        {%- endif -%}
+        {%- assign badge_raw = badge_raw | strip -%}
+        {%- if badge_raw != blank -%}
+          {%- liquid
+            assign badge_parts = badge_raw | split: '|'
+            assign badge_label = badge_parts[0] | strip
+            assign badge_fg = badge_parts[1] | default: '' | strip
+            assign badge_bg = badge_parts[2] | default: '' | strip
+            assign badge_border = badge_parts[3] | default: '' | strip
+          -%}
+          {%- if badge_label != blank -%}
+            {%- assign badge_count = badge_count | plus: 1 -%}
+            <div
+              class="product-badges__badge product-badges__badge--rectangle product-badges__badge--custom"
+              {% if badge_fg != blank or badge_bg != blank or badge_border != blank %}
+                style="
+                  {% if badge_fg != blank %}color: {{ badge_fg }};{% endif %}
+                  {% if badge_bg != blank %}background: {{ badge_bg }};{% endif %}
+                  {% if badge_border != blank %}border: 1px solid {{ badge_border }};{% endif %}
+                "
+              {% endif %}
+            >
+              {{ badge_label | escape }}
+            </div>
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endif -%}
+  {%- endif -%}
+
+  {%- if settings.custom_badge_from_tags != false and badge_count < max_badges -%}
+    {%- liquid
+      assign tag_prefix = settings.custom_badge_tag_prefix | default: 'badge:' | strip
+      if tag_prefix == blank
+        assign tag_prefix = 'badge:'
+      endif
+      assign prefix_size = tag_prefix | size
+    -%}
+    {%- for tag in product.tags -%}
+      {%- if badge_count >= max_badges -%}
+        {%- break -%}
+      {%- endif -%}
+      {%- assign tag_start = tag | slice: 0, prefix_size -%}
+      {%- if tag_start == tag_prefix -%}
+        {%- assign badge_raw = tag | slice: prefix_size, 255 | strip -%}
+        {%- if badge_raw != blank -%}
+          {%- liquid
+            assign badge_parts = badge_raw | split: '|'
+            assign badge_label = badge_parts[0] | strip
+            assign badge_fg = badge_parts[1] | default: '' | strip
+            assign badge_bg = badge_parts[2] | default: '' | strip
+            assign badge_border = badge_parts[3] | default: '' | strip
+          -%}
+          {%- if badge_label != blank -%}
+            {%- assign badge_count = badge_count | plus: 1 -%}
+            <div
+              class="product-badges__badge product-badges__badge--rectangle product-badges__badge--custom"
+              {% if badge_fg != blank or badge_bg != blank or badge_border != blank %}
+                style="
+                  {% if badge_fg != blank %}color: {{ badge_fg }};{% endif %}
+                  {% if badge_bg != blank %}background: {{ badge_bg }};{% endif %}
+                  {% if badge_border != blank %}border: 1px solid {{ badge_border }};{% endif %}
+                "
+              {% endif %}
+            >
+              {{ badge_label | escape }}
+            </div>
+          {%- endif -%}
+        {%- endif -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endif -%}
+{%- endunless -%}
