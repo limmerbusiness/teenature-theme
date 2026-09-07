@@ -1,0 +1,395 @@
+
+
+{%- assign is_vertical = false -%}
+{%- if section.settings.motion_axis == 'vertical' -%}
+  {%- assign is_vertical = true -%}
+{%- endif -%}
+
+{%- unless is_vertical -%}
+  <script
+    src="{{ 'marquee.js' | asset_url }}"
+    type="module"
+    fetchpriority="low"
+  ></script>
+{%- endunless -%}
+
+{% assign gap_between_elements = section.settings.gap_between_elements %}
+
+{%- comment -%}
+  Senkrechte Variante: immer eine Zeile sichtbar, sie kommt von unten, bleibt
+  stehen und verschwindet nach oben.
+
+  Vier Fallstricke, die hier geloest sind:
+  1. Das Marquee-Skript des Themes vervielfaeltigt den Inhalt nach BREITE.
+     Fuer die senkrechte Variante wird es nicht geladen und die ref-Attribute
+     entfallen - ohne sie startet die Komponente nicht.
+  2. Die waagerechte Animation haengt an
+     `marquee-component:not([data-disabled]) .marquee__wrapper` und ist
+     spezifischer als eine reine Klassenregel.
+  3. `section.blocks` ist bei diesem Block-System leer, die Zeilen lassen sich
+     in Liquid nicht zaehlen. Das Skript zaehlt sie im Browser.
+  4. Text-Bloecke geben neben ihrem Text auch <style>- und <script>-Elemente
+     aus (eigene Farb- und Verlauf-Einstellungen). Da der Text-Block keine
+     eigene Huelle hat, landen sie als Geschwister zwischen den Zeilen und
+     wurden als leere Takte mitgezaehlt. Deshalb wird streng gefiltert.
+
+  Ausgeblendet werden die Zeilen erst, wenn das Skript uebernommen hat
+  (Klasse kokoro-ready). Faellt es aus, steht der Text einfach da.
+{%- endcomment -%}
+{%- if is_vertical -%}
+  {%- style -%}
+    marquee-component[data-kokoro-vaxis] {
+      overflow: hidden;
+    }
+
+    marquee-component[data-kokoro-vaxis] .marquee__wrapper {
+      animation: none !important;
+      transform: none !important;
+      display: block;
+      width: 100%;
+      white-space: normal;
+    }
+
+    marquee-component[data-kokoro-vaxis] .marquee__content {
+      display: block;
+      min-width: 0;
+    }
+
+    marquee-component[data-kokoro-vaxis] .marquee__repeated-items {
+      display: grid;
+      min-width: 0;
+      width: 100%;
+      justify-items: {{ section.settings.vertical_alignment_text }};
+    }
+
+    marquee-component[data-kokoro-vaxis].kokoro-ready .marquee__repeated-items > * {
+      grid-area: 1 / 1;
+      opacity: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      marquee-component[data-kokoro-vaxis] .marquee__repeated-items > * {
+        animation: none !important;
+      }
+      marquee-component[data-kokoro-vaxis].kokoro-ready .marquee__repeated-items > [data-kokoro-line='1'] {
+        opacity: 1;
+      }
+    }
+  {%- endstyle -%}
+
+  <script>
+    (function () {
+      function isLine(node) {
+        if (node.nodeType !== 1) return false;
+        var tag = node.tagName;
+        if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEMPLATE' || tag === 'LINK') return false;
+        if (node.hasAttribute('hidden')) return false;
+        // Eine Zeile hat sichtbaren Inhalt: Text oder ein Bild/Symbol.
+        if (node.textContent && node.textContent.trim().length) return true;
+        return !!node.querySelector('img, svg');
+      }
+
+      function build() {
+        try {
+          var roots = document.querySelectorAll('marquee-component[data-kokoro-vaxis]');
+
+          roots.forEach(function (root) {
+            var group = root.querySelector('.marquee__repeated-items');
+            if (!group) return;
+
+            var per = parseFloat(root.getAttribute('data-kokoro-per')) || 3;
+            var items = Array.prototype.filter.call(group.children, isLine);
+            if (!items.length) return;
+
+            var count = items.length;
+            var total = per * count;
+            var seg = 100 / count;
+            var name = 'kokoroVticker' + count;
+
+            var styleId = 'style-' + name;
+            if (!document.getElementById(styleId)) {
+              var style = document.createElement('style');
+              style.id = styleId;
+              style.textContent =
+                '@keyframes ' + name + '{' +
+                '0%{opacity:0;transform:translateY(110%)}' +
+                (seg * 0.16).toFixed(3) + '%{opacity:1;transform:translateY(0)}' +
+                (seg * 0.84).toFixed(3) + '%{opacity:1;transform:translateY(0)}' +
+                seg.toFixed(3) + '%{opacity:0;transform:translateY(-110%)}' +
+                '100%{opacity:0;transform:translateY(-110%)}}';
+              document.head.appendChild(style);
+            }
+
+            items.forEach(function (item, index) {
+              var delay = index * per + 's';
+              item.setAttribute('data-kokoro-line', String(index + 1));
+              if (item.dataset.kokoroSet === name + delay) return;
+              item.dataset.kokoroSet = name + delay;
+              item.style.animation = name + ' ' + total + 's cubic-bezier(0.16, 1, 0.3, 1) infinite';
+              item.style.animationDelay = delay;
+            });
+
+            root.classList.add('kokoro-ready');
+          });
+        } catch (error) {
+          /* Ohne Taktung bleiben die Zeilen sichtbar, statt zu verschwinden. */
+        }
+      }
+
+      build();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', build);
+      }
+
+      if (!window.kokoroVtickerObserver) {
+        var pending = null;
+        window.kokoroVtickerObserver = new MutationObserver(function () {
+          window.clearTimeout(pending);
+          pending = window.setTimeout(build, 80);
+        });
+        window.kokoroVtickerObserver.observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+        });
+      }
+    })();
+  </script>
+{%- endif -%}
+
+<div class="section-background color-{{ section.settings.color_scheme }}"></div>
+<marquee-component
+  class="section spacing-style gap-style color-{{ section.settings.color_scheme }}"
+  style="
+    {%- render 'spacing-style', settings: section.settings %};
+    {% render 'gap-style', value: gap_between_elements, name: 'marquee-gap' %}
+    --marquee-direction: {{ section.settings.movement_direction }};
+  "
+  data-speed-factor="{{ section.settings.speed_factor | default: 25 }}"
+  data-movement-direction="{{ section.settings.movement_direction }}"
+  {% if is_vertical %}
+    data-disabled="true"
+    data-kokoro-vaxis="true"
+    data-kokoro-per="{{ section.settings.line_duration | default: 3 }}"
+  {% endif %}
+>
+  <div
+    class="marquee__wrapper"
+    {% unless is_vertical %}ref="wrapper"{% endunless %}
+  >
+    <div
+      class="marquee__content"
+      {% unless is_vertical %}ref="content"{% endunless %}
+    >
+      <div
+        class="marquee__repeated-items"
+        {% unless is_vertical %}ref="marqueeItems[]"{% endunless %}
+      >
+        {% content_for 'blocks' %}
+      </div>
+    </div>
+  </div>
+</marquee-component>
+
+{% stylesheet %}
+  marquee-component {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .marquee__wrapper {
+    display: flex;
+    gap: var(--marquee-gap);
+    width: fit-content;
+    white-space: nowrap;
+  }
+
+  .marquee__content {
+    min-width: max-content;
+    display: flex;
+    gap: var(--marquee-gap);
+  }
+
+  .marquee__content :is(p, h1, h2, h3, h4, h5, h6) {
+    white-space: nowrap;
+  }
+
+  .marquee__content .marquee__repeated-items * {
+    max-width: none;
+  }
+
+  .marquee__repeated-items {
+    min-width: max-content;
+    display: flex;
+    gap: var(--marquee-gap);
+    align-items: center;
+    justify-content: center;
+  }
+
+  .marquee__repeated-items > * {
+    align-content: center;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    marquee-component:not([data-disabled]) .marquee__wrapper {
+      animation: marquee-motion var(--marquee-speed) linear infinite var(--marquee-direction);
+    }
+  }
+
+  @keyframes marquee-motion {
+    to {
+      transform: translate3d(calc(-50% - (var(--marquee-gap) / 2)), 0, 0);
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.marquee",
+  "disabled_on": {
+    "groups": ["footer"]
+  },
+  "blocks": [
+    {
+      "type": "text"
+    },
+    {
+      "type": "icon"
+    },
+    {
+      "type": "logo"
+    },
+    {
+      "type": "_divider"
+    }
+  ],
+  "settings": [
+    {
+      "type": "select",
+      "id": "motion_axis",
+      "label": "Bewegung",
+      "options": [
+        { "value": "horizontal", "label": "Seitlich laufend" },
+        { "value": "vertical", "label": "Von unten nach oben" }
+      ],
+      "default": "horizontal",
+      "info": "Bei „Von unten nach oben“ ist immer nur eine Zeile sichtbar. Sie kommt von unten, bleibt kurz stehen und verschwindet nach oben. Jede Zeile ist ein eigener Text-Block."
+    },
+    {
+      "type": "range",
+      "id": "line_duration",
+      "label": "Dauer pro Zeile",
+      "min": 1,
+      "max": 8,
+      "step": 1,
+      "unit": "s",
+      "default": 3,
+      "visible_if": "{{ section.settings.motion_axis == 'vertical' }}"
+    },
+    {
+      "type": "select",
+      "id": "vertical_alignment_text",
+      "label": "Ausrichtung",
+      "options": [
+        { "value": "start", "label": "Links" },
+        { "value": "center", "label": "Mittig" },
+        { "value": "end", "label": "Rechts" }
+      ],
+      "default": "center",
+      "visible_if": "{{ section.settings.motion_axis == 'vertical' }}"
+    },
+    {
+      "type": "select",
+      "id": "movement_direction",
+      "label": "t:settings.motion_direction",
+      "options": [
+        {
+          "value": "reverse",
+          "label": "t:options.forward"
+        },
+        {
+          "value": "normal",
+          "label": "t:options.reverse"
+        }
+      ],
+      "default": "normal",
+      "visible_if": "{{ section.settings.motion_axis == 'horizontal' }}"
+    },
+    {
+      "type": "range",
+      "id": "speed_factor",
+      "label": "t:settings.marquee_scroll_speed",
+      "info": "t:settings.marquee_scroll_speed_info",
+      "min": 3,
+      "max": 60,
+      "step": 1,
+      "default": 25,
+      "visible_if": "{{ section.settings.motion_axis == 'horizontal' }}"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:settings.color_scheme",
+      "default": "scheme-1"
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "gap_between_elements",
+      "label": "t:settings.gap",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 24,
+      "visible_if": "{{ section.settings.motion_axis == 'horizontal' }}"
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.marquee_section",
+      "category": "t:categories.text",
+      "blocks": {
+        "text": {
+          "type": "text",
+          "settings": {
+            "text": "t:html_defaults.make_things_better",
+            "type_preset": "custom",
+            "font": "var(--font-body--family)",
+            "font_size": "var(--font-size--h2)",
+            "line_height": "tight",
+            "letter_spacing": "tight",
+            "case": "none",
+            "wrap": "nowrap",
+            "width": "fit-content"
+          }
+        }
+      },
+      "block_order": ["text"]
+    }
+  ]
+}
+{% endschema %}

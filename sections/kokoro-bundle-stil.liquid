@@ -1,0 +1,449 @@
+{%- comment -%}
+  Unsichtbarer Abschnitt mit Einstellungen fuer die Bundle Deals.
+
+  Warum eigener Abschnitt: sections/bundle-deals.liquid ist 63 KB gross und
+  enthaelt die Rabatt- und Warenkorblogik. Fuer ein paar Regler wuerde die ganze
+  Datei neu geschrieben - ein Tippfehler dort legt den Verkauf lahm. Deshalb
+  stehen die Regler hier, und es wird nur CSS plus ein unsichtbares Element mit
+  data-Attributen ausgegeben, das assets/kokoro-bundle-shipping.js ausliest.
+
+  Einmal pro Seite einfuegen, an beliebiger Stelle. Im Shop unsichtbar.
+  Alle Groessen: 0 bedeutet "wie im Theme" - dann wird nichts ausgegeben.
+{%- endcomment -%}
+
+{%- assign s = section.settings -%}
+
+{%- style -%}
+  {%- if s.hide_instruction -%}
+    .bundle-deals__summary-instruction { display: none; }
+  {%- endif -%}
+
+  {%- if s.hide_progress or s.shipping_bar -%}
+    .bundle-deals__progress,
+    .bundle-deals__flat-progress,
+    .bundle-deals__tier-progress { display: none; }
+  {%- endif -%}
+
+  {%- if s.hide_disclaimer -%}
+    .bundle-deals__disclaimer { display: none; }
+  {%- endif -%}
+
+  {%- if s.price_position == 'right' -%}
+    .bundle-deals__checkout-button .add-to-cart-text { flex-direction: row-reverse; }
+  {%- else -%}
+    .bundle-deals__checkout-button .add-to-cart-text { flex-direction: row; }
+  {%- endif -%}
+
+  /* Versand-Fortschritt */
+  .kokoro-shipping {
+    margin-block: 8px 16px;
+  }
+
+  .kokoro-shipping__text {
+    margin: 0 0 8px;
+    font-size: {{ s.shipping_text_size | default: 15 }}px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .kokoro-shipping__track {
+    height: {{ s.shipping_bar_height | default: 8 }}px;
+    border-radius: 999px;
+    background: {{ s.shipping_track_color | default: '#ECECEC' }};
+    overflow: hidden;
+  }
+
+  .kokoro-shipping__fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+
+  @media screen and (min-width: 750px) {
+    {%- if s.size_heading > 0 -%}
+      .bundle-deals__header, .bundle-deals__header * { font-size: {{ s.size_heading }}px; }
+    {%- endif -%}
+    {%- if s.size_subtitle > 0 -%}
+      .bundle-deals__subtitle, .bundle-deals__subtitle * { font-size: {{ s.size_subtitle }}px; }
+    {%- endif -%}
+    {%- if s.size_card_title > 0 -%}
+      .bundle-product-card__title, .bundle-product-card__title a { font-size: {{ s.size_card_title }}px; }
+    {%- endif -%}
+    {%- if s.size_card_price > 0 -%}
+      .bundle-product-card__price, .bundle-product-card__price * { font-size: {{ s.size_card_price }}px; }
+    {%- endif -%}
+    {%- if s.size_card_button > 0 -%}
+      .bundle-product-card__add-button { font-size: {{ s.size_card_button }}px; }
+    {%- endif -%}
+    {%- if s.size_summary_heading > 0 -%}
+      .bundle-deals__summary-heading { font-size: {{ s.size_summary_heading }}px; }
+    {%- endif -%}
+    {%- if s.size_summary_text > 0 -%}
+      .bundle-deals__summary-instruction, .bundle-deals__summary-instruction * { font-size: {{ s.size_summary_text }}px; }
+    {%- endif -%}
+    {%- if s.size_total > 0 -%}
+      .bundle-deals__total, .bundle-deals__total * { font-size: {{ s.size_total }}px; }
+    {%- endif -%}
+    {%- if s.size_checkout > 0 -%}
+      .bundle-deals__checkout-button, .bundle-deals__checkout-button * { font-size: {{ s.size_checkout }}px; }
+    {%- endif -%}
+  }
+
+  @media screen and (max-width: 749px) {
+    {%- if s.m_size_heading > 0 -%}
+      .bundle-deals__header, .bundle-deals__header * { font-size: {{ s.m_size_heading }}px; }
+    {%- endif -%}
+    {%- if s.m_size_subtitle > 0 -%}
+      .bundle-deals__subtitle, .bundle-deals__subtitle * { font-size: {{ s.m_size_subtitle }}px; }
+    {%- endif -%}
+    {%- if s.m_size_card_title > 0 -%}
+      .bundle-product-card__title, .bundle-product-card__title a { font-size: {{ s.m_size_card_title }}px; }
+    {%- endif -%}
+    {%- if s.m_size_card_price > 0 -%}
+      .bundle-product-card__price, .bundle-product-card__price * { font-size: {{ s.m_size_card_price }}px; }
+    {%- endif -%}
+    {%- if s.m_size_card_button > 0 -%}
+      .bundle-product-card__add-button { font-size: {{ s.m_size_card_button }}px; }
+    {%- endif -%}
+    {%- if s.m_size_summary_heading > 0 -%}
+      .bundle-deals__summary-heading { font-size: {{ s.m_size_summary_heading }}px; }
+    {%- endif -%}
+    {%- if s.m_size_summary_text > 0 -%}
+      .bundle-deals__summary-instruction, .bundle-deals__summary-instruction * { font-size: {{ s.m_size_summary_text }}px; }
+    {%- endif -%}
+    {%- if s.m_size_total > 0 -%}
+      .bundle-deals__total, .bundle-deals__total * { font-size: {{ s.m_size_total }}px; }
+    {%- endif -%}
+    {%- if s.m_size_checkout > 0 -%}
+      .bundle-deals__checkout-button, .bundle-deals__checkout-button * { font-size: {{ s.m_size_checkout }}px; }
+    {%- endif -%}
+  }
+{%- endstyle -%}
+
+{%- if s.shipping_bar -%}
+  <div
+    data-kokoro-shipping-bar="true"
+    data-threshold="{{ s.shipping_threshold }}"
+    data-text-open="{{ s.shipping_text_open | escape }}"
+    data-text-done="{{ s.shipping_text_done | escape }}"
+    data-color="{{ s.shipping_color }}"
+    data-color-done="{{ s.shipping_color_done }}"
+    hidden
+  ></div>
+  <script src="{{ 'kokoro-bundle-shipping.js' | asset_url }}" defer></script>
+{%- endif -%}
+
+{% if request.design_mode %}
+  <div {{ section.shopify_attributes }} style="display:none"></div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Kokoro: Bundle-Stil",
+  "tag": "div",
+  "class": "kokoro-bundle-stil",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Einstellungen für den Abschnitt „Bundle deals“. Dieser Abschnitt ist im Shop unsichtbar – einmal pro Seite einfügen genügt. Bei allen Größen bedeutet 0: unverändert lassen."
+    },
+    {
+      "type": "header",
+      "content": "Versand-Fortschritt statt Rabatt"
+    },
+    {
+      "type": "checkbox",
+      "id": "shipping_bar",
+      "label": "Balken zeigt Weg zum kostenlosen Versand",
+      "default": false,
+      "info": "Ersetzt den Rabatt-Fortschritt. Gerechnet wird mit dem Gesamtpreis des Sets, wie im Warenkorb."
+    },
+    {
+      "type": "number",
+      "id": "shipping_threshold",
+      "label": "Ab welchem Betrag ist der Versand kostenlos?",
+      "default": 70,
+      "info": "In Euro. Muss zu deiner Versandeinstellung in Shopify passen."
+    },
+    {
+      "type": "text",
+      "id": "shipping_text_open",
+      "label": "Text, solange noch etwas fehlt",
+      "default": "Noch {betrag} bis zum kostenlosen Versand",
+      "info": "{betrag} wird durch den fehlenden Betrag ersetzt."
+    },
+    {
+      "type": "text",
+      "id": "shipping_text_done",
+      "label": "Text bei erreichtem Betrag",
+      "default": "Kostenloser Versand freigeschaltet"
+    },
+    {
+      "type": "color",
+      "id": "shipping_color",
+      "label": "Farbe des Balkens",
+      "default": "#5E887E"
+    },
+    {
+      "type": "color",
+      "id": "shipping_color_done",
+      "label": "Farbe bei erreichtem Betrag",
+      "default": "#00A650"
+    },
+    {
+      "type": "color",
+      "id": "shipping_track_color",
+      "label": "Farbe der Leiste dahinter",
+      "default": "#ECECEC"
+    },
+    {
+      "type": "range",
+      "id": "shipping_bar_height",
+      "label": "Höhe des Balkens",
+      "min": 4,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "shipping_text_size",
+      "label": "Schriftgröße des Hinweises",
+      "min": 10,
+      "max": 28,
+      "step": 1,
+      "unit": "px",
+      "default": 15
+    },
+    {
+      "type": "header",
+      "content": "Ausblenden"
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_instruction",
+      "label": "Hinweiszeile ausblenden",
+      "default": false,
+      "info": "Die Zeile über dem Fortschrittsbalken, z. B. „Add 3 to 3 products to proceed and Save 0%“."
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_progress",
+      "label": "Fortschrittsbalken ausblenden",
+      "default": false,
+      "info": "Beim Versand-Balken oben passiert das automatisch."
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_disclaimer",
+      "label": "Hinweis unter dem Kaufknopf ausblenden",
+      "default": false
+    },
+    {
+      "type": "select",
+      "id": "price_position",
+      "label": "Preis im Warenkorb-Knopf",
+      "options": [
+        { "value": "left", "label": "Links vom Text" },
+        { "value": "right", "label": "Rechts vom Text" }
+      ],
+      "default": "right"
+    },
+    {
+      "type": "header",
+      "content": "Schriftgrößen am Computer"
+    },
+    {
+      "type": "range",
+      "id": "size_heading",
+      "label": "Überschrift",
+      "min": 0,
+      "max": 72,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "size_subtitle",
+      "label": "Untertitel",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "size_card_title",
+      "label": "Produktname in der Karte",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "size_card_price",
+      "label": "Preis in der Karte",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "size_card_button",
+      "label": "Knopf in der Karte",
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "size_summary_heading",
+      "label": "Überschrift der Zusammenfassung",
+      "min": 0,
+      "max": 60,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "size_summary_text",
+      "label": "Hinweiszeile",
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "size_total",
+      "label": "Gesamtpreis",
+      "min": 0,
+      "max": 48,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "size_checkout",
+      "label": "Warenkorb-Knopf",
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "header",
+      "content": "Schriftgrößen auf dem Handy"
+    },
+    {
+      "type": "range",
+      "id": "m_size_heading",
+      "label": "Überschrift",
+      "min": 0,
+      "max": 56,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "m_size_subtitle",
+      "label": "Untertitel",
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "m_size_card_title",
+      "label": "Produktname in der Karte",
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "m_size_card_price",
+      "label": "Preis in der Karte",
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "m_size_card_button",
+      "label": "Knopf in der Karte",
+      "min": 0,
+      "max": 28,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "m_size_summary_heading",
+      "label": "Überschrift der Zusammenfassung",
+      "min": 0,
+      "max": 44,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "m_size_summary_text",
+      "label": "Hinweiszeile",
+      "min": 0,
+      "max": 28,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "m_size_total",
+      "label": "Gesamtpreis",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "m_size_checkout",
+      "label": "Warenkorb-Knopf",
+      "min": 0,
+      "max": 28,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "Kokoro: Bundle-Stil"
+    }
+  ]
+}
+{% endschema %}

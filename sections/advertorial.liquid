@@ -1,0 +1,1100 @@
+{% liquid
+  assign show_sidebar = section.settings.show_sidebar
+  assign sidebar_block = section.blocks | where: 'id', 'sidebar' | first
+  assign advert_multi_block = false
+  if section.blocks.size >= 2
+    assign advert_multi_block = true
+  endif
+%}
+
+<div class="section-background color-{{ section.settings.color_scheme }}"></div>
+<div
+  class="section section--{{ section.settings.section_width }} lumin-advert-section color-{{ section.settings.color_scheme }}{% if show_sidebar and advert_multi_block %} lumin-advert-section--two-column-desktop{% endif %}"
+  data-testid="lumin-advert"
+  style="
+    --lumin-advert-max-width: {{ section.settings.max_width }}px;
+    --lumin-advert-sidebar-width: {{ section.settings.sidebar_width }}px;
+    --lumin-advert-grid-gap: {{ section.settings.advert_column_gap | default: 40 }}px;
+  "
+  {% if request.visual_preview_mode %}
+    data-shopify-visual-preview
+  {% endif %}
+>
+  <div
+    class="
+      spacing-style
+      layout-panel-flex
+      layout-panel-flex--column
+      section-content-wrapper
+    "
+    style="
+      --flex-direction: column; --flex-wrap: nowrap; --flex-wrap-mobile: wrap;
+      {% render 'gap-style', value: 12 %}
+      --horizontal-alignment: flex-start; --vertical-alignment: flex-start; --vertical-alignment-mobile: flex-start;
+      {% render 'spacing-style', settings: section.settings %}
+    "
+  >
+    <div class="lumin-advert-wrapper">
+      <div
+        class="lumin-advert-container{% if show_sidebar %} lumin-advert-container--sidebar-on{% endif %}{% if show_sidebar and advert_multi_block %} lumin-advert-container--with-sidebar-layout{% endif %}"
+      >
+        {% content_for 'blocks' %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if sidebar_block and show_sidebar == false %}
+  {% unless request.design_mode %}
+    <style>
+      .lumin-advert-section #shopify-block-{{ sidebar_block.id }} {
+        display: none !important;
+      }
+    </style>
+  {% endunless %}
+{% endif %}
+
+{% stylesheet %}
+  .lumin-advert-section {
+    --lumin-advert-max-width: 1000px;
+    --lumin-advert-sidebar-width: 300px;
+    --lumin-advert-grid-gap: 40px;
+  }
+
+  .lumin-advert-wrapper {
+    max-width: var(--lumin-advert-max-width);
+    margin: 0 auto;
+    padding: 0 var(--page-margin);
+    display: block !important;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: clip;
+  }
+
+  /* Desktop two-column + sticky sidebar: clip on wrapper breaks sticky positioning */
+  @media screen and (min-width: 750px) {
+    .lumin-advert-section--two-column-desktop .lumin-advert-wrapper {
+      overflow-x: visible;
+    }
+  }
+
+  .lumin-advert-container {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--lumin-advert-grid-gap);
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    isolation: isolate;
+  }
+
+  .lumin-advert-container > * {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Nested blocks (e.g. video slider) live inside group flex; default min-width:auto prevents shrinking */
+  .lumin-advert-container .group-block-content {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Block wrappers + flex children: default min-width:auto lets Swiper exceed the column */
+  .lumin-advert-container .group-block-content > *,
+  .lumin-advert-container .group-block {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Stacked: sidebar below main (mobile default + when only one block) */
+  .lumin-advert-container--sidebar-on > :last-child:not(:only-child) {
+    max-width: var(--lumin-advert-sidebar-width);
+    align-self: flex-start;
+   /* border-top: 1px solid rgb(var(--color-border-rgb) / 0.35);*/
+  }
+
+  /* Desktop: main left, sidebar right (class from Liquid avoids :has() repaint cost on mobile) */
+  @media screen and (min-width: 750px) {
+    .lumin-advert-container--sidebar-on.lumin-advert-container--with-sidebar-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, var(--lumin-advert-sidebar-width));
+      gap: var(--lumin-advert-grid-gap);
+      align-items: start;
+    }
+
+    .lumin-advert-container--sidebar-on.lumin-advert-container--with-sidebar-layout > :not(:last-child) {
+      grid-column: 1;
+      grid-row: auto;
+      width: 100%;
+    }
+
+    .lumin-advert-container--sidebar-on.lumin-advert-container--with-sidebar-layout > :last-child {
+      grid-column: 2;
+      grid-row: 1 / -1;
+      width: 100%;
+      max-width: none;
+      align-self: start;
+     /* border-top: none;
+      border-left: 1px solid rgb(var(--color-border-rgb) / 0.35);
+      padding-left: var(--lumin-advert-grid-gap);*/
+      position: sticky;
+      top: calc(var(--header-group-height, 0px) + 20px);
+      height: fit-content;
+    }
+  }
+
+  @media (max-width: 749px) {
+    .lumin-advert-container {
+      gap: min(var(--lumin-advert-grid-gap), 32px);
+    }
+    .lumin-advert-wrapper {
+      padding: 0;
+    }
+
+    .lumin-advert-container--sidebar-on > :last-child:not(:only-child) {
+      max-width: none;
+      align-self: stretch;
+      position: static;
+      top: auto;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.advertorial",
+  "class": "section-wrapper",
+  "disabled_on": {
+    "groups": ["header"]
+  },
+  "blocks": [
+    {
+      "type": "group"
+    }
+  ],
+  "max_blocks": 2,
+  "settings": [
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:settings.color_scheme",
+      "default": "scheme-1"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_sidebar",
+      "label": "t:settings.show_sidebar",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "label": "t:settings.container_width",
+      "min": 600,
+      "max": 1600,
+      "step": 20,
+      "unit": "px",
+      "default": 1000
+    },
+    {
+      "type": "range",
+      "id": "sidebar_width",
+      "label": "t:settings.sidebar_width",
+      "min": 200,
+      "max": 400,
+      "step": 20,
+      "unit": "px",
+      "default": 300,
+      "visible_if": "{{ section.settings.show_sidebar }}"
+    },
+    {
+      "type": "range",
+      "id": "advert_column_gap",
+      "label": "t:settings.layout_gap",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 40,
+      "visible_if": "{{ section.settings.show_sidebar }}"
+    },
+    {
+      "type": "select",
+      "id": "section_width",
+      "label": "t:settings.section_width",
+      "options": [
+        {
+          "value": "page-width",
+          "label": "t:options.page"
+        },
+        {
+          "value": "full-width",
+          "label": "t:options.full"
+        }
+      ],
+      "default": "page-width"
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-start",
+      "label": "t:settings.left",
+      "min": 0,
+      "max": 60,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-end",
+      "label": "t:settings.right",
+      "min": 0,
+      "max": 60,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.advertorial",
+      "category": "t:categories.storytelling",
+      "settings": {
+        "color_scheme": "scheme-1",
+        "show_sidebar": true,
+        "max_width": 1000
+      },
+      "blocks": {
+        "main-content": {
+          "type": "group",
+          "name": "t:names.content",
+          "settings": {
+            "content_direction": "column",
+            "gap": 24
+          },
+          "blocks": {
+            "heading": {
+              "type": "text",
+              "name": "t:names.heading",
+              "settings": {
+                "text": "<p>Your Story Headline Goes Here</p>",
+                "type_preset": "h1"
+              }
+            },
+            "subheading": {
+              "type": "text",
+              "name": "t:names.caption",
+              "settings": {
+                "text": "<p>Add your subheadline or introduction text here.</p>",
+                "type_preset": "paragraph"
+              }
+            },
+            "image": {
+              "type": "image",
+              "name": "t:names.image",
+              "settings": {
+                "image_ratio": "adapt"
+              }
+            },
+            "content": {
+              "type": "text",
+              "name": "t:names.content",
+              "settings": {
+                "text": "<p>Share your brand story, product benefits, or editorial content. Use text, images, videos, and buttons to create an engaging lumin-advert layout.</p>",
+                "type_preset": "rte",
+                "max_width": "none"
+              }
+            },
+            "button": {
+              "type": "button",
+              "name": "t:names.button",
+              "settings": {
+                "label": "Shop now",
+                "link": "shopify://collections/all",
+                "style_class": "button"
+              }
+            }
+          },
+          "block_order": ["heading", "subheading", "image", "content", "button"]
+        },
+        "sidebar": {
+          "type": "group",
+          "name": "t:names.content",
+          "settings": {
+            "content_direction": "column",
+            "gap": 20
+          },
+          "blocks": {
+            "sidebar-image": {
+              "type": "image",
+              "name": "t:names.image",
+              "settings": {
+                "image_ratio": "portrait"
+              }
+            },
+            "sidebar-text": {
+              "type": "text",
+              "name": "t:names.content",
+              "settings": {
+                "text": "<p>Featured product or offer. Customize with theme blocks.</p>",
+                "type_preset": "paragraph"
+              }
+            },
+            "sidebar-cta": {
+              "type": "button",
+              "name": "t:names.button",
+              "settings": {
+                "label": "Shop now",
+                "link": "shopify://collections/all",
+                "style_class": "button",
+                "width": "custom",
+                "custom_width": 100
+              }
+            }
+          },
+          "block_order": ["sidebar-image", "sidebar-text", "sidebar-cta"]
+        }
+      },
+      "block_order": ["main-content", "sidebar"]
+    },
+    {
+      "name": "t:names.advertorial_single",
+      "category": "t:categories.storytelling",
+      "settings": {
+        "color_scheme": "scheme-2",
+        "show_sidebar": false,
+        "max_width": 800
+      },
+      "blocks": {
+        "main-content": {
+          "type": "group",
+          "name": "t:names.content",
+          "settings": {
+            "content_direction": "column",
+            "gap": 24
+          },
+          "blocks": {
+            "heading": {
+              "type": "text",
+              "name": "t:names.heading",
+              "settings": {
+                "text": "<p>Editorial Content</p>",
+                "type_preset": "h2"
+              }
+            },
+            "content": {
+              "type": "text",
+              "name": "t:names.content",
+              "settings": {
+                "text": "<p>Create compelling editorial-style content with theme blocks. Add text, images, videos, and more.</p>",
+                "type_preset": "rte"
+              }
+            }
+          },
+          "block_order": ["heading", "content"]
+        }
+      },
+      "block_order": ["main-content"]
+    },
+    {
+      "name": "t:names.advertorial_skincare",
+      "category": "t:categories.storytelling",
+      "settings": {
+        "color_scheme": "scheme-1",
+        "show_sidebar": true,
+        "max_width": 1000,
+        "sidebar_width": 280,
+        "advert_column_gap": 40,
+        "padding-block-start": 40,
+        "padding-block-end": 40
+      },
+      "blocks": {
+        "main-content": {
+          "type": "group",
+          "name": "t:names.group",
+          "settings": {
+            "content_direction": "column",
+            "gap": 20,
+            "width": "fill",
+            "height": "fit",
+            "inherit_color_scheme": true,
+            "border": "none"
+          },
+          "blocks": {
+            "label": {
+              "type": "text",
+              "name": "t:names.caption",
+              "settings": {
+                "text": "<p>ADVERTORIAL</p>",
+                "width": "fit-content",
+                "type_preset": "custom",
+                "font": "var(--font-body--family)",
+                "font_size": "0.75rem",
+                "letter_spacing": "loose",
+                "case": "uppercase",
+                "color_mode": "custom",
+                "custom_text_color": "#8a7a72"
+              }
+            },
+            "headline": {
+              "type": "text",
+              "name": "t:names.heading",
+              "settings": {
+                "text": "<h2>7 Reasons Why This New Age-Defying Serum Is Taking the Skincare World By Storm in 2024</h2>",
+                "width": "100%",
+                "max_width": "none",
+                "alignment": "left",
+                "type_preset": "custom",
+                "font": "custom_font",
+                "custom_typography_font": "instrument_serif_n4",
+                "enable_bold_typography_font": false,
+                "enable_italic_typography_font": false,
+                "font_size": "3rem",
+                "line_height": "tight",
+                "letter_spacing": "tight",
+                "case": "none",
+                "wrap": "pretty",
+                "color_mode": "default",
+                "color": "var(--color-foreground)"
+              }
+            },
+            "byline": {
+              "type": "text",
+              "name": "t:names.caption",
+              "settings": {
+                "text": "<p>By Jessica M. · Last updated Jan 1, 2024</p>",
+                "width": "fit-content",
+                "type_preset": "custom",
+                "font": "var(--font-body--family)",
+                "font_size": "0.875rem",
+                "color_mode": "custom",
+                "custom_text_color": "#6b6b6b"
+              }
+            },
+            "summary": {
+              "type": "text",
+              "name": "t:names.content",
+              "settings": {
+                "text": "<p><strong>Summary:</strong> We are introducing RenewLift™ Age-Defying Serum — a barrier-first formula designed for fast absorption, peptide support, and multi-area use on face, neck, and décolleté.</p>",
+                "width": "100%",
+                "max_width": "none",
+                "alignment": "left",
+                "type_preset": "paragraph",
+                "background": true,
+                "background_color": "#f8f3f0",
+                "corner_radius": 10,
+                "padding-block-start": 16,
+                "padding-block-end": 16,
+                "padding-inline-start": 18,
+                "padding-inline-end": 18
+              }
+            },
+            "hero-image": {
+              "type": "image",
+              "name": "t:names.image",
+              "settings": {
+                "image_ratio": "adapt",
+                "width": "fill",
+                "border_radius": 8
+              }
+            },
+            "reason-1-heading": {
+              "type": "text",
+              "name": "t:names.heading",
+              "settings": {
+                "text": "<h3>1. Ultra-Fast Absorption</h3>",
+                "width": "100%",
+                "max_width": "none",
+                "alignment": "left",
+                "type_preset": "custom",
+                "font": "custom_font",
+                "custom_typography_font": "instrument_serif_n4",
+                "enable_bold_typography_font": false,
+                "enable_italic_typography_font": false,
+                "font_size": "3rem",
+                "line_height": "tight",
+                "letter_spacing": "tight",
+                "case": "none",
+                "wrap": "pretty",
+                "color_mode": "default",
+                "color": "var(--color-foreground)"
+              }
+            },
+            "reason-1-body": {
+              "type": "text",
+              "name": "t:names.content",
+              "settings": {
+                "text": "<p>Most serums sit on the surface. RenewLift™ is engineered to absorb quickly, leaving skin soft — never sticky — so you can layer moisturizer or makeup right away.</p>",
+                "width": "100%",
+                "max_width": "none",
+                "type_preset": "paragraph"
+              }
+            },
+            "feature-peptide": {
+              "type": "group",
+              "name": "t:names.image_with_text",
+              "settings": {
+                "content_direction": "row",
+                "vertical_on_mobile": true,
+                "horizontal_alignment": "flex-start",
+                "vertical_alignment": "center",
+                "gap": 24,
+                "width": "fill",
+                "height": "fit",
+                "inherit_color_scheme": true,
+                "border": "none"
+              },
+              "blocks": {
+                "image": {
+                  "type": "image",
+                  "settings": {
+                    "image_ratio": "square",
+                    "width": "fill",
+                    "width_mobile": "fill",
+                    "border_radius": 8
+                  }
+                },
+                "text": {
+                  "type": "text",
+                  "name": "t:names.text",
+                  "settings": {
+                    "text": "<h4>Precisely Balanced Peptide Complex</h4><p>Signal peptides help support firmer-looking, smoother-feeling skin over time.</p>",
+                    "width": "100%",
+                    "max_width": "none",
+                    "alignment": "left",
+                    "type_preset": "rte"
+                  }
+                }
+              },
+              "block_order": ["image", "text"]
+            },
+            "feature-nourishes": {
+              "type": "group",
+              "name": "t:names.image_with_text",
+              "settings": {
+                "content_direction": "row",
+                "vertical_on_mobile": true,
+                "horizontal_alignment": "flex-start",
+                "vertical_alignment": "center",
+                "gap": 24,
+                "width": "fill",
+                "height": "fit",
+                "inherit_color_scheme": true,
+                "border": "none"
+              },
+              "blocks": {
+                "text": {
+                  "type": "text",
+                  "name": "t:names.text",
+                  "settings": {
+                    "text": "<h4>Nourishes Skin & Boosts Radiance</h4><p>Lightweight hydration and antioxidants help skin look refreshed and more even-toned.</p>",
+                    "width": "100%",
+                    "max_width": "none",
+                    "alignment": "left",
+                    "type_preset": "rte"
+                  }
+                },
+                "image": {
+                  "type": "image",
+                  "settings": {
+                    "image_ratio": "square",
+                    "width": "fill",
+                    "width_mobile": "fill",
+                    "border_radius": 8
+                  }
+                }
+              },
+              "block_order": ["text", "image"]
+            },
+            "reason-2-heading": {
+              "type": "text",
+              "name": "t:names.heading",
+              "settings": {
+                "text": "<h3>2. A Precisely Balanced Peptide Complex</h3>",
+                "width": "100%",
+                "max_width": "none",
+                "alignment": "left",
+                "type_preset": "custom",
+                "font": "custom_font",
+                "custom_typography_font": "instrument_serif_n4",
+                "enable_bold_typography_font": false,
+                "enable_italic_typography_font": false,
+                "font_size": "3rem",
+                "line_height": "tight",
+                "letter_spacing": "tight",
+                "case": "none",
+                "wrap": "pretty",
+                "color_mode": "default",
+                "color": "var(--color-foreground)"
+              }
+            },
+            "reason-2-body": {
+              "type": "text",
+              "name": "t:names.content",
+              "settings": {
+                "text": "<p>Peptides are the messengers of healthy-looking skin. This complex is calibrated to support elasticity and a smoother-looking texture — without harsh actives.</p>",
+                "width": "100%",
+                "max_width": "none",
+                "type_preset": "paragraph"
+              }
+            },
+            "reason-2-image": {
+              "type": "image",
+              "name": "t:names.image",
+              "settings": {
+                "image_ratio": "adapt",
+                "width": "fill",
+                "border_radius": 8
+              }
+            },
+            "reason-3-heading": {
+              "type": "text",
+              "name": "t:names.heading",
+              "settings": {
+                "text": "<h3>3. Barrier-First Hydration</h3>",
+                "width": "100%",
+                "max_width": "none",
+                "alignment": "left",
+                "type_preset": "custom",
+                "font": "custom_font",
+                "custom_typography_font": "instrument_serif_n4",
+                "enable_bold_typography_font": false,
+                "enable_italic_typography_font": false,
+                "font_size": "3rem",
+                "line_height": "tight",
+                "letter_spacing": "tight",
+                "case": "none",
+                "wrap": "pretty",
+                "color_mode": "default",
+                "color": "var(--color-foreground)"
+              }
+            },
+            "reason-3-body": {
+              "type": "text",
+              "name": "t:names.content",
+              "settings": {
+                "text": "<p>Multi-weight hyaluronic acid helps draw in moisture at multiple levels, supporting a plump, comfortable feel that lasts through the day.</p>",
+                "width": "100%",
+                "max_width": "none",
+                "type_preset": "paragraph"
+              }
+            },
+            "reason-4-heading": {
+              "type": "text",
+              "name": "t:names.heading",
+              "settings": {
+                "text": "<h3>4. Gentle Enough for Sensitive Skin</h3>",
+                "width": "100%",
+                "max_width": "none",
+                "alignment": "left",
+                "type_preset": "custom",
+                "font": "custom_font",
+                "custom_typography_font": "instrument_serif_n4",
+                "enable_bold_typography_font": false,
+                "enable_italic_typography_font": false,
+                "font_size": "3rem",
+                "line_height": "tight",
+                "letter_spacing": "tight",
+                "case": "none",
+                "wrap": "pretty",
+                "color_mode": "default",
+                "color": "var(--color-foreground)"
+              }
+            },
+            "reason-4-body": {
+              "type": "text",
+              "name": "t:names.content",
+              "settings": {
+                "text": "<p>No added fragrance, no drying alcohols, and a calm formula profile — so you get results without the irritation cycle.</p>",
+                "width": "100%",
+                "max_width": "none",
+                "type_preset": "paragraph"
+              }
+            },
+            "countdown-1": {
+              "type": "countdown-timer",
+              "name": "Countdown timer",
+              "settings": {
+                "end_date": "2027-02-15 23:59:59",
+                "expired_behavior": "show_text",
+                "expired_text": "Sale ended",
+                "width": "100%",
+                "timer_style": "default",
+                "layout_style": "full",
+                "segment_background": "#2b2b2b",
+                "segment_background_opacity": 100,
+                "segment_border_radius": 8,
+                "heading": "LIMITED TIME OFFER",
+                "text_before": "SALE ENDS",
+                "heading_size": 18,
+                "text_size": 22,
+                "label_size": 11,
+                "weight": "700",
+                "show_days": true,
+                "background_color": "#f8f3f0",
+                "number_color": "#ffffff",
+                "border": "none",
+                "show_labels": true,
+                "label_color": "#ffffff",
+                "colon_color": "#2b2b2b",
+                "label_days": "Days",
+                "label_hours": "Hrs",
+                "label_minutes": "Min",
+                "label_seconds": "Sec",
+                "padding-block-start": 12,
+                "padding-block-end": 12,
+                "padding-inline-start": 12,
+                "padding-inline-end": 12
+              }
+            },
+            "promo-1": {
+              "type": "promo-cta-card",
+              "name": "t:sections.promo-cta-card.name",
+              "settings": {
+                "show_badge": true,
+                "badge_text": "Verified purchase rating 4.9",
+                "show_reviews": true,
+                "star_count": 5,
+                "review_label": "12,740+ reviews",
+                "headline": "Smoother, better-hydrated looking skin with RenewLift™ Age-Defying Serum",
+                "discount_line": "50% OFF",
+                "button_label": "GET 50% OFF →",
+                "button_link": "shopify://collections/all",
+                "footnote": "Wait-list is currently 1.2M and growing fast!",
+                "image_position": "right",
+                "mobile_image_first": true,
+                "accent_color": "#a67c66",
+                "border_color": "#e8ddd6",
+                "star_color": "#c9a227",
+                "heading_color": "#333333",
+                "muted_text_color": "#666666",
+                "badge_text_color": "#ffffff",
+                "button_text_color": "#ffffff",
+                "card_background": "#ffffff",
+                "border_radius": 12,
+                "button_radius": 8
+              }
+            },
+            "reason-5-heading": {
+              "type": "text",
+              "name": "t:names.heading",
+              "settings": {
+                "text": "<h3>5. Multi-Use: Face, Neck & Décolleté</h3>",
+                "width": "100%",
+                "max_width": "none",
+                "alignment": "left",
+                "type_preset": "custom",
+                "font": "custom_font",
+                "custom_typography_font": "instrument_serif_n4",
+                "enable_bold_typography_font": false,
+                "enable_italic_typography_font": false,
+                "font_size": "3rem",
+                "line_height": "tight",
+                "letter_spacing": "tight",
+                "case": "none",
+                "wrap": "pretty",
+                "color_mode": "default",
+                "color": "var(--color-foreground)"
+              }
+            },
+            "reason-5-body": {
+              "type": "text",
+              "name": "t:names.content",
+              "settings": {
+                "text": "<p>The areas that show age first deserve the same care. Use one serum from face to neck and chest for a consistent, polished look.</p>",
+                "width": "100%",
+                "max_width": "none",
+                "type_preset": "paragraph"
+              }
+            },
+            "reason-5-image": {
+              "type": "image",
+              "name": "t:names.image",
+              "settings": {
+                "image_ratio": "adapt",
+                "width": "fill",
+                "border_radius": 8
+              }
+            },
+            "reason-6-heading": {
+              "type": "text",
+              "name": "t:names.heading",
+              "settings": {
+                "text": "<h3>6. An Airless Dropper That Protects Potency</h3>",
+                "width": "100%",
+                "max_width": "none",
+                "alignment": "left",
+                "type_preset": "custom",
+                "font": "custom_font",
+                "custom_typography_font": "instrument_serif_n4",
+                "enable_bold_typography_font": false,
+                "enable_italic_typography_font": false,
+                "font_size": "3rem",
+                "line_height": "tight",
+                "letter_spacing": "tight",
+                "case": "none",
+                "wrap": "pretty",
+                "color_mode": "default",
+                "color": "var(--color-foreground)"
+              }
+            },
+            "reason-6-body": {
+              "type": "text",
+              "name": "t:names.content",
+              "settings": {
+                "text": "<p>Active ingredients degrade when exposed to air and light. The airless dropper helps keep every dose fresher and more effective.</p>",
+                "width": "100%",
+                "max_width": "none",
+                "type_preset": "paragraph"
+              }
+            },
+            "reason-7-heading": {
+              "type": "text",
+              "name": "t:names.heading",
+              "settings": {
+                "text": "<h3>7. Clean Formula With a Conscience</h3>",
+                "width": "100%",
+                "max_width": "none",
+                "alignment": "left",
+                "type_preset": "custom",
+                "font": "custom_font",
+                "custom_typography_font": "instrument_serif_n4",
+                "enable_bold_typography_font": false,
+                "enable_italic_typography_font": false,
+                "font_size": "3rem",
+                "line_height": "tight",
+                "letter_spacing": "tight",
+                "case": "none",
+                "wrap": "pretty",
+                "color_mode": "default",
+                "color": "var(--color-foreground)"
+              }
+            },
+            "reason-7-body": {
+              "type": "text",
+              "name": "t:names.content",
+              "settings": {
+                "text": "<p>Vegan, cruelty-free, and free from unnecessary fillers — so you can feel good about what you put on your skin every morning and night.</p>",
+                "width": "100%",
+                "max_width": "none",
+                "type_preset": "paragraph"
+              }
+            },
+            "countdown-2": {
+              "type": "countdown-timer",
+              "name": "Countdown timer",
+              "settings": {
+                "end_date": "2027-02-15 23:59:59",
+                "expired_behavior": "show_text",
+                "expired_text": "Sale ended",
+                "width": "100%",
+                "timer_style": "default",
+                "layout_style": "full",
+                "segment_background": "#2b2b2b",
+                "segment_background_opacity": 100,
+                "segment_border_radius": 8,
+                "heading": "LIMITED TIME OFFER",
+                "text_before": "SALE ENDS",
+                "heading_size": 18,
+                "text_size": 22,
+                "label_size": 11,
+                "weight": "700",
+                "show_days": true,
+                "background_color": "#f8f3f0",
+                "number_color": "#ffffff",
+                "border": "none",
+                "show_labels": true,
+                "label_color": "#ffffff",
+                "colon_color": "#2b2b2b",
+                "label_days": "Days",
+                "label_hours": "Hrs",
+                "label_minutes": "Min",
+                "label_seconds": "Sec",
+                "padding-block-start": 12,
+                "padding-block-end": 12,
+                "padding-inline-start": 12,
+                "padding-inline-end": 12
+              }
+            },
+            "promo-2": {
+              "type": "promo-cta-card",
+              "name": "t:sections.promo-cta-card.name",
+              "settings": {
+                "show_badge": true,
+                "badge_text": "Verified purchase rating 4.9",
+                "show_reviews": true,
+                "star_count": 5,
+                "review_label": "12,740+ reviews",
+                "headline": "Smoother, better-hydrated looking skin with RenewLift™ Age-Defying Serum",
+                "discount_line": "50% OFF",
+                "button_label": "GET OFFER NOW →",
+                "button_link": "shopify://collections/all",
+                "footnote": "Free shipping on all orders over $50",
+                "image_position": "left",
+                "mobile_image_first": true,
+                "accent_color": "#a67c66",
+                "border_color": "#e8ddd6",
+                "star_color": "#c9a227",
+                "heading_color": "#333333",
+                "muted_text_color": "#666666",
+                "badge_text_color": "#ffffff",
+                "button_text_color": "#ffffff",
+                "card_background": "#ffffff",
+                "border_radius": 12,
+                "button_radius": 8
+              }
+            },
+            "final-cta": {
+              "type": "button",
+              "name": "t:names.button",
+              "settings": {
+                "label": "Try RenewLift™ now",
+                "link": "shopify://collections/all",
+                "style_class": "button",
+                "width": "custom",
+                "custom_width": 100
+              }
+            },
+            "disclosure": {
+              "type": "text",
+              "name": "t:names.caption",
+              "settings": {
+                "text": "<p>Advertising disclosure: this page contains affiliate links and sponsored product mentions. Results may vary. Always patch-test new skincare products.</p>",
+                "width": "100%",
+                "max_width": "none",
+                "type_preset": "custom",
+                "font": "var(--font-body--family)",
+                "font_size": "0.75rem",
+                "color_mode": "custom",
+                "custom_text_color": "#888888"
+              }
+            }
+          },
+          "block_order": [
+            "label",
+            "headline",
+            "byline",
+            "summary",
+            "hero-image",
+            "reason-1-heading",
+            "reason-1-body",
+            "feature-peptide",
+            "feature-nourishes",
+            "reason-2-heading",
+            "reason-2-body",
+            "reason-2-image",
+            "reason-3-heading",
+            "reason-3-body",
+            "reason-4-heading",
+            "reason-4-body",
+            "countdown-1",
+            "promo-1",
+            "reason-5-heading",
+            "reason-5-body",
+            "reason-5-image",
+            "reason-6-heading",
+            "reason-6-body",
+            "reason-7-heading",
+            "reason-7-body",
+            "countdown-2",
+            "promo-2",
+            "final-cta",
+            "disclosure"
+          ]
+        },
+        "sidebar": {
+          "type": "group",
+          "name": "t:names.content",
+          "settings": {
+            "content_direction": "column",
+            "gap": 14,
+            "width": "fill",
+            "height": "fit",
+            "inherit_color_scheme": true,
+            "border": "solid",
+            "border_width": 1,
+            "border_opacity": 100,
+            "border_radius": 10,
+            "padding-block-start": 16,
+            "padding-block-end": 16,
+            "padding-inline-start": 16,
+            "padding-inline-end": 16
+          },
+          "blocks": {
+            "sidebar-image": {
+              "type": "image",
+              "name": "t:names.image",
+              "settings": {
+                "image_ratio": "portrait",
+                "width": "fill",
+                "border_radius": 8
+              }
+            },
+            "sidebar-review": {
+              "type": "short-review-block",
+              "name": "Lumin Review",
+              "settings": {
+                "lrw_text": "Wait-list: 1.2M+ | Rating: 4.8/5",
+                "text_size": 13,
+                "star_style": "star",
+                "star_size": 0.7,
+                "star_rating": 4.5,
+                "lrw_star_color": "#c54350",
+                "lrw_color": "#333333"
+              }
+            },
+            "sidebar-text": {
+              "type": "text",
+              "name": "t:names.content",
+              "settings": {
+                "text": "<p>Featured product or offer. Customize with theme blocks.</p>",
+                "type_preset": "paragraph"
+              }
+            },
+            "sidebar-cta": {
+              "type": "button",
+              "name": "t:names.button",
+              "settings": {
+                "label": "Try it now",
+                "link": "shopify://collections/all",
+                "style_class": "button",
+                "width": "custom",
+                "custom_width": 100
+              }
+            }
+          },
+          "block_order": ["sidebar-image", "sidebar-review", "sidebar-text", "sidebar-cta"]
+        }
+      },
+      "block_order": ["main-content", "sidebar"]
+    }
+  ]
+}
+{% endschema %}

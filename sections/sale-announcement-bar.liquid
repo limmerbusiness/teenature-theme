@@ -1,0 +1,514 @@
+{%- liquid
+  assign s = section.settings
+  assign product = s.product
+  assign sale_title = s.sale_title
+  assign sale_title_plain = sale_title | strip_html | strip
+  assign show_timer = s.show_timer
+  assign show_prices = s.show_prices
+  assign show_icon = s.show_icon
+  assign timer_suffix_plain = s.timer_suffix | strip_html | strip
+
+  assign month_str = s.end_month | prepend: '00' | slice: -2, 2
+  assign day_str = s.end_day | prepend: '00' | slice: -2, 2
+  assign hour_str = s.end_hour | prepend: '00' | slice: -2, 2
+  assign minute_str = s.end_minute | prepend: '00' | slice: -2, 2
+  assign end_date = s.end_year | append: '-' | append: month_str | append: '-' | append: day_str | append: ' ' | append: hour_str | append: ':' | append: minute_str | append: ':00'
+
+  assign has_content = false
+  if sale_title_plain != blank or show_timer or show_prices and product != blank
+    assign has_content = true
+  endif
+
+  if request.visual_preview_mode and product == blank
+    assign product = collections.all.products.first
+  endif
+
+  if product != blank
+    assign variant = product.selected_or_first_available_variant
+    assign compare_price = variant.compare_at_price
+    assign sale_price = variant.price
+  endif
+
+  assign link_url = s.link
+  if link_url == blank and product != blank
+    assign link_url = product.url
+  endif
+-%}
+
+{%- if has_content -%}
+  <aside
+    class="sale-announcement-bar sale-announcement-bar--{{ section.id }}"
+    style="
+      --sab-gradient-start: {{ s.gradient_color_1 }};
+      --sab-gradient-end: {{ s.gradient_color_2 }};
+      --sab-text-color: {{ s.text_color }};
+      --sab-timer-color: {{ s.timer_color }};
+      --sab-timer-weight: {% if s.timer_bold %}700{% else %}inherit{% endif %};
+      --sab-price-color: {{ s.price_color }};
+      --sab-price-weight: {% if s.price_bold %}700{% else %}inherit{% endif %};
+      --sab-font-size: {{ s.font_size }}px;
+      --sab-padding-block: {{ s.padding_block }}px;
+      --sab-padding-inline: {{ s.padding_inline }}px;
+    "
+    data-expired-behavior="{{ s.expired_behavior }}"
+    {{ section.shopify_attributes }}
+  >
+    <div class="sale-announcement-bar__inner">
+      {%- if show_icon -%}
+        <span class="sale-announcement-bar__icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" focusable="false">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-11.5a.75.75 0 0 0-1.5 0v4.25a.75.75 0 0 0 .22.53l2.25 2.25a.75.75 0 1 0 1.06-1.06l-2.03-2.03V6.5Z" clip-rule="evenodd"/>
+          </svg>
+        </span>
+      {%- endif -%}
+
+      <p class="sale-announcement-bar__text">
+        {%- if sale_title_plain != blank -%}
+          <span class="sale-announcement-bar__title">{{ sale_title }}</span>
+        {%- endif -%}
+
+        {%- if show_prices and product != blank -%}
+          {%- if sale_title_plain != blank -%}
+            <span class="sale-announcement-bar__separator" aria-hidden="true">&mdash;</span>
+          {%- endif -%}
+          <span class="sale-announcement-bar__pricing">
+            {%- if compare_price != blank and compare_price > sale_price -%}
+              <span class="sale-announcement-bar__compare-price">{{ compare_price | money }}</span>
+            {%- endif -%}
+            <span class="sale-announcement-bar__now-label">{{ s.now_label }}</span>
+            <span class="sale-announcement-bar__sale-price">{{ sale_price | money }}</span>
+          </span>
+        {%- endif -%}
+
+        {%- if show_timer -%}
+          {%- if sale_title_plain != blank or show_prices and product != blank -%}
+            <span class="sale-announcement-bar__separator" aria-hidden="true">&mdash;</span>
+          {%- endif -%}
+          <span
+            class="sale-announcement-bar__timer"
+            data-sale-announcement-timer
+            data-end="{{ end_date }}"
+            data-expired-behavior="{{ s.expired_behavior }}"
+          >
+            <span class="sale-announcement-bar__timer-value" data-timer-display>00:00:00</span>
+            {%- if timer_suffix_plain != blank -%}
+              <span class="sale-announcement-bar__timer-suffix">{{ s.timer_suffix }}</span>
+            {%- endif -%}
+          </span>
+          <span class="sale-announcement-bar__expired" data-timer-expired hidden>{{ s.expired_text }}</span>
+        {%- endif -%}
+      </p>
+
+      {%- if link_url != blank -%}
+        <a class="sale-announcement-bar__link" href="{{ link_url }}">
+          <span class="visually-hidden">{{ sale_title_plain | default: product.title | escape }}</span>
+        </a>
+      {%- endif -%}
+    </div>
+  </aside>
+{%- endif -%}
+
+{% stylesheet %}
+  .sale-announcement-bar {
+    position: relative;
+    width: 100%;
+    background: linear-gradient(to right, var(--sab-gradient-start), var(--sab-gradient-end));
+    color: var(--sab-text-color);
+    padding-block: var(--sab-padding-block);
+    padding-inline: var(--sab-padding-inline);
+  }
+
+  .sale-announcement-bar__inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    max-width: var(--page-width, 1200px);
+    margin-inline: auto;
+  }
+
+  .sale-announcement-bar__icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    width: calc(var(--sab-font-size) + 2px);
+    height: calc(var(--sab-font-size) + 2px);
+  }
+
+  .sale-announcement-bar__icon svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .sale-announcement-bar__text {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem 0.5rem;
+    margin: 0;
+    font-size: var(--sab-font-size);
+    line-height: 1.2;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sale-announcement-bar__separator {
+    opacity: 0.85;
+  }
+
+  .sale-announcement-bar__compare-price {
+    text-decoration: line-through;
+    opacity: 0.9;
+    margin-inline-end: 0.15rem;
+  }
+
+  .sale-announcement-bar__now-label {
+    margin-inline: 0.15rem;
+  }
+
+  .sale-announcement-bar__sale-price {
+    color: var(--sab-price-color);
+    font-weight: var(--sab-price-weight);
+  }
+
+  .sale-announcement-bar__timer {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    white-space: nowrap;
+  }
+
+  .sale-announcement-bar__timer-value {
+    color: var(--sab-timer-color);
+    font-weight: var(--sab-timer-weight);
+  }
+
+  .sale-announcement-bar__expired {
+    color: var(--sab-timer-color);
+  }
+
+  .sale-announcement-bar__link {
+    position: absolute;
+    inset: 0;
+  }
+
+  .sale-announcement-bar--expired .sale-announcement-bar__timer {
+    display: none;
+  }
+
+  .sale-announcement-bar--expired[data-expired-behavior="show_text"] .sale-announcement-bar__expired {
+    display: inline;
+  }
+
+  .sale-announcement-bar--hidden {
+    display: none;
+  }
+
+  @media screen and (max-width: 749px) {
+    .sale-announcement-bar__text {
+      font-size: calc(var(--sab-font-size) * 0.875);
+    }
+  }
+{% endstylesheet %}
+
+<script>
+  (function () {
+    if (window.__saleAnnouncementBarInit) {
+      if (window.__saleAnnouncementBarInitAll) window.__saleAnnouncementBarInitAll();
+      return;
+    }
+    window.__saleAnnouncementBarInit = true;
+
+    function pad(value) {
+      return String(value).padStart(2, '0');
+    }
+
+    function parseEndDate(value) {
+      if (!value || typeof value !== 'string') return null;
+      var date = new Date(value.trim());
+      return isNaN(date.getTime()) ? null : date;
+    }
+
+    function tick(timerEl) {
+      var end = parseEndDate(timerEl.getAttribute('data-end'));
+      if (!end) return false;
+
+      var bar = timerEl.closest('.sale-announcement-bar');
+      var displayEl = timerEl.querySelector('[data-timer-display]');
+      var expiredEl = bar ? bar.querySelector('[data-timer-expired]') : null;
+      var diff = end.getTime() - Date.now();
+
+      if (diff <= 0) {
+        var behavior = timerEl.getAttribute('data-expired-behavior') || 'show_text';
+        if (behavior === 'hide' && bar) {
+          bar.classList.add('sale-announcement-bar--hidden');
+        } else if (bar) {
+          bar.classList.add('sale-announcement-bar--expired');
+          if (expiredEl) {
+            expiredEl.hidden = false;
+          }
+        }
+        return true;
+      }
+
+      var totalHours = Math.floor(diff / (1000 * 60 * 60));
+      var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      var seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      if (displayEl) {
+        displayEl.textContent = pad(totalHours) + ':' + pad(minutes) + ':' + pad(seconds);
+      }
+      return false;
+    }
+
+    function initTimer(timerEl) {
+      if (timerEl.getAttribute('data-initialized') === 'true') return;
+      timerEl.setAttribute('data-initialized', 'true');
+
+      if (tick(timerEl)) return;
+
+      var interval = setInterval(function () {
+        if (tick(timerEl)) clearInterval(interval);
+      }, 1000);
+    }
+
+    function initAll() {
+      document.querySelectorAll('[data-sale-announcement-timer]').forEach(initTimer);
+    }
+
+    window.__saleAnnouncementBarInitAll = initAll;
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAll);
+    } else {
+      initAll();
+    }
+
+    document.addEventListener('shopify:section:load', initAll);
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Sale announcement bar",
+  "tag": "section",
+  "class": "sale-announcement-bar-section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "sale_title",
+      "label": "Sale title",
+      "default": "Founding Members Sale"
+    },
+    {
+      "type": "product",
+      "id": "product",
+      "label": "Product"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_prices",
+      "label": "Show product prices",
+      "default": true
+    },
+    {
+      "type": "inline_richtext",
+      "id": "now_label",
+      "label": "Price prefix",
+      "default": "now",
+      "info": "Shown before the sale price, e.g. \"now $299\""
+    },
+    {
+      "type": "url",
+      "id": "link",
+      "label": "Link",
+      "info": "Optional. Defaults to the selected product URL."
+    },
+    {
+      "type": "header",
+      "content": "Countdown timer"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_timer",
+      "label": "Show countdown timer",
+      "default": true
+    },
+    {
+      "type": "number",
+      "id": "end_year",
+      "label": "End year",
+      "default": 2026
+    },
+    {
+      "type": "select",
+      "id": "end_month",
+      "label": "End month",
+      "default": "12",
+      "options": [
+        { "value": "1", "label": "January" },
+        { "value": "2", "label": "February" },
+        { "value": "3", "label": "March" },
+        { "value": "4", "label": "April" },
+        { "value": "5", "label": "May" },
+        { "value": "6", "label": "June" },
+        { "value": "7", "label": "July" },
+        { "value": "8", "label": "August" },
+        { "value": "9", "label": "September" },
+        { "value": "10", "label": "October" },
+        { "value": "11", "label": "November" },
+        { "value": "12", "label": "December" }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "end_day",
+      "label": "End day",
+      "min": 1,
+      "max": 31,
+      "step": 1,
+      "default": 31
+    },
+    {
+      "type": "range",
+      "id": "end_hour",
+      "label": "End hour",
+      "min": 0,
+      "max": 23,
+      "step": 1,
+      "default": 23,
+      "unit": "h"
+    },
+    {
+      "type": "range",
+      "id": "end_minute",
+      "label": "End minute",
+      "min": 0,
+      "max": 59,
+      "step": 1,
+      "default": 59,
+      "unit": "m"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "timer_suffix",
+      "label": "Timer suffix",
+      "default": "left"
+    },
+    {
+      "type": "select",
+      "id": "expired_behavior",
+      "label": "When timer ends",
+      "default": "show_text",
+      "options": [
+        { "value": "show_text", "label": "Show expired message" },
+        { "value": "hide", "label": "Hide bar" }
+      ]
+    },
+    {
+      "type": "inline_richtext",
+      "id": "expired_text",
+      "label": "Expired message",
+      "default": "Sale ended",
+      "visible_if": "{{ section.settings.expired_behavior == 'show_text' }}"
+    },
+    {
+      "type": "header",
+      "content": "Appearance"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_icon",
+      "label": "Show clock icon",
+      "default": true
+    },
+    {
+      "type": "color",
+      "id": "gradient_color_1",
+      "label": "Gradient color (left)",
+      "default": "#8B7FD4"
+    },
+    {
+      "type": "color",
+      "id": "gradient_color_2",
+      "label": "Gradient color (right)",
+      "default": "#3B82F6"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "timer_color",
+      "label": "Timer color",
+      "default": "#FFFFFF",
+      "visible_if": "{{ section.settings.show_timer }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "timer_bold",
+      "label": "Bold timer",
+      "default": false,
+      "visible_if": "{{ section.settings.show_timer }}"
+    },
+    {
+      "type": "color",
+      "id": "price_color",
+      "label": "Price color",
+      "default": "#FFFFFF",
+      "visible_if": "{{ section.settings.show_prices }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "price_bold",
+      "label": "Bold price",
+      "default": false,
+      "visible_if": "{{ section.settings.show_prices }}"
+    },
+    {
+      "type": "range",
+      "id": "font_size",
+      "label": "Font size",
+      "min": 10,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "padding_block",
+      "label": "Vertical padding",
+      "min": 4,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 10
+    },
+    {
+      "type": "range",
+      "id": "padding_inline",
+      "label": "Horizontal padding",
+      "min": 8,
+      "max": 60,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    }
+  ],
+  "presets": [
+    {
+      "name": "Sale announcement bar",
+      "category": "Promotional"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,1903 @@
+{{ 'lumin-review.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign review_load = section.settings.review_load | default: 6
+  assign pagination_style = section.settings.pagination_style | default: 'load_more'
+  assign total_reviews = 0
+  assign show_all_reviews = false
+
+  if request.design_mode and section.settings.editing
+    assign show_all_reviews = true
+  endif
+
+  # Theme blocks report block.type as "@theme", and settings are empty when
+  # iterating section.blocks from the section. Identify reviews via block id.
+  for block in section.blocks
+    if block.type == 'review' or block.type == '_lumin-review' or block.id contains 'review_'
+      assign total_reviews = total_reviews | plus: 1
+    endif
+  endfor
+-%}
+
+{%- capture lr_review_block_order_json -%}
+[
+{%- assign lr_review_order_first = true -%}
+{%- for block in section.blocks -%}
+  {%- if block.type == 'review' or block.type == '_lumin-review' or block.id contains 'review_' -%}
+    {%- assign lr_block_key = block.id -%}
+    {%- unless block.id contains section.id -%}
+      {%- assign lr_block_key = section.id | append: '__' | append: block.id -%}
+    {%- endunless -%}
+    {%- unless lr_review_order_first -%},{%- endunless -%}
+    {{- lr_block_key | json -}}
+    {%- assign lr_review_order_first = false -%}
+  {%- endif -%}
+{%- endfor -%}
+]
+{%- endcapture -%}
+
+{%- capture lr_review_order_map_json -%}
+{
+{%- assign lr_review_map_first = true -%}
+{%- assign lr_review_map_index = 0 -%}
+{%- for block in section.blocks -%}
+  {%- if block.type == 'review' or block.type == '_lumin-review' or block.id contains 'review_' -%}
+    {%- assign lr_review_map_index = lr_review_map_index | plus: 1 -%}
+    {%- assign lr_block_key = block.id -%}
+    {%- unless block.id contains section.id -%}
+      {%- assign lr_block_key = section.id | append: '__' | append: block.id -%}
+    {%- endunless -%}
+    {%- unless lr_review_map_first -%},{%- endunless -%}
+    {{- lr_block_key | json -}}:{{- lr_review_map_index -}}
+    {%- assign lr_review_map_first = false -%}
+  {%- endif -%}
+{%- endfor -%}
+}
+{%- endcapture -%}
+
+{%- liquid
+  assign total_pages = total_reviews | plus: review_load | minus: 1 | divided_by: review_load
+
+  assign visible_reviews = total_reviews
+  unless show_all_reviews
+    if total_reviews > review_load
+      assign visible_reviews = review_load
+    endif
+  endunless
+
+  assign lr_columns_desk = section.settings.review_column_desk
+  assign lr_columns_tab = section.settings.review_column_tab
+  assign lr_columns_mobile = section.settings.review_column_mobile
+
+  if visible_reviews > 0 and visible_reviews < lr_columns_desk
+    assign lr_columns_desk = visible_reviews
+  endif
+  if visible_reviews > 0 and visible_reviews < lr_columns_tab
+    assign lr_columns_tab = visible_reviews
+  endif
+  if visible_reviews > 0 and visible_reviews < lr_columns_mobile
+    assign lr_columns_mobile = visible_reviews
+  endif
+
+  assign lr_has_multi_column = false
+  if section.settings.review_column_mobile > 1 or section.settings.review_column_tab > 1 or section.settings.review_column_desk > 1
+    assign lr_has_multi_column = true
+  endif
+
+  assign lr_desk_image_card = false
+  if section.settings.review_column_desk > 1 and section.settings.review_desk_image_card
+    assign lr_desk_image_card = true
+  endif
+
+  assign lr_show_load_preview = false
+  if pagination_style == 'load_more' and lr_has_multi_column and section.settings.show_load_more_fade
+    assign lr_show_load_preview = true
+  endif
+
+  assign lr_star_scale = section.settings.star_size | default: 0.7
+  assign lr_star_scale_top = section.settings.star_size_top | default: 1
+
+  capture lr_css_vars
+    echo '--padding-block-start: ' | append: section.settings.padding_top | append: 'px;'
+    echo '--padding-block-end: ' | append: section.settings.padding_bottom | append: 'px;'
+    echo '--lr-feature-color: ' | append: section.settings.feature_svg_color | append: ';'
+    echo '--lr-inactive-star-color: ' | append: section.settings.inactive_star_color | append: ';'
+    echo '--lr-star-scale-top: ' | append: lr_star_scale_top | append: ';'
+    echo '--lr-star-scale: ' | append: lr_star_scale | append: ';'
+    echo '--lr-border-radius: ' | append: section.settings.border_radius | append: 'px;'
+    echo '--lr-rw-border: ' | append: section.settings.rw_border | append: ';'
+    echo '--lr-columns-mobile: ' | append: lr_columns_mobile | append: ';'
+    echo '--lr-columns-tab: ' | append: lr_columns_tab | append: ';'
+    echo '--lr-columns-desk: ' | append: lr_columns_desk | append: ';'
+    echo '--lr-columns-active: ' | append: lr_columns_desk | append: ';'
+    echo '--lr-review-pd: ' | append: section.settings.review_pd | append: 'px;'
+    echo '--lr-review-pd-m: ' | append: section.settings.review_pd_m | append: 'px;'
+    echo '--lr-review-bg: ' | append: section.settings.review_bg | append: ';'
+    echo '--lr-rw-margin: ' | append: section.settings.rw_margin | append: 'px;'
+    echo '--lr-verify-color: ' | append: section.settings.section_bg3 | append: ';'
+    echo '--lr-verify-badge-fill: ' | append: section.settings.section_bg2 | append: ';'
+    echo '--lr-date-size: ' | append: section.settings.date_size | append: 'px;'
+    echo '--lr-block-name-size: ' | append: section.settings.block_name_size | append: 'px;'
+    echo '--lr-block-head-size: ' | append: section.settings.block_head_size | append: 'px;'
+    echo '--lr-block-text-size: ' | append: section.settings.block_text_size | append: 'px;'
+    echo '--lr-img-size: ' | append: section.settings.rw_img_size | append: 'px;'
+    echo '--lr-img-radius: ' | append: section.settings.rw_img_radius | append: 'px;'
+    echo '--lr-customer-image-size: ' | append: section.settings.customer_image_size | append: 'px;'
+    echo '--lr-customer-image-radius: ' | append: section.settings.customer_image_radius | append: 'px;'
+    echo '--lr-customer-initials-bg: ' | append: section.settings.customer_initials_bg | append: ';'
+    echo '--lr-customer-initials-color: ' | append: section.settings.customer_initials_color | append: ';'
+    echo '--lr-add-review-btn-bg: ' | append: section.settings.add_review_button_bg | append: ';'
+    echo '--lr-add-review-btn-text: ' | append: section.settings.add_review_button_text_color | append: ';'
+    echo '--lr-popup-customer-size: ' | append: section.settings.popup_customer_image_size | default: 60 | append: 'px;'
+    echo '--lr-product-image-radius: ' | append: section.settings.product_image_radius | default: 0 | append: 'px;'
+    echo '--lr-title-size: ' | append: section.settings.rw_title_size | append: 'px;'
+    echo '--lr-title-align: ' | append: section.settings.rw_title_alignment | append: ';'
+    echo '--lr-cta-heading-color: ' | append: section.settings.review_cta_heading_color | append: ';'
+    echo '--lr-cta-subtext-color: ' | append: section.settings.review_cta_subtext_color | append: ';'
+    echo '--lr-star-radius: ' | append: section.settings.star_radius | append: 'px;'
+    echo '--star-color: ' | append: section.settings.inactive_star_color | append: ';'
+    echo '--star-background: ' | append: section.settings.feature_svg_color | append: ';'
+    echo '--lr-fade-height: ' | append: section.settings.load_more_fade_height | default: 120 | append: 'px;'
+  endcapture
+-%}
+
+{%- style -%}
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+  }
+  @media screen and (min-width: 750px) {
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+{%- endstyle -%}
+
+{%- if section.settings.star_style == 'star_bg' or section.settings.star_style == 'star_bg_2' -%}
+  {%- style -%}
+    .lumin-review-section[data-section-id="{{ section.id }}"] .rating i {
+      border-color: {{ section.settings.inactive_star_color }};
+      background: {{ section.settings.inactive_star_color }};
+      border-radius: {{ section.settings.star_radius }}px;
+    }
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="1"] .star-1,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="2"] .star-1,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="2"] .star-2,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="3"] .star-1,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="3"] .star-2,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="3"] .star-3,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="4"] .star-1,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="4"] .star-2,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="4"] .star-3,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="4"] .star-4,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="5"] .star-1,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="5"] .star-2,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="5"] .star-3,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="5"] .star-4,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating="5"] .star-5 {
+      border-color: {{ section.settings.feature_svg_color }};
+      background: {{ section.settings.feature_svg_color }};
+    }
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="1.5"] .star-2,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="2.5"] .star-3,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="3.5"] .star-4,
+    .lumin-review-section[data-section-id="{{ section.id }}"] [data-rating^="4.5"] .star-5 {
+      border-left-color: {{ section.settings.feature_svg_color }};
+    }
+  {%- endstyle -%}
+{%- endif -%}
+
+{%- if request.design_mode -%}
+  <script src="{{ 'theme-editor.js' | asset_url }}" defer="defer"></script>
+{%- endif -%}
+
+<div class="section-background color-{{ section.settings.color_scheme }}" {% if section.settings.ancher_id != blank %}id="{{ section.settings.ancher_id }}"{% endif %}></div>
+{% render 'skip-to-content-link', href: '#lmReview-{{ section.id }}', text: 'accessibility.skip_to_reviews' %}
+
+<div
+  id="lmReview-{{ section.id }}"
+  class="section section--{{ section.settings.section_width | default: 'page' }} color-{{ section.settings.color_scheme }} lumin-review-section spacing-style gap-style{% if lr_desk_image_card %} lumin-review-section--image-card{% endif %}"
+  style="{{ lr_css_vars }}"
+  data-lumin-review
+  data-section-id="{{ section.id }}"
+  data-star-style="{{ section.settings.star_style }}"
+  role="region"
+  aria-labelledby="reviews-heading-{{ section.id }}"
+  {{ section.shopify_attributes }}
+>
+  {% render 'lumin-review-star-sprite', section: section %}
+  <script type="application/json" data-lumin-review-config>
+    {
+      "reviewLoad": {{ review_load }},
+      "totalReviews": {{ total_reviews }},
+      "totalPages": {{ total_pages }},
+      "paginationStyle": {{ pagination_style | json }},
+      "showLoadMoreFade": {{ section.settings.show_load_more_fade | default: true | json }},
+      "hasMultiColumn": {{ lr_has_multi_column | json }},
+      "maxColumnsDesk": {{ section.settings.review_column_desk }},
+      "maxColumnsTab": {{ section.settings.review_column_tab }},
+      "maxColumnsMobile": {{ section.settings.review_column_mobile }},
+      "minColumnWidth": 140,
+      "enablePopup": {{ section.settings.enable_review_popup | json }},
+      "showAddReviewButton": {{ section.settings.show_add_review_button | json }},
+      "showCountryFlags": {{ section.settings.show_country_flags | json }},
+      "showPopupProductInfo": {{ section.settings.show_popup_product_info | json }},
+      "showPopupHelpfulButtons": {{ section.settings.show_popup_helpful_buttons | json }},
+      "enableImageEnlarge": {{ section.settings.enable_image_enlarge | json }},
+      "featureColor": {{ section.settings.feature_svg_color | json }},
+      "inactiveColor": {{ section.settings.inactive_star_color | json }},
+      "starSpriteId": {{ 'lumin-star-' | append: section.id | json }},
+      "starHalfGradientId": {{ 'lumin-star-half-' | append: section.id | json }},
+      "popupImageQuality": {{ section.settings.popup_image_quality | default: '800' | json }},
+      "popupCustomerImageSize": {{ section.settings.popup_customer_image_size | default: 60 }},
+      "successTitle": {{ section.settings.success_message_title | default: 'Thank you for your review!' | json }},
+      "successBody": {{ section.settings.success_message_body | default: 'Your review has been submitted successfully.' | json }},
+      "successDuration": {{ section.settings.success_message_duration | default: 3 | times: 1000 }},
+      "successBg": {{ section.settings.success_message_bg | default: '#4CAF50' | json }},
+      "successText": {{ section.settings.success_message_text | default: '#ffffff' | json }},
+      "successFontSize": {{ section.settings.success_message_font_size | default: 16 | json }},
+      "sectionId": {{ section.id | json }},
+      "reviewBlockOrder": {{ lr_review_block_order_json | strip }},
+      "reviewOrder": {{ lr_review_order_map_json | strip }}
+    }
+  </script>
+
+  <div class="page-width">
+    <h2 id="reviews-heading-{{ section.id }}" class="rw-title">{{ section.settings.header_text }}</h2>
+
+    {%- if section.settings.show_top -%}
+      {%- liquid
+        assign top_rating_items = 'center'
+        if section.settings.top_rating_alignment == 'left'
+          assign top_rating_items = 'flex-start'
+        elsif section.settings.top_rating_alignment == 'right'
+          assign top_rating_items = 'flex-end'
+        endif
+      -%}
+      <div class="top-review-box">
+        <div class="rating-box zoom-top" style="align-items: {{ top_rating_items }};">
+          <p class="rw-rating-text" style="margin: 0; font-size: {{ section.settings.rating_text_size }}px; line-height: 1; text-align: {{ section.settings.top_rating_alignment }}; width: 100%;">{{ section.settings.rating_text }}</p>
+          {%- if section.settings.star_style == 'star' -%}
+            {% render 'review-star', section: section %}
+          {%- elsif section.settings.star_style == 'star_bg' -%}
+            {% render 'review-star-background', section: section %}
+          {%- elsif section.settings.star_style == 'star_bg_2' -%}
+            {% render 'review-star-crisp', section: section %}
+          {%- endif -%}
+          {%- unless section.settings.rating_count == blank -%}
+            <p style="margin: 0; text-align: {{ section.settings.top_rating_alignment }}; width: 100%;">{{ section.settings.rating_count }}</p>
+          {%- endunless -%}
+        </div>
+      </div>
+      <lr></lr>
+    {%- endif -%}
+
+    {% content_for 'block', type: 'rating_summary', id: 'rating_summary' %}
+    {% content_for 'block', type: 'thumbnail_gallery', id: 'thumbnail_gallery' %}
+
+    <div class="load-more-container">
+      <div class="load-more-stage" data-lumin-review-stage>
+        <div class="load-more-list-wrap">
+          <script type="application/json" data-lumin-review-block-order>{{ lr_review_block_order_json | strip }}</script>
+          <div class="rw-container rw-container--flat" data-lumin-review-list role="list" data-lumin-section-id="{{ section.id }}">
+            {% content_for 'blocks' %}
+          </div>
+
+          {%- if lr_show_load_preview and total_reviews > review_load and show_all_reviews == false -%}
+            <div class="load-more-fade" data-lumin-review-fade aria-hidden="true"></div>
+          {%- endif -%}
+        </div>
+      </div>
+
+      {%- unless show_all_reviews -%}
+        <div class="lumin-review-deferred-store" data-lumin-review-deferred hidden></div>
+      {%- endunless -%}
+
+      {%- if total_reviews > review_load and show_all_reviews == false -%}
+        {%- if pagination_style == 'numbered' -%}
+          <nav class="lumin-review-pagination" aria-label="{{ 'content.pagination.nav_label' | t }}" data-lumin-review-pagination>
+            <ul class="lumin-review-pagination__list" role="list">
+              {%- for page_num in (1..total_pages) -%}
+                <li class="lumin-review-pagination__item">
+                  <button
+                    type="button"
+                    class="lumin-review-pagination__btn{% if page_num == 1 %} is-active{% endif %}"
+                    data-page="{{ page_num }}"
+                    aria-label="{{ 'content.pagination.page' | t: page: page_num }}"
+                    {% if page_num == 1 %}aria-current="page"{% endif %}
+                  >
+                    {{ page_num }}
+                  </button>
+                </li>
+              {%- endfor -%}
+            </ul>
+          </nav>
+        {%- else -%}
+          <div class="load-more-actions">
+            <button type="button" id="loadMore-{{ section.id }}" class="link-review button" data-lumin-review-load-more>
+              {{ section.settings.load_text }}
+            </button>
+          </div>
+        {%- endif -%}
+      {%- endif -%}
+    </div>
+  </div>
+
+  {% render 'lumin-review-popup', section: section %}
+  {% render 'lumin-review-add-modal', section: section, product: product %}
+</div>
+
+<script src="{{ 'lumin-review.js' | asset_url }}" defer></script>
+{% schema %}
+{
+  "name": "Lumin Review",
+   "disabled_on": {
+  "groups": ["header", "footer"]
+   },
+ "settings": [
+   {
+        "type": "header",
+        "content": "t:sections.lumin-review.note"
+      },
+   {
+        "type": "checkbox",
+        "id": "editing",
+        "label": "t:sections.lumin-review.edit_mode",
+        "default": true,
+        "info": "t:sections.lumin-review.edit_mode_info"
+      },
+   {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:settings.color_scheme",
+      "default": "background-1"
+    },
+    {
+      "type": "select",
+      "id": "section_width",
+      "label": "t:settings.width",
+      "options": [
+        {
+          "value": "page-width",
+          "label": "t:options.page"
+        },
+        {
+          "value": "full-width",
+          "label": "t:options.full"
+        }
+      ],
+      "default": "page-width"
+    },
+   {
+        "type": "header", 
+        "content": "t:sections.lumin-review.top_header"
+      },
+{
+        "type": "inline_richtext",
+        "id": "header_text",
+        "label": "t:names.product_title",
+        "default": "t:sections.lumin-review.header_text"
+      },
+    {
+        "type": "range",
+        "id": "rw_title_size",
+        "min": 14,
+        "max": 72,
+        "step": 1,
+        "unit": "px",
+        "label": "t:sections.lumin-review.rw_title_size",
+        "default": 32
+      },
+    {
+        "type": "select",
+        "id": "rw_title_alignment",
+        "label": "t:sections.lumin-review.rw_title_alignment",
+        "options": [
+          {
+            "value": "left",
+            "label": "t:options.left"
+          },
+          {
+            "value": "center",
+            "label": "t:options.center"
+          },
+          {
+            "value": "right",
+            "label": "t:options.right"
+          }
+        ],
+        "default": "center"
+      },
+   {
+        "type": "checkbox",
+        "id": "show_top",
+        "label": "t:sections.lumin-review.show_header_contents",
+        "default": true
+      },
+
+   {
+        "type": "inline_richtext",
+        "id": "rating_text",
+        "label": "t:sections.lumin-review.rating_text",
+        "default": "4.8",
+        "info": "t:sections.lumin-review.rating_text_info"
+      },
+    {
+        "type": "range",
+        "id": "rating_text_size",
+        "min": 14,
+        "max": 72,
+        "step": 1,
+        "unit": "px",
+        "label": "t:sections.lumin-review.rating_text_size",
+        "default": 40
+      },
+    {
+        "type": "select",
+        "id": "top_rating_alignment",
+        "label": "t:sections.lumin-review.top_rating_alignment",
+        "options": [
+          {
+            "value": "left",
+            "label": "t:options.left"
+          },
+          {
+            "value": "center",
+            "label": "t:options.center"
+          },
+          {
+            "value": "right",
+            "label": "t:options.right"
+          }
+        ],
+        "default": "center"
+      },
+   {
+        "type":      "range",
+        "id":        "rating_range",
+        "min":       1,
+        "max":        5,
+        "step":       0.5,
+        "label":     "t:sections.lumin-review.star_rating",
+        "default":   4.5
+     },
+    {
+    "type":      "range",
+    "id":        "star_size_top",
+    "min":       0.5,
+    "max":        2,
+    "step":       0.1,
+    "label":     "t:sections.lumin-review.star_size",
+    "default":   1
+    },
+    {
+        "type": "inline_richtext",
+        "id": "rating_count",
+        "label": "t:sections.lumin-review.review_count",
+        "default": "Based on 16 Reviews",
+        "info": "t:sections.lumin-review.review_count_info"
+      },
+   {
+        "type": "header",
+        "content": "t:sections.lumin-review.section_settings"
+      },
+
+   {
+        "type": "checkbox",
+        "id": "show_customer_images",
+        "label": "t:sections.lumin-review.show_customer_images",
+        "default": true
+      },
+   {
+        "type": "checkbox",
+        "id": "show_country_flags",
+        "label": "t:sections.lumin-review.show_country_flags",
+        "default": true
+      },
+   {
+        "type": "checkbox",
+        "id": "show_review_heading",
+        "label": "t:sections.lumin-review.show_review_heading",
+        "default": true
+      },
+   {
+        "type": "select",
+        "id": "flag_style",
+        "label": "t:sections.lumin-review.flag_style",
+        "options": [
+          {
+            "value": "circle",
+            "label": "t:sections.lumin-review.flag_style_circle"
+          },
+          {
+            "value": "wide",
+            "label": "t:sections.lumin-review.flag_style_wide"
+          },
+          {
+            "value": "crisp",
+            "label": "t:sections.lumin-review.flag_style_crisp"
+          }
+        ],
+        "default": "circle"
+      },
+   {
+        "type": "range",
+        "id": "customer_image_size",
+        "min": 10,
+        "max": 100,
+        "step": 5,
+        "unit": "px",
+        "label": "t:sections.lumin-review.customer_image_size",
+        "default": 40
+      },
+   {
+        "type": "range",
+        "id": "customer_image_radius",
+        "min": 0,
+        "max": 50,
+        "step": 1,
+        "unit": "px",
+        "label": "t:sections.lumin-review.customer_image_radius",
+        "default": 30
+      },
+   {
+        "type": "color",
+        "id": "customer_initials_bg",
+        "label": "t:sections.lumin-review.customer_initials_bg",
+        "default": "#FFD700"
+      },
+   {
+        "type": "color",
+        "id": "customer_initials_color",
+        "label": "t:sections.lumin-review.customer_initials_color",
+        "default": "#000000"
+      },
+
+{
+        "type": "range",
+        "id": "review_column_mobile",
+        "label": "t:sections.lumin-review.review_column_mobile",
+        "default": 1,
+        "min": 1,
+        "max": 3,
+        "step": 1
+      },
+{
+        "type": "range",
+        "id": "review_column_tab",
+        "label": "t:sections.lumin-review.review_column_tab",
+        "default": 2,
+        "min": 1,
+        "max": 4,
+        "step": 1
+      },
+{
+        "type": "range",
+        "id": "review_column_desk",
+        "label": "t:sections.lumin-review.review_column_desk",
+        "default": 3,
+        "min": 1,
+        "max": 8,
+        "step": 1
+      },
+   {
+        "type": "checkbox",
+        "id": "review_desk_image_card",
+        "label": "t:sections.lumin-review.review_desk_image_card",
+        "default": false,
+        "info": "t:sections.lumin-review.review_desk_image_card_info",
+        "visible_if": "{{ section.settings.review_column_desk > 1 }}"
+      },
+   {
+        "type": "select",
+        "id": "pagination_style",
+        "label": "t:sections.lumin-review.pagination_style",
+        "options": [
+          {
+            "value": "load_more",
+            "label": "t:sections.lumin-review.pagination_style_load_more"
+          },
+          {
+            "value": "numbered",
+            "label": "t:sections.lumin-review.pagination_style_numbered"
+          }
+        ],
+        "default": "load_more",
+        "info": "t:sections.lumin-review.pagination_style_info"
+      },
+   {
+        "type": "range",
+        "id": "review_load",
+        "label": "t:sections.lumin-review.reviews_per_page",
+        "default": 6,
+        "min": 1,
+        "max": 20,
+        "step": 1,
+        "info": "t:sections.lumin-review.load_more_info"
+      },
+   {
+        "type": "text",
+        "id": "load_text",
+        "label": "t:sections.lumin-review.button_text",
+        "default": "Load More"
+      },
+   {
+        "type": "checkbox",
+        "id": "show_load_more_fade",
+        "label": "t:sections.lumin-review.show_load_more_fade",
+        "default": true,
+        "info": "t:sections.lumin-review.load_more_bottom_effect_info",
+        "visible_if": "{{ section.settings.pagination_style == 'load_more' }}"
+      },
+   {
+        "type": "range",
+        "id": "load_more_fade_height",
+        "label": "t:sections.lumin-review.load_more_fade_height",
+        "min": 60,
+        "max": 200,
+        "step": 10,
+        "unit": "px",
+        "default": 120,
+        "visible_if": "{{ section.settings.pagination_style == 'load_more' and section.settings.show_load_more_fade }}"
+      },
+    {
+        "type": "header",
+        "content": "t:sections.lumin-review.sizes"
+      },
+      {
+    "type":      "range",
+    "id":        "rw_img_size",
+    "min":       20,
+    "max":        400,
+    "step":       10,
+    "unit":       "px",
+    "label":     "t:sections.lumin-review.review_image_size",
+    "default":   90,
+    "visible_if": "{{ section.settings.review_column_desk <= 1 or section.settings.review_desk_image_card == false }}"
+ },
+     {
+    "type":      "range",
+    "id":        "rw_img_radius",
+    "min":       0,
+    "max":        100,
+    "step":       1,
+    "unit":       "px",
+    "label":     "t:sections.lumin-review.image_radius",
+    "default":   6,
+    "visible_if": "{{ section.settings.review_column_desk <= 1 or section.settings.review_desk_image_card == false }}"
+ },
+   {
+    "type":      "range",
+    "id":        "block_name_size",
+    "min":       10,
+    "max":        100,
+    "step":       1,
+    "unit":       "px",
+    "label":     "t:sections.lumin-review.customer_name_size",
+    "default":   20
+},
+        {
+    "type":      "range",
+    "id":        "date_size",
+    "min":       6,
+    "max":        50,
+    "step":       1,
+    "unit":       "px",
+    "label":     "t:sections.lumin-review.date_size",
+    "default":   12
+},
+ {
+    "type":      "range",
+    "id":        "block_head_size",
+    "min":       10,
+    "max":        100,
+    "step":       1,
+    "unit":       "px",
+    "label":     "t:sections.lumin-review.review_heading_size",
+    "default":   18
+},
+    {
+    "type":      "range",
+    "id":        "block_text_size",
+    "min":       6,
+    "max":        100,
+    "step":       1,
+    "unit":       "px",
+    "label":     "t:sections.lumin-review.review_text_size",
+    "default":   14
+},
+   {
+        "type": "header",
+        "content": "t:sections.lumin-review.stars"
+      },
+   {
+      "type": "select",
+      "id": "star_style",
+      "label": "t:sections.lumin-review.star_style",
+      "options": [
+        {
+          "value": "star",
+          "label": "t:sections.lumin-review.star_style_stars"
+        },
+        {
+          "value": "star_bg",
+          "label": "t:sections.lumin-review.star_style_colors"
+        },
+        {
+          "value": "star_bg_2",
+          "label": "t:sections.lumin-review.star_style_crisp"
+        }
+      ],
+      "default": "star"
+    },
+    {
+    "type":      "range",
+    "id":        "star_size",
+    "min":       0.5,
+    "max":        2,
+    "step":       0.1,
+    "label":     "t:sections.lumin-review.star_size",
+    "default":   0.7
+},
+    {
+    "type":      "range",
+    "id":        "star_radius",
+    "min":       0,
+    "max":        30,
+    "step":       1,
+    "unit":       "px",
+    "label":     "t:sections.lumin-review.star_corner_radius",
+    "default":   0
+},
+   {
+        "type": "color",
+        "id": "feature_svg_color",
+        "label": "t:sections.lumin-review.star_color",
+        "default": "#000"
+      },
+   {
+        "type": "color",
+        "id": "inactive_star_color",
+        "label": "t:sections.lumin-review.disable_star_color",
+        "default": "#e2e2e2"
+      },
+   {
+        "type": "header",
+        "content": "t:sections.lumin-review.colors"
+      },
+   {
+        "type": "checkbox",
+        "id": "show_border",
+        "label": "t:sections.lumin-review.show_border",
+        "default": true
+      },
+{
+        "type": "color",
+        "id": "rw_border",
+        "label": "t:sections.lumin-review.border",
+        "default": "#f2f2f2"
+      },
+   {
+    "type":      "range",
+    "id":        "border_radius",
+    "min":       0,
+    "max":        100,
+    "step":       1,
+    "unit":       "px",
+    "label":     "t:sections.lumin-review.corner_radius",
+    "default":   10
+},
+{
+        "type": "color",
+        "id": "section_bg3",
+        "label": "t:sections.lumin-review.verify_text_color",
+        "default": "#000"
+      },
+{
+        "type": "color",
+        "id": "section_bg2",
+        "label": "t:sections.lumin-review.verify_badge_color",
+        "default": "#000"
+      },
+   {
+        "type": "text",
+        "id": "verify_text",
+        "label": "t:sections.lumin-review.verify_text",
+        "default": "Verified Buyer",
+        "info": "t:sections.lumin-review.verify_text_info"
+      },
+{
+        "type": "color",
+        "id": "review_bg",
+        "label": "t:sections.lumin-review.review_background",
+        "default": "#fff"
+      },
+
+   {
+        "type": "color",
+        "id": "feature_acc_color",
+        "label": "t:sections.lumin-review.accent_color",
+        "default": "#000"
+      },
+   {
+      "type": "range",
+      "id": "review_pd",
+      "min": 0,
+      "max": 100,
+      "step": 2,
+      "unit": "px",
+      "label": "t:sections.lumin-review.review_padding",
+      "default": 20
+    },
+   {
+      "type": "range",
+      "id": "review_pd_m", 
+      "min": 0,
+      "max": 100,
+      "step": 2,
+      "unit": "px",
+      "label": "t:sections.lumin-review.review_padding_mobile",
+      "default": 20
+    },
+   {
+        "type": "header",
+        "content": "t:sections.lumin-review.review_footer"
+      },
+     {
+        "type": "checkbox",
+        "id": "show_footer",
+        "label": "t:sections.lumin-review.show_review_footer",
+        "default": true
+      },
+     {
+        "type": "checkbox",
+        "id": "show_product",
+        "label": "t:sections.lumin-review.show_product",
+        "default": true
+      },
+    {
+      "type": "range",
+      "id": "product_image_radius",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "label": "Product image radius",
+      "default": 4
+    },
+      {
+        "type": "text",
+        "id": "like_text",
+        "label": "t:sections.lumin-review.like_dislike_text",
+        "default": "Was this helpful?",
+        "info": "t:sections.lumin-review.like_dislike_text_info"
+      },
+      {
+        "type": "checkbox",
+        "id": "show_footer_border",
+        "label": "t:sections.lumin-review.show_footer_border",
+        "default": true,
+        "visible_if": "{{ section.settings.show_footer }}"
+      },
+      {
+        "type": "color",
+        "id": "footer_border_color",
+        "label": "t:sections.lumin-review.footer_border_color",
+        "default": "#e5e5e5",
+        "visible_if": "{{ section.settings.show_footer and section.settings.show_footer_border }}"
+      },
+   {
+        "type": "header",
+        "content": "t:sections.lumin-review.add_review_functionality"
+      },
+   {
+        "type": "checkbox",
+        "id": "show_add_review_button",
+        "label": "t:sections.lumin-review.show_add_review_button",
+        "default": true
+      },
+      {
+        "type": "inline_richtext",
+        "id": "review_cta_heading",
+        "label": "t:sections.lumin-review.review_cta_heading",
+        "default": "t:sections.lumin-review.review_cta_heading"
+      },
+   {
+        "type": "inline_richtext",
+        "id": "review_cta_subtext",
+        "label": "t:sections.lumin-review.review_cta_subtext",
+        "default": "t:sections.lumin-review.review_cta_subtext"
+      },
+   {
+        "type": "inline_richtext",
+        "id": "add_review_button_text",
+        "label": "t:sections.lumin-review.add_review_button_text",
+        "default": "t:sections.lumin-review.add_review_button_text"
+      },
+        {
+          "type": "color",
+          "id": "review_cta_heading_color",
+          "label": "t:sections.lumin-review.review_cta_heading_color",
+          "default": "#333"
+        },
+   {
+        "type": "color",
+        "id": "review_cta_subtext_color",
+        "label": "t:sections.lumin-review.review_cta_subtext_color",
+        "default": "#666"
+      },
+      {
+        "type": "color",
+        "id": "add_review_button_bg",
+        "label": "t:sections.lumin-review.review_cta_button_bg",
+        "default": "#000"
+      },
+   {
+        "type": "color",
+        "id": "add_review_button_text_color",
+        "label": "t:sections.lumin-review.add_review_button_text_color",
+        "default": "#fff"
+      },
+   {
+        "type": "header",
+        "content": "t:sections.lumin-review.modal_settings"
+      },
+   {
+        "type": "text",
+        "id": "modal_title",
+        "label": "t:sections.lumin-review.modal_title",
+        "default": "t:sections.lumin-review.modal_title"
+      },
+   {
+        "type": "text",
+        "id": "name_label",
+        "label": "t:sections.lumin-review.name_field_label",
+        "default": "Your Name"
+      },
+   {
+        "type": "text",
+        "id": "rating_label",
+        "label": "t:sections.lumin-review.rating_field_label",
+        "default": "Rating"
+      },
+   {
+        "type": "text",
+        "id": "title_label",
+        "label": "t:sections.lumin-review.title_field_label",
+        "default": "Review Title"
+      },
+   {
+        "type": "text",
+        "id": "review_label",
+        "label": "t:sections.lumin-review.review_field_label",
+        "default": "Your Review"
+      },
+   {
+        "type": "text",
+        "id": "email_label",
+        "label": "t:sections.lumin-review.email_field_label",
+        "default": "Your Email"
+      },
+   {
+        "type": "header",
+        "content": "t:sections.lumin-review.date_format_settings"
+      },
+   {
+        "type": "select",
+        "id": "date_format",
+        "label": "t:sections.lumin-review.date_display_format",
+        "options": [
+          {
+            "value": "detailed",
+            "label": "t:sections.lumin-review.date_format_detailed"
+          },
+          {
+            "value": "simple",
+            "label": "t:sections.lumin-review.date_format_simple"
+          },
+          {
+            "value": "short",
+            "label": "t:sections.lumin-review.date_format_short"
+          }
+        ],
+        "default": "detailed",
+        "info": "t:sections.lumin-review.date_format_info"
+      },
+   {
+        "type": "text",
+        "id": "cancel_button_text",
+        "label": "t:sections.lumin-review.cancel_button_text",
+        "default": "Cancel"
+      },
+   {
+        "type": "text",
+        "id": "submit_button_text",
+        "label": "t:sections.lumin-review.submit_button_text",
+        "default": "Submit Review"
+      },
+   {
+        "type": "header",
+        "content": "t:sections.lumin-review.success_message_settings"
+      },
+   {
+        "type": "text",
+        "id": "success_message_title",
+        "label": "t:sections.lumin-review.success_message_title",
+        "default": "t:sections.lumin-review.success_message_title"
+      },
+   {
+        "type": "textarea",
+        "id": "success_message_body",
+        "label": "t:sections.lumin-review.success_message_body",
+        "default": "t:sections.lumin-review.success_message_body",
+        "info": "t:sections.lumin-review.success_message_body_info"
+      },
+   {
+        "type": "text",
+        "id": "success_message_duration",
+        "label": "t:sections.lumin-review.success_message_duration",
+        "default": "3",
+        "info": "t:sections.lumin-review.success_message_duration_info"
+      },
+   {
+        "type": "color",
+        "id": "success_message_bg",
+        "label": "t:sections.lumin-review.success_message_bg",
+        "default": "#4CAF50"
+      },
+   {
+        "type": "color",
+        "id": "success_message_text",
+        "label": "t:sections.lumin-review.success_message_text",
+        "default": "#ffffff"
+      },
+   {
+        "type": "select",
+        "id": "success_message_position",
+        "label": "t:sections.lumin-review.success_message_position",
+        "options": [
+          {
+            "value": "top-right",
+            "label": "t:sections.lumin-review.success_message_position_top_right"
+          },
+          {
+            "value": "top-left",
+            "label": "t:sections.lumin-review.success_message_position_top_left"
+          },
+          {
+            "value": "bottom-right",
+            "label": "t:sections.lumin-review.success_message_position_bottom_right"
+          },
+          {
+            "value": "bottom-left",
+            "label": "t:sections.lumin-review.success_message_position_bottom_left"
+          },
+          {
+            "value": "center",
+            "label": "t:sections.lumin-review.success_message_position_center"
+          }
+        ],
+        "default": "top-right",
+        "info": "t:sections.lumin-review.success_message_position_info"
+      },
+   {
+        "type": "range",
+        "id": "success_message_font_size",
+        "label": "t:sections.lumin-review.success_message_font_size",
+        "min": 12,
+        "max": 24,
+        "step": 1,
+        "default": 16,
+        "unit": "px"
+      },
+   {
+        "type": "checkbox",
+        "id": "success_message_show_icon",
+        "label": "t:sections.lumin-review.success_message_show_icon",
+        "default": true,
+        "info": "t:sections.lumin-review.success_message_show_icon_info"
+      },
+   {
+        "type": "header",
+        "content": "t:sections.lumin-review.email_settings"
+      },
+
+   {
+        "type": "text",
+        "id": "email_subject",
+        "label": "t:sections.lumin-review.email_subject_line",
+        "default": "New Review Submitted"
+      },
+         {
+        "type": "select",
+        "id": "email_method",
+        "label": "t:sections.lumin-review.email_method",
+        "options": [
+          {
+            "value": "real_form",
+            "label": "t:sections.lumin-review.email_method_shopify_contact"
+          }
+        ],
+        "default": "real_form",
+        "info": "t:sections.lumin-review.email_method_info"
+      },
+
+   {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+   {
+      "type": "range",
+      "id": "rw_margin",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.lumin-review.margin_bottom",
+      "default": 0
+    },
+   {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:settings.top",
+      "default": 36
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:settings.bottom",
+      "default": 36
+    },
+    {
+        "type": "header",
+        "content": "t:sections.lumin-review.review_popup_modal"
+      },
+   {
+        "type": "checkbox",
+        "id": "enable_review_popup",
+        "label": "t:sections.lumin-review.enable_review_popup",
+        "default": true,
+        "info": "t:sections.lumin-review.enable_review_popup_info"
+      },
+   {
+        "type": "text",
+        "id": "popup_helpful_text",
+        "label": "t:sections.lumin-review.popup_helpful_text",
+        "default": "Was this helpful?",
+        "info": "t:sections.lumin-review.popup_helpful_text_info"
+      },
+   {
+        "type": "checkbox",
+        "id": "show_popup_helpful_buttons",
+        "label": "t:sections.lumin-review.show_popup_helpful_buttons",
+        "default": true,
+        "info": "t:sections.lumin-review.show_popup_helpful_buttons_info"
+      },
+   {
+        "type": "checkbox",
+        "id": "show_popup_product_info",
+        "label": "t:sections.lumin-review.show_popup_product_info",
+        "default": true,
+        "info": "t:sections.lumin-review.show_popup_product_info_info"
+      },
+   {
+        "type": "select",
+        "id": "popup_image_quality",
+        "label": "t:sections.lumin-review.popup_image_quality",
+        "options": [
+          {
+            "value": "600",
+            "label": "t:sections.lumin-review.popup_image_quality_high"
+          },
+          {
+            "value": "800",
+            "label": "t:sections.lumin-review.popup_image_quality_very_high"
+          },
+          {
+            "value": "1000",
+            "label": "t:sections.lumin-review.popup_image_quality_ultra_high"
+          },
+          {
+            "value": "1200",
+            "label": "t:sections.lumin-review.popup_image_quality_maximum"
+          }
+        ],
+        "default": "800",
+        "info": "t:sections.lumin-review.popup_image_quality_info"
+      },
+   {
+        "type": "range",
+        "id": "popup_customer_image_size",
+        "min": 10,
+        "max": 100,
+        "step": 5,
+        "unit": "px",
+        "label": "t:sections.lumin-review.popup_customer_image_size",
+        "default": 60,
+        "info": "t:sections.lumin-review.popup_customer_image_size_info"
+      },
+   {
+        "type": "checkbox",
+        "id": "enable_image_enlarge",
+        "label": "t:sections.lumin-review.enable_image_enlarge",
+        "default": true,
+        "info": "t:sections.lumin-review.enable_image_enlarge_info"
+      },
+      {
+        "type": "header",
+        "content": "t:sections.group.ancher_link"
+      },
+      {
+        "type": "text",
+        "id": "ancher_id",
+        "label": "t:sections.group.ancher_id",
+        "info": "t:sections.group.ancher_id_info"
+      }
+],
+
+  "max_blocks": 30,
+  "blocks": [
+    {
+      "type": "rating_summary"
+    },
+    {
+      "type": "thumbnail_gallery"
+    },
+    {
+      "type": "review"
+    }
+  ],
+
+  "presets": [
+    {
+      "name": "Lumin Review",
+      "category": "Social Proofs",
+      "settings": {
+        "header_text": "Results You Can See. Reviews You Can Trust.",
+        "rw_title_size": 48,
+        "rw_title_alignment": "center",
+        "show_top": true,
+        "rating_text": "<strong>4.8</strong> — From smoother skin to radiant glow — hear directly from our community.",
+        "rating_text_size": 22,
+        "top_rating_alignment": "center",
+        "rating_range": 4.5,
+        "star_size_top": 1,
+        "rating_count": "Based on 16 Reviews",
+        "show_customer_images": true,
+        "show_country_flags": true,
+        "show_review_heading": true,
+        "flag_style": "circle",
+        "customer_image_size": 40,
+        "customer_image_radius": 30,
+        "customer_initials_bg": "#e8e8e8",
+        "customer_initials_color": "#333333",
+        "review_column_mobile": 1,
+        "review_column_tab": 1,
+        "review_column_desk": 1,
+        "review_desk_image_card": false,
+        "pagination_style": "load_more",
+        "review_load": 6,
+        "load_text": "Load More",
+        "show_load_more_fade": false,
+        "load_more_fade_height": 120,
+        "block_name_size": 20,
+        "date_size": 10,
+        "block_head_size": 16,
+        "block_text_size": 14,
+        "star_style": "star",
+        "star_size": 0.7,
+        "star_radius": 0,
+        "feature_svg_color": "#F5A623",
+        "inactive_star_color": "#e2e2e2",
+        "show_border": true,
+        "rw_border": "#e8e8e8",
+        "border_radius": 8,
+        "section_bg3": "#1A6820",
+        "section_bg2": "#03B67A",
+        "verify_text": "Verified Buyer",
+        "review_bg": "#ffffff",
+        "review_pd": 20,
+        "review_pd_m": 20,
+        "show_footer": true,
+        "show_product": true,
+        "like_text": "Was this helpful?",
+        "show_add_review_button": true,
+        "review_cta_heading": "Review this product",
+        "review_cta_subtext": "Share your thoughts with other customers",
+        "add_review_button_text": "Add Your Review",
+        "review_cta_heading_color": "#333333",
+        "review_cta_subtext_color": "#666666",
+        "add_review_button_bg": "#EAEAE8",
+        "add_review_button_text_color": "#000000",
+        "padding_top": 36,
+        "padding_bottom": 36
+      },
+      "blocks": {
+        "rating_summary": {
+          "type": "rating_summary",
+          "static": true,
+          "settings": {
+            "rating_summary_score": "4.8",
+            "rating_summary_total": "731 Reviews",
+            "rating_bar_5_width": 85,
+            "rating_bar_5_count": "624",
+            "rating_bar_4_width": 14,
+            "rating_bar_4_count": "104",
+            "rating_bar_3_width": 1,
+            "rating_bar_3_count": "3",
+            "rating_bar_2_width": 0,
+            "rating_bar_2_count": "0",
+            "rating_bar_1_width": 0,
+            "rating_bar_1_count": "0",
+            "rating_summary_border_radius": 12,
+            "rating_summary_bg": "#ffffff",
+            "rating_summary_score_color": "#333333",
+            "rating_summary_text_color": "#666666",
+            "rating_bar_bg": "#DCD6D1",
+            "rating_bar_fill": "#333333",
+            "rating_summary_border_color": "#e8e8e8",
+            "rating_summary_border_style": "solid",
+            "rating_summary_border_width": 1
+          }
+        },
+        "thumbnail_gallery": {
+          "type": "thumbnail_gallery",
+          "static": true,
+          "settings": {
+            "thumbnail_align": "center",
+            "gallery_title": "Customer Reviews",
+            "gallery_bg": "#f8f6f2",
+            "gallery_title_color": "#333333",
+            "gallery_accent_color": "#F5A623",
+            "border_thickness": 1,
+            "border_color": "#e8e4de",
+            "border_style": "solid",
+            "border_radius": 8,
+            "image_size": 60
+          }
+        },
+        "review_1": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Emma Collins – London, United Kingdom",
+            "country_code": "GB",
+            "date_text": "June 2026",
+            "review_head": "Noticeable Energy Boost Without Jitters",
+            "review_text": "I've been using this supplement for about six weeks now, and the difference in my daily energy levels is unbelievable. I no longer crash in the afternoon, and I feel a lot more focused during work. What I love most is that it gives me a clean boost without that shaky, overstimulated feeling."
+          }
+        },
+        "review_2": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Sophia Nguyen – Toronto, Canada",
+            "country_code": "CA",
+            "date_text": "May 2026",
+            "review_head": "Improved Recovery and Better Sleep",
+            "review_text": "As someone who trains four to five times a week, recovery has always been a challenge for me. Since starting this supplement, I've noticed significantly less soreness and a deeper, more restful sleep at night. I wake up feeling refreshed instead of groggy."
+          }
+        },
+        "review_3": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Isabella Santos – Madrid, Spain",
+            "country_code": "ES",
+            "date_text": "April 2026",
+            "review_head": "Great for Digestion and Gut Health",
+            "review_text": "I bought this after struggling with bloating and slow digestion for months. Within the first week, I felt lighter and more regular, and my stomach discomfort almost completely disappeared. It's the only product that actually gave me noticeable results."
+          }
+        },
+        "review_4": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Johan Lindström – Stockholm, Sweden",
+            "country_code": "SE",
+            "date_text": "March 2026",
+            "review_head": "Visible Results in 30 Days",
+            "review_text": "I was skeptical at first because I've tried so many supplements that promised results but did nothing. After about 30 days of consistent use, my skin looks clearer, my focus has improved, and I just feel more balanced overall."
+          }
+        },
+        "review_5": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Emma R. – Manchester, United Kingdom",
+            "country_code": "GB",
+            "date_text": "February 2026",
+            "review_head": "Steady Energy All Day Long",
+            "review_text": "This gives me steady energy throughout the day without feeling jittery. I've already noticed better focus and less afternoon fatigue. Definitely staying in my routine — already recommended it to two friends."
+          }
+        },
+        "review_6": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Priya K. – Vancouver, Canada",
+            "country_code": "CA",
+            "date_text": "January 2026",
+            "review_head": "Finally Something That Works",
+            "review_text": "I've tried countless wellness products over the years and most did nothing. This one actually delivered. Better sleep, more energy, and my skin looks healthier. The ingredients are clean and clearly listed."
+          }
+        },
+        "review_7": {
+          "type": "review",
+          "settings": {
+            "star_rating": 4.5,
+            "show_verified_buyer": true,
+            "name_text": "Lauren T. – Austin, United States",
+            "country_code": "US",
+            "date_text": "December 2025",
+            "review_head": "Great Product, Fast Shipping",
+            "review_text": "Really happy with the results so far. I feel more energized in the mornings and my overall mood has improved. Shipping was fast and the packaging felt premium. Will be ordering again."
+          }
+        },
+        "review_8": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Chloe B. – Sydney, Australia",
+            "country_code": "AU",
+            "date_text": "November 2025",
+            "review_head": "Perfect Addition to My Wellness Routine",
+            "review_text": "This supplement quickly became one of my daily essentials. I feel calmer throughout the day, my mood is more stable, and I've even noticed improvements in my digestion and skin. Highly recommend."
+          }
+        }
+      },
+      "block_order": [
+        "review_1",
+        "review_2",
+        "review_3",
+        "review_4",
+        "review_5",
+        "review_6",
+        "review_7",
+        "review_8"
+      ]
+    },
+    {
+      "name": "Skincare Reviews",
+      "category": "Social Proofs",
+      "settings": {
+        "header_text": "What Our Customers Say",
+        "rating_text": "<strong>4.8</strong>",
+        "rating_range": 4.5,
+        "rating_count": "Based on 15 Reviews",
+        "review_column_mobile": 2,
+        "review_column_tab": 3,
+        "review_column_desk": 5,
+        "review_desk_image_card": true,
+        "review_load": 10,
+        "feature_svg_color": "#2d5a4a",
+        "customer_initials_bg": "#e8f4ef",
+        "review_pd": 12,
+        "review_pd_m": 10,
+        "show_footer": false
+      },
+      "blocks": {
+        "rating_summary": {
+          "type": "rating_summary",
+          "static": true
+        },
+        "thumbnail_gallery": {
+          "type": "thumbnail_gallery",
+          "static": true
+        },
+        "review_1": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "name_text": "Sofia M.",
+            "country_code": "US",
+            "date_text": "March 2026",
+            "review_head": "My skin finally feels balanced",
+            "review_text": "After years of switching products, this hydrating serum is the first one that calmed my combination skin without clogging pores. My T-zone is less oily and my cheeks feel soft all day."
+          }
+        },
+        "review_2": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "name_text": "Emma R.",
+            "country_code": "GB",
+            "date_text": "February 2026",
+            "review_head": "Visible glow in two weeks",
+            "review_text": "I started using the vitamin C serum every morning and noticed a brighter, more even tone within two weeks. It layers perfectly under sunscreen and never pills."
+          }
+        },
+        "review_3": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "name_text": "Priya K.",
+            "country_code": "CA",
+            "date_text": "January 2026",
+            "review_head": "Gentle on sensitive skin",
+            "review_text": "This cream cleanser removes makeup and SPF without stripping my skin. No redness, no tight feeling — just clean, comfortable skin every single night."
+          }
+        },
+        "review_4": {
+          "type": "review",
+          "settings": {
+            "star_rating": 4.5,
+            "name_text": "Lauren T.",
+            "country_code": "US",
+            "date_text": "December 2025",
+            "review_head": "Best night cream I've tried",
+            "review_text": "The retinol night cream is rich but not heavy. Fine lines around my eyes look softer and I wake up with plump, rested-looking skin. I only use a pea-sized amount."
+          }
+        },
+        "review_5": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "name_text": "Chloe B.",
+            "country_code": "AU",
+            "date_text": "November 2025",
+            "review_head": "No more midday shine",
+            "review_text": "Finally a lightweight moisturizer that keeps my oily skin matte without feeling dry. I use it before makeup and my foundation stays fresh for hours."
+          }
+        },
+        "review_6": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "name_text": "Hannah W.",
+            "country_code": "US",
+            "date_text": "October 2025",
+            "review_head": "Calmed my redness overnight",
+            "review_text": "The soothing recovery balm worked wonders after a bad reaction to another brand. Redness faded noticeably overnight and my barrier feels strong again."
+          }
+        },
+        "review_7": {
+          "type": "review",
+          "settings": {
+            "star_rating": 4.5,
+            "name_text": "Megan L.",
+            "country_code": "GB",
+            "date_text": "September 2025",
+            "review_head": "Pores look noticeably smaller",
+            "review_text": "I've been using the refining toner for a month and my pores along my nose look tighter. Skin texture is smoother and my serums absorb much better now."
+          }
+        },
+        "review_8": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "name_text": "Ava C.",
+            "country_code": "US",
+            "date_text": "August 2025",
+            "review_head": "Fades dark spots beautifully",
+            "review_text": "Sun spots on my cheeks have faded significantly since I started the brightening serum. It took about six weeks but the results are real and my skin tone looks so even."
+          }
+        },
+        "review_9": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "name_text": "Isabella N.",
+            "country_code": "IT",
+            "date_text": "July 2025",
+            "review_head": "Hydration that actually lasts",
+            "review_text": "Most moisturizers disappear on my dry skin by noon. This hyaluronic formula keeps me hydrated from morning to night, even in air-conditioned offices."
+          }
+        },
+        "review_10": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "name_text": "Zoe P.",
+            "country_code": "CA",
+            "date_text": "June 2025",
+            "review_head": "My makeup sits so much better",
+            "review_text": "I use this as a primer and moisturizer in one step. My foundation glides on smoothly, doesn't settle into fine lines, and my skin looks dewy not greasy."
+          }
+        },
+        "review_11": {
+          "type": "review",
+          "settings": {
+            "star_rating": 4.5,
+            "name_text": "Lily S.",
+            "country_code": "US",
+            "date_text": "May 2025",
+            "review_head": "Worth every penny",
+            "review_text": "The eye cream is silky and absorbs quickly. My under-eye area looks brighter and less puffy in the morning. A little goes a long way so the jar lasts months."
+          }
+        },
+        "review_12": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "name_text": "Grace F.",
+            "country_code": "AU",
+            "date_text": "April 2025",
+            "review_head": "Transformed my dry patches",
+            "review_text": "Winter used to leave my cheeks flaky and sore. This barrier repair cream fixed those dry patches in days and my skin feels supple even in cold weather."
+          }
+        },
+        "review_13": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "name_text": "Natalie H.",
+            "country_code": "US",
+            "date_text": "March 2025",
+            "review_head": "SPF that doesn't feel greasy",
+            "review_text": "I've finally found a daily sunscreen I actually want to wear. No white cast on my medium skin tone, no greasy finish, and it works beautifully under makeup."
+          }
+        },
+        "review_14": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "name_text": "Maya J.",
+            "country_code": "GB",
+            "date_text": "February 2025",
+            "review_head": "Finally cleared my jawline breakouts",
+            "review_text": "The blemish control gel targeted my hormonal breakouts without drying out the rest of my face. Spots heal faster and I'm getting far fewer new ones each month."
+          }
+        },
+        "review_15": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "name_text": "Olivia D.",
+            "country_code": "US",
+            "date_text": "January 2025",
+            "review_head": "The whole routine works together",
+            "review_text": "I bought the complete skincare set and every product complements the others. My skin is clearer, smoother, and more radiant than it's been in years. Already repurchased."
+          }
+        }
+      },
+      "block_order": [
+        "review_1",
+        "review_2",
+        "review_3",
+        "review_4",
+        "review_5",
+        "review_6",
+        "review_7",
+        "review_8",
+        "review_9",
+        "review_10",
+        "review_11",
+        "review_12",
+        "review_13",
+        "review_14",
+        "review_15"
+      ]
+    },
+    {
+      "name": "Trust Pilot Reviews",
+      "category": "Social Proofs",
+      "settings": {
+        "header_text": "Results You Can See. Reviews You Can Trust.",
+        "rw_title_size": 48,
+        "rw_title_alignment": "center",
+        "show_top": true,
+        "rating_text": "<strong>4.8</strong> — From smoother skin to radiant glow — hear directly from our community.",
+        "rating_text_size": 22,
+        "top_rating_alignment": "center",
+        "rating_range": 4.5,
+        "star_size_top": 1,
+        "rating_count": "Based on 16 Reviews",
+        "show_customer_images": true,
+        "show_country_flags": true,
+        "show_review_heading": true,
+        "flag_style": "circle",
+        "customer_image_size": 40,
+        "customer_image_radius": 30,
+        "customer_initials_bg": "#FEF6C5",
+        "customer_initials_color": "#000000",
+        "review_column_mobile": 1,
+        "review_column_tab": 2,
+        "review_column_desk": 4,
+        "review_desk_image_card": false,
+        "pagination_style": "load_more",
+        "review_load": 6,
+        "load_text": "Load More",
+        "show_load_more_fade": false,
+        "load_more_fade_height": 120,
+        "block_name_size": 20,
+        "date_size": 10,
+        "block_head_size": 16,
+        "block_text_size": 14,
+        "star_style": "star_bg_2",
+        "star_size": 0.6,
+        "star_radius": 0,
+        "feature_svg_color": "#03B67A",
+        "inactive_star_color": "#DCDCE6",
+        "show_border": true,
+        "rw_border": "#DCD6D1",
+        "border_radius": 8,
+        "section_bg3": "#1A6820",
+        "section_bg2": "#03B67A",
+        "verify_text": "Verified Buyer",
+        "review_bg": "#ffffff",
+        "review_pd": 20,
+        "review_pd_m": 20,
+        "show_footer": false,
+        "show_add_review_button": true,
+        "review_cta_heading": "Review this product",
+        "review_cta_subtext": "Share your thoughts with other customers",
+        "add_review_button_text": "Add Your Review",
+        "review_cta_heading_color": "#333333",
+        "review_cta_subtext_color": "#666666",
+        "add_review_button_bg": "#EAEAE8",
+        "add_review_button_text_color": "#000000",
+        "padding_top": 36,
+        "padding_bottom": 36
+      },
+      "blocks": {
+        "rating_summary": {
+          "type": "rating_summary",
+          "static": true,
+          "settings": {
+            "rating_summary_score": "4.8",
+            "rating_summary_total": "731 Reviews",
+            "rating_bar_5_width": 85,
+            "rating_bar_5_count": "624",
+            "rating_bar_4_width": 14,
+            "rating_bar_4_count": "104",
+            "rating_bar_3_width": 1,
+            "rating_bar_3_count": "3",
+            "rating_bar_2_width": 0,
+            "rating_bar_2_count": "0",
+            "rating_bar_1_width": 0,
+            "rating_bar_1_count": "0",
+            "rating_summary_border_radius": 12,
+            "rating_summary_bg": "#ffffff",
+            "rating_summary_score_color": "#333333",
+            "rating_summary_text_color": "#666666",
+            "rating_bar_bg": "#DCD6D1",
+            "rating_bar_fill": "#333333",
+            "rating_summary_border_color": "#dddddd",
+            "rating_summary_border_style": "solid",
+            "rating_summary_border_width": 1
+          }
+        },
+        "thumbnail_gallery": {
+          "type": "thumbnail_gallery",
+          "static": true,
+          "settings": {
+            "thumbnail_align": "center",
+            "gallery_title": "Customer Reviews",
+            "gallery_bg": "#f8f6f2",
+            "gallery_title_color": "#333333",
+            "gallery_accent_color": "#03B67A",
+            "border_thickness": 1,
+            "border_color": "#e8e4de",
+            "border_style": "solid",
+            "border_radius": 8,
+            "image_size": 60
+          }
+        },
+        "review_1": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Emma Collins – London, United Kingdom",
+            "country_code": "GB",
+            "date_text": "June 2026",
+            "review_head": "Noticeable Energy Boost Without Jitters",
+            "review_text": "I've been using this supplement for about six weeks now, and the difference in my daily energy levels is unbelievable. I no longer crash in the afternoon, and I feel a lot more focused during work. What I love most is that it gives me a clean boost without that shaky, overstimulated feeling."
+          }
+        },
+        "review_2": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Sophia Nguyen – Toronto, Canada",
+            "country_code": "CA",
+            "date_text": "May 2026",
+            "review_head": "Improved Recovery and Better Sleep",
+            "review_text": "As someone who trains four to five times a week, recovery has always been a challenge for me. Since starting this supplement, I've noticed significantly less soreness and a deeper, more restful sleep at night. I wake up feeling refreshed instead of groggy."
+          }
+        },
+        "review_3": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Isabella Santos – Madrid, Spain",
+            "country_code": "ES",
+            "date_text": "April 2026",
+            "review_head": "Great for Digestion and Gut Health",
+            "review_text": "I bought this after struggling with bloating and slow digestion for months. Within the first week, I felt lighter and more regular, and my stomach discomfort almost completely disappeared. It's the only product that actually gave me noticeable results."
+          }
+        },
+        "review_4": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Johan Lindström – Stockholm, Sweden",
+            "country_code": "SE",
+            "date_text": "March 2026",
+            "review_head": "Visible Results in 30 Days",
+            "review_text": "I was skeptical at first because I've tried so many supplements that promised results but did nothing. After about 30 days of consistent use, my skin looks clearer, my focus has improved, and I just feel more balanced overall."
+          }
+        },
+        "review_5": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Emma R. – Manchester, United Kingdom",
+            "country_code": "GB",
+            "date_text": "February 2026",
+            "review_head": "Steady Energy All Day Long",
+            "review_text": "This gives me steady energy throughout the day without feeling jittery. I've already noticed better focus and less afternoon fatigue. Definitely staying in my routine — already recommended it to two friends."
+          }
+        },
+        "review_6": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Priya K. – Vancouver, Canada",
+            "country_code": "CA",
+            "date_text": "January 2026",
+            "review_head": "Finally Something That Works",
+            "review_text": "I've tried countless wellness products over the years and most did nothing. This one actually delivered. Better sleep, more energy, and my skin looks healthier. The ingredients are clean and clearly listed."
+          }
+        },
+        "review_7": {
+          "type": "review",
+          "settings": {
+            "star_rating": 4.5,
+            "show_verified_buyer": true,
+            "name_text": "Lauren T. – Austin, United States",
+            "country_code": "US",
+            "date_text": "December 2025",
+            "review_head": "Great Product, Fast Shipping",
+            "review_text": "Really happy with the results so far. I feel more energized in the mornings and my overall mood has improved. Shipping was fast and the packaging felt premium. Will be ordering again."
+          }
+        },
+        "review_8": {
+          "type": "review",
+          "settings": {
+            "star_rating": 5,
+            "show_verified_buyer": true,
+            "name_text": "Chloe B. – Sydney, Australia",
+            "country_code": "AU",
+            "date_text": "November 2025",
+            "review_head": "Perfect Addition to My Wellness Routine",
+            "review_text": "This supplement quickly became one of my daily essentials. I feel calmer throughout the day, my mood is more stable, and I've even noticed improvements in my digestion and skin. Highly recommend."
+          }
+        }
+      },
+      "block_order": [
+        "review_1",
+        "review_2",
+        "review_3",
+        "review_4",
+        "review_5",
+        "review_6",
+        "review_7",
+        "review_8"
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,588 @@
+{%- comment -%}
+  Bild links, Ueberschrift und Aufklapp-Punkte rechts.
+
+  Eigener Abschnitt statt Bastelei an einer bestehenden Struktur: So liegen
+  Breitenverhaeltnis, Bildgroesse und Schriftgroessen als echte Regler vor, und
+  es gibt keinen Kampf mit fremden Layout-Einstellungen.
+
+  Das Aufklappen laeuft ueber natives <details>/<summary> - kein JavaScript,
+  funktioniert also auch, wenn Skripte blockiert werden.
+
+  Verlauf in der Ueberschrift: Text in eckige Klammern setzen, z. B.
+  "Weich. Warm. [Wunderbar.]" - die Klammern selbst sieht der Kunde nicht.
+{%- endcomment -%}
+
+{%- liquid
+  assign s = section.settings
+  assign heading_html = s.heading
+  if s.gradient_on
+    assign heading_html = heading_html | replace: '[', '<span class="kbp__grad">' | replace: ']', '</span>'
+  else
+    assign heading_html = heading_html | replace: '[', '' | replace: ']', ''
+  endif
+
+  assign media_width = s.media_width
+  assign text_width = 100 | minus: media_width
+-%}
+
+{%- style -%}
+  .kbp-{{ section.id }} {
+    --kbp-gap: {{ s.gap }}px;
+    --kbp-radius: {{ s.image_radius }}px;
+    --kbp-row-bg: {{ s.row_background }};
+    --kbp-row-radius: {{ s.row_radius }}px;
+    --kbp-row-gap: {{ s.row_gap }}px;
+    --kbp-line: {{ s.line_color }};
+    --kbp-icon: {{ s.icon_color }};
+  }
+
+  .kbp-{{ section.id }} .kbp__inner {
+    display: grid;
+    grid-template-columns: {{ media_width }}fr {{ text_width }}fr;
+    gap: var(--kbp-gap);
+    align-items: {{ s.vertical_alignment }};
+    width: 100%;
+  }
+
+  {%- if s.image_position == 'right' -%}
+    .kbp-{{ section.id }} .kbp__media { order: 2; }
+    .kbp-{{ section.id }} .kbp__content { order: 1; }
+  {%- endif -%}
+
+  .kbp-{{ section.id }} .kbp__media img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--kbp-radius);
+    {%- if s.image_ratio != 'natural' -%}
+      aspect-ratio: {{ s.image_ratio }};
+      object-fit: cover;
+    {%- endif -%}
+  }
+
+  .kbp-{{ section.id }} .kbp__heading {
+    margin: 0 0 {{ s.heading_gap }}px;
+    font-size: {{ s.heading_size }}px;
+    line-height: 1.15;
+    text-align: {{ s.text_alignment }};
+  }
+
+  .kbp-{{ section.id }} .kbp__grad {
+    background-image: linear-gradient(to right, {{ s.gradient_start }}, {{ s.gradient_end }});
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .kbp-{{ section.id }} .kbp__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--kbp-row-gap);
+  }
+
+  .kbp-{{ section.id }} .kbp__row {
+    background: var(--kbp-row-bg);
+    border-radius: var(--kbp-row-radius);
+    {%- if s.dividers -%}
+      border-bottom: 1px solid var(--kbp-line);
+    {%- endif -%}
+  }
+
+  .kbp-{{ section.id }} .kbp__summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    list-style: none;
+    padding: {{ s.row_padding_block }}px {{ s.row_padding_inline }}px;
+    font-size: {{ s.title_size }}px;
+    font-weight: {{ s.title_weight }};
+    line-height: 1.3;
+  }
+
+  .kbp-{{ section.id }} .kbp__summary::-webkit-details-marker { display: none; }
+
+  .kbp-{{ section.id }} .kbp__check {
+    flex-shrink: 0;
+    width: {{ s.icon_size }}px;
+    height: {{ s.icon_size }}px;
+    color: var(--kbp-icon);
+  }
+
+  .kbp-{{ section.id }} .kbp__title { flex: 1; }
+
+  /* Plus, das sich beim Oeffnen zum Minus dreht. */
+  .kbp-{{ section.id }} .kbp__plus {
+    position: relative;
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+  }
+
+  .kbp-{{ section.id }} .kbp__plus::before,
+  .kbp-{{ section.id }} .kbp__plus::after {
+    content: '';
+    position: absolute;
+    inset: 50% 0 auto 0;
+    height: 1.5px;
+    background: currentColor;
+    transition: transform 0.2s ease;
+  }
+
+  .kbp-{{ section.id }} .kbp__plus::after { transform: rotate(90deg); }
+  .kbp-{{ section.id }} details[open] .kbp__plus::after { transform: rotate(0deg); }
+
+  .kbp-{{ section.id }} .kbp__answer {
+    padding: 0 {{ s.row_padding_inline }}px {{ s.row_padding_block }}px;
+    font-size: {{ s.text_size }}px;
+    line-height: 1.55;
+  }
+
+  .kbp-{{ section.id }} .kbp__answer > *:first-child { margin-top: 0; }
+  .kbp-{{ section.id }} .kbp__answer > *:last-child { margin-bottom: 0; }
+
+  @media screen and (max-width: 749px) {
+    .kbp-{{ section.id }} .kbp__inner {
+      grid-template-columns: 1fr;
+      gap: {{ s.gap_mobile }}px;
+    }
+
+    {%- if s.image_position == 'right' -%}
+      .kbp-{{ section.id }} .kbp__media { order: {% if s.image_first_mobile %}1{% else %}2{% endif %}; }
+      .kbp-{{ section.id }} .kbp__content { order: {% if s.image_first_mobile %}2{% else %}1{% endif %}; }
+    {%- endif -%}
+
+    .kbp-{{ section.id }} .kbp__heading { font-size: {{ s.heading_size_mobile }}px; }
+    .kbp-{{ section.id }} .kbp__summary { font-size: {{ s.title_size_mobile }}px; }
+    .kbp-{{ section.id }} .kbp__answer { font-size: {{ s.text_size_mobile }}px; }
+  }
+{%- endstyle -%}
+
+<div class="section-background color-{{ s.color_scheme }}"></div>
+<div
+  class="section kbp-{{ section.id }} color-{{ s.color_scheme }}"
+  style="padding-block-start: {{ s.padding_top }}px; padding-block-end: {{ s.padding_bottom }}px;"
+>
+  <div class="kbp__inner">
+    <div class="kbp__media">
+      {%- if s.image != blank -%}
+        <img
+          src="{{ s.image | image_url: width: 1400 }}"
+          alt="{{ s.image.alt | escape }}"
+          width="{{ s.image.width }}"
+          height="{{ s.image.height }}"
+          loading="lazy"
+        >
+      {%- else -%}
+        {{ 'lifestyle-1' | placeholder_svg_tag: 'kbp__placeholder' }}
+      {%- endif -%}
+    </div>
+
+    <div class="kbp__content">
+      {%- if s.heading != blank -%}
+        <h2 class="kbp__heading">{{ heading_html }}</h2>
+      {%- endif -%}
+
+      <div class="kbp__list">
+        {%- for block in section.blocks -%}
+          <details
+            class="kbp__row"
+            {% if block.settings.open_by_default %}open{% endif %}
+            {{ block.shopify_attributes }}
+          >
+            <summary class="kbp__summary">
+              {%- if s.show_check -%}
+                <svg class="kbp__check" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"></circle>
+                  <path d="M7.5 12.5l3 3 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+              {%- endif -%}
+              <span class="kbp__title">{{ block.settings.title }}</span>
+              <span class="kbp__plus" aria-hidden="true"></span>
+            </summary>
+            {%- if block.settings.text != blank -%}
+              <div class="kbp__answer">{{ block.settings.text }}</div>
+            {%- endif -%}
+          </details>
+        {%- endfor -%}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Kokoro: Bild mit Punkten",
+  "tag": "section",
+  "class": "kokoro-bild-mit-punkten",
+  "blocks": [
+    {
+      "type": "punkt",
+      "name": "Punkt",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Überschrift",
+          "default": "Smarte Heiztechnologie"
+        },
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "Text zum Aufklappen",
+          "default": "<p>In 8 bis 10 Minuten warm, danach bis zu 8 Stunden gleichmäßige Wärme.</p>"
+        },
+        {
+          "type": "checkbox",
+          "id": "open_by_default",
+          "label": "Beim Laden geöffnet",
+          "default": false
+        }
+      ]
+    }
+  ],
+  "max_blocks": 12,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Bild"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Bild"
+    },
+    {
+      "type": "select",
+      "id": "image_position",
+      "label": "Bild steht",
+      "options": [
+        { "value": "left", "label": "Links" },
+        { "value": "right", "label": "Rechts" }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "range",
+      "id": "media_width",
+      "label": "Breite des Bildes",
+      "min": 25,
+      "max": 70,
+      "step": 1,
+      "unit": "%",
+      "default": 50,
+      "info": "Anteil an der Gesamtbreite. Der Rest geht an Text und Punkte."
+    },
+    {
+      "type": "select",
+      "id": "image_ratio",
+      "label": "Seitenverhältnis",
+      "options": [
+        { "value": "natural", "label": "Wie das Original" },
+        { "value": "1/1", "label": "Quadratisch" },
+        { "value": "4/5", "label": "Hochkant" },
+        { "value": "3/4", "label": "Hochkant schmal" },
+        { "value": "4/3", "label": "Querformat" },
+        { "value": "16/9", "label": "Breitbild" }
+      ],
+      "default": "natural",
+      "info": "„Wie das Original“ schneidet nichts ab."
+    },
+    {
+      "type": "range",
+      "id": "image_radius",
+      "label": "Eckenrundung",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "checkbox",
+      "id": "image_first_mobile",
+      "label": "Auf dem Handy Bild zuerst",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Überschrift"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "heading",
+      "label": "Text",
+      "default": "Weich. Warm. [Wunderbar.]",
+      "info": "Text in eckigen Klammern bekommt den Farbverlauf."
+    },
+    {
+      "type": "range",
+      "id": "heading_size",
+      "label": "Größe am Computer",
+      "min": 20,
+      "max": 80,
+      "step": 1,
+      "unit": "px",
+      "default": 44
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "label": "Größe auf dem Handy",
+      "min": 16,
+      "max": 56,
+      "step": 1,
+      "unit": "px",
+      "default": 30
+    },
+    {
+      "type": "range",
+      "id": "heading_gap",
+      "label": "Abstand zu den Punkten",
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "text_alignment",
+      "id": "text_alignment",
+      "label": "Ausrichtung",
+      "default": "left"
+    },
+    {
+      "type": "checkbox",
+      "id": "gradient_on",
+      "label": "Farbverlauf aktiv",
+      "default": true
+    },
+    {
+      "type": "color",
+      "id": "gradient_start",
+      "label": "Startfarbe",
+      "default": "#A9BEB6",
+      "visible_if": "{{ section.settings.gradient_on }}"
+    },
+    {
+      "type": "color",
+      "id": "gradient_end",
+      "label": "Endfarbe",
+      "default": "#5E887E",
+      "visible_if": "{{ section.settings.gradient_on }}"
+    },
+    {
+      "type": "header",
+      "content": "Aufklapp-Punkte"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_check",
+      "label": "Häkchen-Symbol anzeigen",
+      "default": true
+    },
+    {
+      "type": "color",
+      "id": "icon_color",
+      "label": "Farbe des Häkchens",
+      "default": "#5E887E",
+      "visible_if": "{{ section.settings.show_check }}"
+    },
+    {
+      "type": "range",
+      "id": "icon_size",
+      "label": "Größe des Häkchens",
+      "min": 14,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 22,
+      "visible_if": "{{ section.settings.show_check }}"
+    },
+    {
+      "type": "range",
+      "id": "title_size",
+      "label": "Schriftgröße der Punkte am Computer",
+      "min": 12,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "range",
+      "id": "title_size_mobile",
+      "label": "Schriftgröße der Punkte auf dem Handy",
+      "min": 10,
+      "max": 26,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "select",
+      "id": "title_weight",
+      "label": "Schriftstärke der Punkte",
+      "options": [
+        { "value": "400", "label": "Normal" },
+        { "value": "600", "label": "Halbfett" },
+        { "value": "700", "label": "Fett" }
+      ],
+      "default": "600"
+    },
+    {
+      "type": "range",
+      "id": "text_size",
+      "label": "Schriftgröße im aufgeklappten Text",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "text_size_mobile",
+      "label": "Aufgeklappter Text auf dem Handy",
+      "min": 10,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 15
+    },
+    {
+      "type": "color",
+      "id": "row_background",
+      "label": "Hintergrund der Zeilen",
+      "default": "#00000000",
+      "alpha": true
+    },
+    {
+      "type": "range",
+      "id": "row_radius",
+      "label": "Eckenrundung der Zeilen",
+      "min": 0,
+      "max": 30,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "row_gap",
+      "label": "Abstand zwischen den Zeilen",
+      "min": 0,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "checkbox",
+      "id": "dividers",
+      "label": "Trennlinien anzeigen",
+      "default": true
+    },
+    {
+      "type": "color",
+      "id": "line_color",
+      "label": "Farbe der Trennlinie",
+      "default": "#E6E6E6",
+      "visible_if": "{{ section.settings.dividers }}"
+    },
+    {
+      "type": "range",
+      "id": "row_padding_block",
+      "label": "Innenabstand oben/unten",
+      "min": 4,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "row_padding_inline",
+      "label": "Innenabstand seitlich",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "header",
+      "content": "Abschnitt"
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "label": "Abstand Bild zu Text",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 48
+    },
+    {
+      "type": "range",
+      "id": "gap_mobile",
+      "label": "Abstand auf dem Handy",
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "select",
+      "id": "vertical_alignment",
+      "label": "Senkrechte Ausrichtung",
+      "options": [
+        { "value": "start", "label": "Oben" },
+        { "value": "center", "label": "Mittig" },
+        { "value": "stretch", "label": "Gleiche Höhe" }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "Farbschema",
+      "default": "scheme-1"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Abstand oben",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 48
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Abstand unten",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 48
+    }
+  ],
+  "presets": [
+    {
+      "name": "Kokoro: Bild mit Punkten",
+      "blocks": [
+        { "type": "punkt", "settings": { "title": "Smarte Heiztechnologie" } },
+        { "type": "punkt", "settings": { "title": "Touch-Bedienung" } },
+        { "type": "punkt", "settings": { "title": "Kuschelig weich" } },
+        { "type": "punkt", "settings": { "title": "Nie wieder aufstehen" } },
+        { "type": "punkt", "settings": { "title": "Flexibel und vielseitig" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

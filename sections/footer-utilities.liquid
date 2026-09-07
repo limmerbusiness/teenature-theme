@@ -1,0 +1,504 @@
+
+{% liquid
+  assign policy_list_horizontal = false
+  for block in section.blocks
+    if block.type == 'footer-policy-list' and block.settings.policy_list_layout == 'horizontal'
+      assign policy_list_horizontal = true
+    endif
+  endfor
+%}
+
+<div class="section-background color-{{ section.settings.color_scheme }}"></div>
+<div
+  class="section section--{{ section.settings.section_width }} color-{{ section.settings.color_scheme }}"
+  {{ section.shopify_attributes }}
+>
+  <div
+    class="utilities utilities--blocks-{{ section.blocks.size }} utilities--mobile-align-{{ section.settings.mobile_block_alignment | default: 'center' }} spacing-style{% if policy_list_horizontal %} utilities--policy-list-horizontal{% endif %}"
+    style="{% render 'spacing-style', settings: section.settings %} --border-width: {{ section.settings.divider_thickness }}px; --gap: {{ section.settings.gap }}px;"
+    data-testid="footer-utilities"
+  >
+    {% content_for 'blocks' %}
+  </div>
+</div>
+
+{% stylesheet %}
+  .utilities {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--gap);
+    text-wrap: nowrap;
+    border-top: var(--border-width) solid var(--color-border);
+    color: var(--color-foreground-muted);
+
+    @media screen and (min-width: 750px) {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      justify-content: center;
+      gap: var(--gap);
+      align-items: start;
+      text-align: left;
+    }
+  }
+
+  .utilities a {
+    color: var(--color-foreground-muted);
+  }
+
+  .utilities > * {
+    text-align: center;
+
+    @media screen and (min-width: 750px) {
+      text-align: left;
+      justify-self: start;
+    }
+  }
+
+  /* Mobile (<750px): block alignment (setting: mobile_block_alignment) */
+  @media screen and (max-width: 749px) {
+    .utilities.utilities--mobile-align-start {
+      align-items: flex-start;
+    }
+
+    .utilities.utilities--mobile-align-start > * {
+      width: 100%;
+      text-align: left;
+      align-self: stretch;
+    }
+
+    .utilities.utilities--mobile-align-center {
+      align-items: center;
+    }
+
+    .utilities.utilities--mobile-align-center > * {
+      width: 100%;
+      text-align: center;
+      align-self: stretch;
+    }
+
+    .utilities.utilities--mobile-align-end {
+      align-items: flex-end;
+    }
+
+    .utilities.utilities--mobile-align-end > * {
+      width: 100%;
+      text-align: right;
+      align-self: stretch;
+    }
+
+    .utilities.utilities--mobile-align-start .policy-list--horizontal {
+      justify-content: flex-start;
+    }
+
+    .utilities.utilities--mobile-align-center .policy-list--horizontal {
+      justify-content: center;
+    }
+
+    .utilities.utilities--mobile-align-end .policy-list--horizontal {
+      justify-content: flex-end;
+    }
+
+    .utilities.utilities--mobile-align-start anchored-popover-component.footer-utilities__policy-list {
+      display: flex;
+      justify-content: flex-start;
+      text-align: left;
+      width: 100%;
+    }
+
+    .utilities.utilities--mobile-align-center anchored-popover-component.footer-utilities__policy-list {
+      display: flex;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+    }
+
+    .utilities.utilities--mobile-align-end anchored-popover-component.footer-utilities__policy-list {
+      display: flex;
+      justify-content: flex-end;
+      text-align: right;
+      width: 100%;
+    }
+
+    .utilities.utilities--mobile-align-start .social-icons__wrapper {
+      justify-content: flex-start;
+    }
+
+    .utilities.utilities--mobile-align-center .social-icons__wrapper {
+      justify-content: center;
+    }
+
+    .utilities.utilities--mobile-align-end .social-icons__wrapper {
+      justify-content: flex-end;
+    }
+
+    .utilities.utilities--mobile-align-start .payment-icons__list {
+      justify-content: flex-start;
+    }
+
+    .utilities.utilities--mobile-align-center .payment-icons__list {
+      justify-content: center;
+    }
+
+    .utilities.utilities--mobile-align-end .payment-icons__list {
+      justify-content: flex-end;
+    }
+  }
+
+  /* Dynamic positioning based on number of blocks */
+  @media screen and (min-width: 750px) {
+    /* 1 block: Single column, left aligned */
+    .utilities--blocks-1 {
+      grid-template-columns: 1fr;
+      justify-content: start;
+    }
+
+    .utilities--blocks-1 > * {
+      justify-self: start;
+      text-align: left;
+    }
+
+    /* 2 blocks: two equal columns */
+    .utilities--blocks-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* 3 blocks: seven columns — outer pairs span 2, middle block spans 3 */
+    .utilities--blocks-3 {
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+
+    .utilities--blocks-3 > *:nth-child(1) {
+      grid-column: span 2;
+    }
+
+    .utilities--blocks-3 > *:nth-child(2) {
+      grid-column: span 3;
+    }
+
+    .utilities--blocks-3 > *:nth-child(3) {
+      grid-column: span 2;
+    }
+
+    /* Horizontal policy list: three auto tracks (overrides repeat(7)) */
+    .utilities--blocks-3.utilities--policy-list-horizontal {
+      grid-template-columns: auto auto auto;
+      grid-template-areas: 'utilities-row3-start utilities-row3-middle utilities-row3-end';
+    }
+
+    .utilities--blocks-3.utilities--policy-list-horizontal > *:nth-child(1) {
+      grid-area: utilities-row3-start;
+    }
+
+    .utilities--blocks-3.utilities--policy-list-horizontal > *:nth-child(2) {
+      grid-area: utilities-row3-middle;
+    }
+
+    .utilities--blocks-3.utilities--policy-list-horizontal > *:nth-child(3) {
+      grid-area: utilities-row3-end;
+    }
+
+    /*
+      4–6 blocks: seven columns per row.
+      Row 1: blocks 1–3 span 2 + 3 + 2 (= 7).
+      Six blocks → row 2: blocks 4–6 same pattern (5th spans 3).
+      Five blocks → row 2: spans 3 + 4.
+      Four blocks → row 2: block 4 spans full row.
+    */
+    .utilities--blocks-4,
+    .utilities--blocks-5,
+    .utilities--blocks-6 {
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+
+    .utilities--blocks-4 > *:nth-child(1),
+    .utilities--blocks-5 > *:nth-child(1),
+    .utilities--blocks-6 > *:nth-child(1) {
+      grid-column: span 2;
+      grid-row: 1;
+    }
+
+    .utilities--blocks-4 > *:nth-child(2),
+    .utilities--blocks-5 > *:nth-child(2),
+    .utilities--blocks-6 > *:nth-child(2) {
+      grid-column: span 3;
+      grid-row: 1;
+    }
+
+    .utilities--blocks-4 > *:nth-child(3),
+    .utilities--blocks-5 > *:nth-child(3),
+    .utilities--blocks-6 > *:nth-child(3) {
+      grid-column: span 2;
+      grid-row: 1;
+    }
+
+    .utilities--blocks-6 > *:nth-child(4) {
+      grid-column: span 2;
+      grid-row: 2;
+    }
+
+    .utilities--blocks-6 > *:nth-child(5) {
+      grid-column: span 3;
+      grid-row: 2;
+    }
+
+    .utilities--blocks-6 > *:nth-child(6) {
+      grid-column: span 2;
+      grid-row: 2;
+    }
+
+    .utilities--blocks-4 > *:nth-child(4) {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      width: 100%;
+    }
+
+    .utilities--blocks-5 > *:nth-child(4) {
+      grid-column: span 3;
+      grid-row: 2;
+    }
+
+    .utilities--blocks-5 > *:nth-child(5) {
+      grid-column: span 4;
+      grid-row: 2;
+    }
+
+    /*
+      Desktop ≥750px — center inner content in key columns:
+      when 3+ blocks, align the 2nd block to center; when 6 blocks, also align the 5th (middle bottom row).
+    */
+    .utilities.utilities--blocks-3 > *:nth-child(2),
+    .utilities.utilities--blocks-4 > *:nth-child(2),
+    .utilities.utilities--blocks-5 > *:nth-child(2),
+    .utilities.utilities--blocks-6 > *:nth-child(2),
+    .utilities.utilities--blocks-6 > *:nth-child(5) {
+      justify-self: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      text-align: center;
+    }
+
+    .utilities.utilities--blocks-3 > *:nth-child(2) .policy-list--horizontal,
+    .utilities.utilities--blocks-4 > *:nth-child(2) .policy-list--horizontal,
+    .utilities.utilities--blocks-5 > *:nth-child(2) .policy-list--horizontal,
+    .utilities.utilities--blocks-6 > *:nth-child(2) .policy-list--horizontal,
+    .utilities.utilities--blocks-6 > *:nth-child(5) .policy-list--horizontal {
+      justify-content: center;
+    }
+
+    .utilities.utilities--blocks-3 > *:nth-child(2) anchored-popover-component.footer-utilities__policy-list,
+    .utilities.utilities--blocks-4 > *:nth-child(2) anchored-popover-component.footer-utilities__policy-list,
+    .utilities.utilities--blocks-5 > *:nth-child(2) anchored-popover-component.footer-utilities__policy-list,
+    .utilities.utilities--blocks-6 > *:nth-child(2) anchored-popover-component.footer-utilities__policy-list,
+    .utilities.utilities--blocks-6 > *:nth-child(5) anchored-popover-component.footer-utilities__policy-list {
+      display: flex;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+    }
+
+    .utilities.utilities--blocks-3 > *:nth-child(2) .social-icons__wrapper,
+    .utilities.utilities--blocks-4 > *:nth-child(2) .social-icons__wrapper,
+    .utilities.utilities--blocks-5 > *:nth-child(2) .social-icons__wrapper,
+    .utilities.utilities--blocks-6 > *:nth-child(2) .social-icons__wrapper,
+    .utilities.utilities--blocks-6 > *:nth-child(5) .social-icons__wrapper {
+      justify-content: center;
+    }
+
+    .utilities.utilities--blocks-3 > *:nth-child(2) .payment-icons__list,
+    .utilities.utilities--blocks-4 > *:nth-child(2) .payment-icons__list,
+    .utilities.utilities--blocks-5 > *:nth-child(2) .payment-icons__list,
+    .utilities.utilities--blocks-6 > *:nth-child(2) .payment-icons__list,
+    .utilities.utilities--blocks-6 > *:nth-child(5) .payment-icons__list {
+      justify-content: center;
+    }
+
+    /*
+      Align selected blocks to the inline end (flex-end within full-width cell).
+      2 blocks → last; 3 → last; 4 → 3rd only; 5 → 3rd + last; 6 → 3rd + last.
+    */
+    .utilities.utilities--blocks-2 > *:nth-child(2),
+    .utilities.utilities--blocks-3 > *:nth-child(3),
+    .utilities.utilities--blocks-4 > *:nth-child(3),
+    .utilities.utilities--blocks-5 > *:nth-child(3),
+    .utilities.utilities--blocks-5 > *:nth-child(5),
+    .utilities.utilities--blocks-6 > *:nth-child(3),
+    .utilities.utilities--blocks-6 > *:nth-child(6) {
+      display: flex;
+      justify-content: flex-end;
+      justify-self: end;
+      width: 100%;
+      text-align: right;
+    }
+
+    /*
+      Policy horizontal list overrides its own centered flex; menu popover must flex internal trigger.
+      (Theme wraps blocks in `.shopify-block`; children are targeted with `>` *.)
+    */
+    .utilities.utilities--blocks-2 > *:nth-child(2) .policy-list--horizontal,
+    .utilities.utilities--blocks-3 > *:nth-child(3) .policy-list--horizontal,
+    .utilities.utilities--blocks-4 > *:nth-child(3) .policy-list--horizontal,
+    .utilities.utilities--blocks-5 > *:nth-child(3) .policy-list--horizontal,
+    .utilities.utilities--blocks-5 > *:nth-child(5) .policy-list--horizontal,
+    .utilities.utilities--blocks-6 > *:nth-child(3) .policy-list--horizontal,
+    .utilities.utilities--blocks-6 > *:nth-child(6) .policy-list--horizontal {
+      justify-content: flex-end;
+    }
+
+    .utilities.utilities--blocks-2 > *:nth-child(2) anchored-popover-component.footer-utilities__policy-list,
+    .utilities.utilities--blocks-3 > *:nth-child(3) anchored-popover-component.footer-utilities__policy-list,
+    .utilities.utilities--blocks-4 > *:nth-child(3) anchored-popover-component.footer-utilities__policy-list,
+    .utilities.utilities--blocks-5 > *:nth-child(3) anchored-popover-component.footer-utilities__policy-list,
+    .utilities.utilities--blocks-5 > *:nth-child(5) anchored-popover-component.footer-utilities__policy-list,
+    .utilities.utilities--blocks-6 > *:nth-child(3) anchored-popover-component.footer-utilities__policy-list,
+    .utilities.utilities--blocks-6 > *:nth-child(6) anchored-popover-component.footer-utilities__policy-list {
+      display: flex;
+      justify-content: flex-end;
+      width: 100%;
+      text-align: right;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.policies_and_links",
+  "tag": "div",
+  "class": "footer-utilities",
+  "max_blocks": 6,
+  "enabled_on": {
+    "groups": ["footer"]
+  },
+  "settings": [
+    {
+      "type": "select",
+      "id": "section_width",
+      "label": "t:settings.width",
+      "options": [
+        {
+          "value": "page-width",
+          "label": "t:options.page"
+        },
+        {
+          "value": "full-width",
+          "label": "t:options.full"
+        }
+      ],
+      "default": "page-width"
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "label": "t:settings.gap",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "divider_thickness",
+      "label": "t:settings.divider_thickness",
+      "min": 0,
+      "max": 5,
+      "step": 0.5,
+      "unit": "px",
+      "default": 1
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:settings.color_scheme",
+      "default": "scheme-1"
+    },
+    {
+      "type": "header",
+      "content": "t:content.mobile_layout"
+    },
+    {
+      "type": "select",
+      "id": "mobile_block_alignment",
+      "label": "t:settings.alignment_mobile",
+      "options": [
+        {
+          "value": "start",
+          "label": "t:options.left"
+        },
+        {
+          "value": "center",
+          "label": "t:options.center"
+        },
+        {
+          "value": "end",
+          "label": "t:options.right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 20
+    }
+  ],
+  "blocks": [
+    {
+      "type": "footer-copyright"
+    },
+    {
+      "type": "footer-policy-list"
+    },
+    {
+      "type": "social-links"
+    },
+    {
+      "type": "_payment-icons-footer"
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.policies_and_links",
+      "category": "t:categories.footer",
+      "blocks": {
+        "copyright": {
+          "type": "footer-copyright"
+        },
+        "policy_list": {
+          "type": "footer-policy-list"
+        },
+        "social_icons": {
+          "type": "social-links"
+        }
+      },
+      "block_order": ["copyright", "policy_list", "social_icons"]
+    }
+  ]
+}
+{% endschema %}
