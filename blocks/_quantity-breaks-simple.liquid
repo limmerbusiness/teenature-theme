@@ -1,0 +1,1500 @@
+{%- liquid
+  assign product = product | default: closest.product
+  assign product_form_id = 'BuyButtons-ProductForm-' | append: section.id
+-%}
+{% render 'tiered-quantity-selector-simple', product: product, block: block, section: section, product_form_id: product_form_id %}
+
+{% schema %}
+{
+  "name": "Quantity Breaks — Simple",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Quantity Breaks — Simple"
+    },
+    {
+      "type": "paragraph",
+      "content": "IMPORTANT: Please note that in order for the discounts to work, you'll need to set automatic discounts in your Shopify admin. Learn more about automatic discounts [here](https://help.shopify.com/en/manual/discounts/discount-types)."
+    },
+    {
+      "type": "paragraph",
+      "content": "[Use this tutorial to setup](https://help.lumintheme.com/lumin-theme-documentation/product-page/quantity-breaks-discount)"
+    },
+    {
+      "type": "header",
+      "content": "Product and Collection Selection"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_on_all_products",
+      "label": "Show On All Products",
+      "default": true
+    },
+    {
+      "type": "product_list",
+      "id": "selected_product",
+      "label": "Select Product",
+      "info": "Choose a specific product for which this block should be displayed."
+    },
+    {
+      "type": "collection",
+      "id": "selected_collection",
+      "label": "Select Collection",
+      "info": "Choose a collection for which this block should be displayed on all its products."
+    },
+    {
+      "type": "select",
+      "id": "quantity_style",
+      "options": [
+        {
+          "value": "vertical",
+          "label": "Vertical"
+        },
+        {
+          "value": "horizontal",
+          "label": "Horizontal"
+        },
+        {
+          "value": "horizontal-nogap",
+          "label": "Horizontal No Gap"
+        }
+      ],
+      "default": "vertical",
+      "label": "Selector Style"
+    },
+    {
+      "type": "select",
+      "id": "columns_block",
+      "options": [
+        {
+          "value": "40",
+          "label": "2"
+        },
+        {
+          "value": "25",
+          "label": "3"
+        },
+        {
+          "value": "20",
+          "label": "4"
+        },
+        {
+          "value": "none",
+          "label": "Auto"
+        }
+      ],
+      "default": "25",
+      "label": "Columns in first row, other rows will auto adjust.",
+      "info": "Work on Vertical selector Style"
+    },
+    {
+      "type": "select",
+      "id": "vertical_two_column_layout",
+      "label": "2-column card layout",
+      "options": [
+        {
+          "value": "default",
+          "label": "Standard"
+        },
+        {
+          "value": "compact",
+          "label": "Compact cards"
+        }
+      ],
+      "default": "default",
+      "info": "Compact cards show a radio, pack title, and per-unit price in a 2-column grid.",
+      "visible_if": "{{ block.settings.quantity_style == 'vertical' and block.settings.columns_block == '40' }}"
+    },
+    {
+      "type": "select",
+      "id": "option_height",
+      "options": [
+        {
+          "value": "auto",
+          "label": "Equal"
+        },
+        {
+          "value": "fit-content",
+          "label": "Auto"
+        }
+      ],
+      "default": "auto",
+      "label": "Option Height",
+      "info": "Work on Vertical selector Style"
+    },
+    {
+      "type": "select",
+      "id": "preselected",
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "1",
+          "label": "Option #1"
+        },
+        {
+          "value": "2",
+          "label": "Option #2"
+        },
+        {
+          "value": "3",
+          "label": "Option #3"
+        },
+        {
+          "value": "4",
+          "label": "Option #4"
+        },
+        {
+          "value": "5",
+          "label": "Option #5"
+        },
+        {
+          "value": "6",
+          "label": "Option #6"
+        }
+      ],
+      "default": "2",
+      "label": "Preselected option"
+    },
+    {
+      "type": "paragraph",
+      "content": "\u26a0\ufe0f Save setting to take effect"
+    },
+    {
+      "type": "header",
+      "content": "General Settings"
+    },
+    {
+      "type": "select",
+      "id": "discount_type",
+      "label": "Discount Type",
+      "options": [
+        {
+          "value": "price",
+          "label": "Price"
+        },
+        {
+          "value": "percentage",
+          "label": "Percentage"
+        }
+      ],
+      "default": "percentage"
+    },
+    {
+      "type": "select",
+      "id": "show_strikethrough_price",
+      "label": "Strikethrough Pricing Style",
+      "options": [
+        {
+          "value": "calculated",
+          "label": "Calculated"
+        },
+        {
+          "value": "original",
+          "label": "Original"
+        }
+      ],
+      "default": "calculated"
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_checkbox",
+      "label": "Hide Dot",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "show_strikethrough",
+      "label": "Show Strikethrough Pricing",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_total_pricing",
+      "label": "Show Total Pricing",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_per_unit",
+      "label": "Show Per Unit Pricing",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "override_product_price",
+      "label": "t:sections.quantity_breaks.override_product_price",
+      "default": true,
+      "info": "t:sections.quantity_breaks.override_product_price_info"
+    },
+    {
+      "type": "checkbox",
+      "id": "compact_per_unit_under_label",
+      "label": "Show per unit under label on compact cards",
+      "default": false,
+      "visible_if": "{{ block.settings.quantity_style == 'vertical' and block.settings.columns_block == '40' and block.settings.vertical_two_column_layout == 'compact' and block.settings.show_per_unit }}"
+    },
+    {
+      "type": "header",
+      "content": "Badge Settings"
+    },
+    {
+      "type": "select",
+      "id": "badge_style",
+      "label": "Badge Style",
+      "options": [
+        {
+          "value": "tiered-option__badge",
+          "label": "Simple"
+        },
+        {
+          "value": "ribbon ribbon-top-right",
+          "label": "Ribbon top Right"
+        },
+        {
+          "value": "ribbon ribbon-bottom-left",
+          "label": "Ribbon Bottom Left"
+        },
+        {
+          "value": "ribbon ribbon-long",
+          "label": "Ribbon Top Long"
+        },
+        {
+          "value": "ribbon ribbon-top-short",
+          "label": "Ribbon Top Short"
+        }
+      ],
+      "default": "tiered-option__badge"
+    },
+    {
+      "type": "range",
+      "id": "badge_font_size",
+      "label": "Badge Font Size",
+      "default": 1.3,
+      "min": 0.5,
+      "max": 2,
+      "step": 0.1,
+      "unit": "rem"
+    },
+    {
+      "type": "range",
+      "id": "badge_font_size_mobile",
+      "label": "Badge Font Size Mobile",
+      "default": 1,
+      "min": 0.5,
+      "max": 2,
+      "step": 0.1,
+      "unit": "rem"
+    },
+    {
+      "type": "color",
+      "id": "badge_bg_color",
+      "label": "Badge Background Color",
+      "default": "#E71717"
+    },
+    {
+      "type": "color_background",
+      "id": "badge_background_gradient",
+      "label": "Badge background gradient",
+      "info": "Work on 'Simple' or 'Robon Top Long' badge style only"
+    },
+    {
+      "type": "color",
+      "id": "badge_font_color",
+      "label": "Badge Font Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Option 1 Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "option_1_show_label",
+      "label": "Show Label",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "option_1_show_image",
+      "label": "Show Images",
+      "default": false,
+      "visible_if": "{{ block.settings.option_1_show_label }}"
+    },
+    {
+      "type": "image_picker",
+      "id": "option_1_image",
+      "label": "Image",
+      "info": "Remove to show product or variant image",
+      "visible_if": "{{ block.settings.option_1_show_label and block.settings.option_1_show_image }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_1_label",
+      "label": "Label",
+      "default": "1 Pack",
+      "info": "Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_1_show_label }}"
+    },
+    {
+      "type": "number",
+      "id": "option_1_quantity",
+      "label": "Quantity",
+      "default": 1,
+      "visible_if": "{{ block.settings.option_1_show_label }}"
+    },
+    {
+      "type": "text",
+      "id": "option_1_fixed_discount",
+      "label": "Fixed Price Discount",
+      "default": "0",
+      "visible_if": "{{ block.settings.option_1_show_label }}"
+    },
+    {
+      "type": "range",
+      "id": "option_1_discount_percentage",
+      "label": "Discount Percentage",
+      "default": 0,
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "visible_if": "{{ block.settings.option_1_show_label }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "option_1_badge_enable",
+      "label": "Enable Badge on This Option",
+      "default": false,
+      "visible_if": "{{ block.settings.option_1_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_1_badge_text",
+      "label": "Badge Text",
+      "default": "Most Popular",
+      "visible_if": "{{ block.settings.option_1_show_label and block.settings.option_1_badge_enable }}"
+    },
+    {
+      "type": "text",
+      "id": "option_1_unit_label",
+      "label": "Per Unit Label",
+      "default": "($)/Pcs",
+      "info": "Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_1_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_1_save_text",
+      "label": "Benefit Text",
+      "default": "Save (%)",
+      "info": "Leave blank to hide. Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_1_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_1_promo",
+      "label": "Promo Text",
+      "info": "Leave blank to hide. Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_1_show_label }}"
+    },
+    {
+      "type": "image_picker",
+      "id": "option_1_bottom_image",
+      "label": "Promo Image",
+      "info": "Remove to hide",
+      "visible_if": "{{ block.settings.option_1_show_label }}"
+    },
+    {
+      "type": "header",
+      "content": "Option 2 Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "option_2_show_label",
+      "label": "Show Label",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "option_2_show_image",
+      "label": "Show Images",
+      "default": false,
+      "visible_if": "{{ block.settings.option_2_show_label }}"
+    },
+    {
+      "type": "image_picker",
+      "id": "option_2_image",
+      "label": "Image",
+      "info": "Remove to show product or variant image",
+      "visible_if": "{{ block.settings.option_2_show_label and block.settings.option_2_show_image }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_2_label",
+      "label": "Label",
+      "default": "2 Pack",
+      "info": "Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_2_show_label }}"
+    },
+    {
+      "type": "number",
+      "id": "option_2_quantity",
+      "label": "Quantity",
+      "default": 2,
+      "visible_if": "{{ block.settings.option_2_show_label }}"
+    },
+    {
+      "type": "text",
+      "id": "option_2_fixed_discount",
+      "label": "Fixed Price Discount",
+      "default": "5",
+      "visible_if": "{{ block.settings.option_2_show_label }}"
+    },
+    {
+      "type": "range",
+      "id": "option_2_discount_percentage",
+      "label": "Discount Percentage",
+      "default": 20,
+      "min": 0,
+      "max": 100,
+      "visible_if": "{{ block.settings.option_2_show_label }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "option_2_badge_enable",
+      "label": "Enable Badge on This Option",
+      "default": true,
+      "visible_if": "{{ block.settings.option_2_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_2_badge_text",
+      "label": "Badge Text",
+      "default": "Most Popular",
+      "visible_if": "{{ block.settings.option_2_show_label and block.settings.option_2_badge_enable }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_2_unit_label",
+      "label": "Per Unit Label",
+      "default": "($)/Pcs",
+      "info": "Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_2_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_2_save_text",
+      "label": "Benefit Text",
+      "default": "Save (%)",
+      "info": "Leave blank to hide. Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_2_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_2_promo",
+      "label": "Promo Text",
+      "info": "Leave blank to hide. Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_2_show_label }}"
+    },
+    {
+      "type": "image_picker",
+      "id": "option_2_bottom_image",
+      "label": "Promo Image",
+      "info": "Remove to hide",
+      "visible_if": "{{ block.settings.option_2_show_label }}"
+    },
+    {
+      "type": "header",
+      "content": "Option 3 Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "option_3_show_label",
+      "label": "Show Label",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "option_3_show_image",
+      "label": "Show Images",
+      "default": false,
+      "visible_if": "{{ block.settings.option_3_show_label }}"
+    },
+    {
+      "type": "image_picker",
+      "id": "option_3_image",
+      "label": "Image",
+      "info": "Remove to show product or variant image",
+      "visible_if": "{{ block.settings.option_3_show_label and block.settings.option_3_show_image }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_3_label",
+      "label": "Label",
+      "default": "3 Pack",
+      "info": "Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_3_show_label }}"
+    },
+    {
+      "type": "number",
+      "id": "option_3_quantity",
+      "label": "Quantity",
+      "default": 3,
+      "visible_if": "{{ block.settings.option_3_show_label }}"
+    },
+    {
+      "type": "text",
+      "id": "option_3_fixed_discount",
+      "label": "Fixed Price Discount",
+      "default": "10",
+      "visible_if": "{{ block.settings.option_3_show_label }}"
+    },
+    {
+      "type": "range",
+      "id": "option_3_discount_percentage",
+      "label": "Discount Percentage",
+      "default": 30,
+      "min": 0,
+      "max": 100,
+      "visible_if": "{{ block.settings.option_3_show_label }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "option_3_badge_enable",
+      "label": "Enable Badge on This Option",
+      "default": false,
+      "visible_if": "{{ block.settings.option_3_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_3_badge_text",
+      "label": "Badge Text",
+      "default": "Most Popular",
+      "visible_if": "{{ block.settings.option_3_show_label and block.settings.option_3_badge_enable }}"
+    },
+    {
+      "type": "text",
+      "id": "option_3_unit_label",
+      "label": "Per Unit Label",
+      "default": "($)/Pcs",
+      "info": "Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_3_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_3_save_text",
+      "label": "Benefit Text",
+      "default": "Save (%)",
+      "info": "Leave blank to hide. Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_3_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_3_promo",
+      "label": "Promo Text",
+      "info": "Leave blank to hide. Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_3_show_label }}"
+    },
+    {
+      "type": "image_picker",
+      "id": "option_3_bottom_image",
+      "label": "Promo Image",
+      "info": "Remove to hide",
+      "visible_if": "{{ block.settings.option_3_show_label }}"
+    },
+    {
+      "type": "header",
+      "content": "Option 4 Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "option_4_show_label",
+      "label": "Show Label",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "option_4_show_image",
+      "label": "Show Images",
+      "default": false,
+      "visible_if": "{{ block.settings.option_4_show_label }}"
+    },
+    {
+      "type": "image_picker",
+      "id": "option_4_image",
+      "label": "Image",
+      "info": "Remove to show product or variant image",
+      "visible_if": "{{ block.settings.option_4_show_label and block.settings.option_4_show_image }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_4_label",
+      "label": "Label",
+      "default": "4 Pack",
+      "info": "Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_4_show_label }}"
+    },
+    {
+      "type": "number",
+      "id": "option_4_quantity",
+      "label": "Quantity",
+      "default": 4,
+      "visible_if": "{{ block.settings.option_4_show_label }}"
+    },
+    {
+      "type": "text",
+      "id": "option_4_fixed_discount",
+      "label": "Fixed Price Discount",
+      "default": "0",
+      "visible_if": "{{ block.settings.option_4_show_label }}"
+    },
+    {
+      "type": "range",
+      "id": "option_4_discount_percentage",
+      "label": "Discount Percentage",
+      "default": 0,
+      "min": 0,
+      "max": 100,
+      "visible_if": "{{ block.settings.option_4_show_label }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "option_4_badge_enable",
+      "label": "Enable Badge on This Option",
+      "default": false,
+      "visible_if": "{{ block.settings.option_4_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_4_badge_text",
+      "label": "Badge Text",
+      "default": "Most Popular",
+      "visible_if": "{{ block.settings.option_4_show_label and block.settings.option_4_badge_enable }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_4_unit_label",
+      "label": "Per Unit Label",
+      "default": "($)/Pcs",
+      "info": "Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_4_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_4_save_text",
+      "label": "Benefit Text",
+      "default": "Save (%)",
+      "info": "Leave blank to hide. Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_4_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_4_promo",
+      "label": "Promo Text",
+      "info": "Leave blank to hide. Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_4_show_label }}"
+    },
+    {
+      "type": "image_picker",
+      "id": "option_4_bottom_image",
+      "label": "Promo Image",
+      "info": "Remove to hide",
+      "visible_if": "{{ block.settings.option_4_show_label }}"
+    },
+    {
+      "type": "header",
+      "content": "Option 5 Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "option_5_show_label",
+      "label": "Show Label",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "option_5_show_image",
+      "label": "Show Images",
+      "default": false,
+      "visible_if": "{{ block.settings.option_5_show_label }}"
+    },
+    {
+      "type": "image_picker",
+      "id": "option_5_image",
+      "label": "Image",
+      "info": "Remove to show product or variant image",
+      "visible_if": "{{ block.settings.option_5_show_label and block.settings.option_5_show_image }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_5_label",
+      "label": "Label",
+      "default": "5 Pack",
+      "info": "Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_5_show_label }}"
+    },
+    {
+      "type": "number",
+      "id": "option_5_quantity",
+      "label": "Quantity",
+      "default": 5,
+      "visible_if": "{{ block.settings.option_5_show_label }}"
+    },
+    {
+      "type": "text",
+      "id": "option_5_fixed_discount",
+      "label": "Fixed Price Discount",
+      "default": "0",
+      "visible_if": "{{ block.settings.option_5_show_label }}"
+    },
+    {
+      "type": "range",
+      "id": "option_5_discount_percentage",
+      "label": "Discount Percentage",
+      "default": 0,
+      "min": 0,
+      "max": 100,
+      "visible_if": "{{ block.settings.option_5_show_label }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "option_5_badge_enable",
+      "label": "Enable Badge on This Option",
+      "default": false,
+      "visible_if": "{{ block.settings.option_5_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_5_badge_text",
+      "label": "Badge Text",
+      "default": "Most Popular",
+      "visible_if": "{{ block.settings.option_5_show_label and block.settings.option_5_badge_enable }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_5_unit_label",
+      "label": "Per Unit Label",
+      "default": "($)/Pcs",
+      "info": "Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_5_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_5_save_text",
+      "label": "Benefit Text",
+      "default": "Save (%)",
+      "info": "Leave blank to hide. Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_5_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_5_promo",
+      "label": "Promo Text",
+      "info": "Leave blank to hide. Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_5_show_label }}"
+    },
+    {
+      "type": "image_picker",
+      "id": "option_5_bottom_image",
+      "label": "Promo Image",
+      "info": "Remove to hide",
+      "visible_if": "{{ block.settings.option_5_show_label }}"
+    },
+    {
+      "type": "header",
+      "content": "Option 6 Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "option_6_show_label",
+      "label": "Show Label",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "option_6_show_image",
+      "label": "Show Images",
+      "default": false,
+      "visible_if": "{{ block.settings.option_6_show_label }}"
+    },
+    {
+      "type": "image_picker",
+      "id": "option_6_image",
+      "label": "Image",
+      "info": "Remove to show product or variant image",
+      "visible_if": "{{ block.settings.option_6_show_label and block.settings.option_6_show_image }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_6_label",
+      "label": "Label",
+      "default": "6 Pack",
+      "info": "Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_6_show_label }}"
+    },
+    {
+      "type": "number",
+      "id": "option_6_quantity",
+      "label": "Quantity",
+      "default": 6,
+      "visible_if": "{{ block.settings.option_6_show_label }}"
+    },
+    {
+      "type": "text",
+      "id": "option_6_fixed_discount",
+      "label": "Fixed Price Discount",
+      "default": "0",
+      "visible_if": "{{ block.settings.option_6_show_label }}"
+    },
+    {
+      "type": "range",
+      "id": "option_6_discount_percentage",
+      "label": "Discount Percentage",
+      "default": 0,
+      "min": 0,
+      "max": 100,
+      "visible_if": "{{ block.settings.option_6_show_label }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "option_6_badge_enable",
+      "label": "Enable Badge on This Option",
+      "default": false,
+      "visible_if": "{{ block.settings.option_6_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_6_badge_text",
+      "label": "Badge Text",
+      "default": "Most Popular",
+      "visible_if": "{{ block.settings.option_6_show_label and block.settings.option_6_badge_enable }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_6_unit_label",
+      "label": "Per Unit Label",
+      "default": "($)/Pcs",
+      "info": "Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_6_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_6_save_text",
+      "label": "Benefit Text",
+      "default": "Save (%)",
+      "info": "Leave blank to hide. Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_6_show_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "option_6_promo",
+      "label": "Promo Text",
+      "info": "Leave blank to hide. Use placeholder (%) to show discount percent and ($) to show price per unit. e.g. 'Save (%)' or '($)/unit'",
+      "visible_if": "{{ block.settings.option_6_show_label }}"
+    },
+    {
+      "type": "image_picker",
+      "id": "option_6_bottom_image",
+      "label": "Promo Image",
+      "info": "Remove to hide",
+      "visible_if": "{{ block.settings.option_6_show_label }}"
+    },
+    {
+      "type": "header",
+      "content": "Top Headings"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_quantity_label",
+      "label": "Show Heading",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_lines",
+      "label": "Hide Lines",
+      "default": false,
+      "visible_if": "{{ block.settings.show_quantity_label }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_head_border",
+      "label": "Show Borders",
+      "default": false,
+      "info": "Work on 'Horizontal No Gap' selector Style",
+      "visible_if": "{{ block.settings.show_quantity_label }}"
+    },
+    {
+      "type": "text_alignment",
+      "id": "title_text_align",
+      "label": "Title text-align",
+      "default": "center",
+      "info": "Work when'Hide Lines' is checked.",
+      "visible_if": "{{ block.settings.show_quantity_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "quantity_title_text",
+      "label": "Heading",
+      "default": "Bundle & Save",
+      "visible_if": "{{ block.settings.show_quantity_label }}"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "quantity_subtitle_text",
+      "label": "Sub Heading",
+      "visible_if": "{{ block.settings.show_quantity_label }}"
+    },
+    {
+      "type": "range",
+      "id": "title_font_size",
+      "label": "Heading Size",
+      "default": 1.8,
+      "min": 0.5,
+      "max": 3.5,
+      "step": 0.1,
+      "unit": "rem",
+      "visible_if": "{{ block.settings.show_quantity_label }}"
+    },
+    {
+      "type": "range",
+      "id": "subtitle_font_size",
+      "label": "Sub Heading Size",
+      "default": 1.3,
+      "min": 0.5,
+      "max": 3.5,
+      "step": 0.1,
+      "unit": "rem",
+      "visible_if": "{{ block.settings.show_quantity_label }}"
+    },
+    {
+      "type": "color",
+      "id": "title_color",
+      "label": "Heading",
+      "default": "#333333",
+      "visible_if": "{{ block.settings.show_quantity_label }}"
+    },
+    {
+      "type": "color",
+      "id": "subtitle_color",
+      "label": "Sub Heading",
+      "default": "#333333",
+      "visible_if": "{{ block.settings.show_quantity_label }}"
+    },
+    {
+      "type": "color",
+      "id": "title_line_color",
+      "label": "Heading Lines",
+      "default": "#e6e6e6",
+      "visible_if": "{{ block.settings.show_quantity_label }}"
+    },
+    {
+      "type": "color",
+      "id": "title_bg_color",
+      "label": "Heading Background",
+      "default": "#ffffff",
+      "info": "Work on 'Horizontal No Gap' selector Style",
+      "visible_if": "{{ block.settings.show_quantity_label }}"
+    },
+    {
+      "type": "header",
+      "content": "Bottom Promo Settings"
+    },
+    {
+      "type": "range",
+      "id": "bottom_image_size",
+      "label": "Bottom Promo image Size",
+      "default": 30,
+      "min": 10,
+      "max": 60,
+      "step": 2,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "bottom_font_size",
+      "label": "Bottom Promo Font Size",
+      "default": 12,
+      "min": 8,
+      "max": 30,
+      "step": 1,
+      "unit": "px"
+    },
+    {
+      "type": "select",
+      "id": "bottom_content_alignment",
+      "label": "Alignment",
+      "default": "flex-start",
+      "options": [
+        {
+          "value": "flex-start",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "flex-end",
+          "label": "Right"
+        }
+      ]
+    },
+    {
+      "type": "color",
+      "id": "promo_font_color",
+      "label": "Bottom Promo Text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "promo_bg_color",
+      "label": "Bottom Promo Background",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "promo_border_color",
+      "label": "Bottom Promo Border",
+      "default": "#000000"
+    },
+    {
+      "type": "header",
+      "content": "Formatting Settings"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border Radius",
+      "default": 0.5,
+      "min": 0,
+      "max": 2,
+      "step": 0.1,
+      "unit": "rem"
+    },
+    {
+      "type": "range",
+      "id": "option_bottom_spacing",
+      "label": "Option Bottom Spacing",
+      "default": 2.5,
+      "min": 1,
+      "max": 5,
+      "step": 0.1,
+      "unit": "rem"
+    },
+    {
+      "type": "range",
+      "id": "option_height_spacing",
+      "label": "Option Hieght for Horizontal Style",
+      "default": 1.8,
+      "min": 0.5,
+      "max": 3,
+      "step": 0.1,
+      "unit": "rem"
+    },
+    {
+      "type": "range",
+      "id": "label_font_size",
+      "label": "Label Font Size",
+      "default": 2,
+      "min": 1,
+      "max": 3,
+      "step": 0.1,
+      "unit": "rem"
+    },
+    {
+      "type": "range",
+      "id": "compare_price_font_size",
+      "label": "Compare Price Font Size",
+      "default": 1.3,
+      "min": 0.5,
+      "max": 2,
+      "step": 0.1,
+      "unit": "rem"
+    },
+    {
+      "type": "range",
+      "id": "final_price_font_size",
+      "label": "Final Price Font Size",
+      "default": 1.5,
+      "min": 0.5,
+      "max": 2,
+      "step": 0.1,
+      "unit": "rem"
+    },
+    {
+      "type": "range",
+      "id": "per_unit_font_size",
+      "label": "Per Unit Price Font Size",
+      "default": 1,
+      "min": 1,
+      "max": 2,
+      "step": 0.1,
+      "unit": "rem"
+    },
+    {
+      "type": "range",
+      "id": "savings_label_font_size",
+      "label": "Savings Label Font Size",
+      "default": 1.1,
+      "min": 0.5,
+      "max": 1.5,
+      "step": 0.1,
+      "unit": "rem"
+    },
+    {
+      "type": "range",
+      "id": "option_image_size",
+      "label": "Option image Size",
+      "default": 60,
+      "min": 20,
+      "max": 100,
+      "step": 2,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "option_image_radius",
+      "label": "Option image Radius",
+      "default": 0,
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "buttons_border_thickness",
+      "min": 0,
+      "max": 2,
+      "step": 0.1,
+      "unit": "rem",
+      "label": "Option Border Thikness",
+      "default": 0.1
+    },
+    {
+      "type": "header",
+      "content": "Inner glow"
+    },
+    {
+      "type": "checkbox",
+      "id": "pill_enable_inner_glow",
+      "label": "Enable inner glow",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "pill_inner_glow_blur",
+      "label": "Inner glow blur",
+      "min": 4,
+      "max": 30,
+      "step": 1,
+      "unit": "px",
+      "default": 14,
+      "visible_if": "{{ block.settings.pill_enable_inner_glow }}"
+    },
+    {
+      "type": "range",
+      "id": "pill_inner_glow_spread",
+      "label": "Inner glow spread",
+      "min": 0,
+      "max": 8,
+      "step": 1,
+      "unit": "px",
+      "default": 2,
+      "visible_if": "{{ block.settings.pill_enable_inner_glow }}"
+    },
+    {
+      "type": "range",
+      "id": "pill_inner_glow_opacity",
+      "label": "Inner glow opacity",
+      "min": 10,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 45,
+      "visible_if": "{{ block.settings.pill_enable_inner_glow }}"
+    },
+    {
+      "type": "color",
+      "id": "pill_unselected_inner_glow_color",
+      "label": "Unselected inner glow color",
+      "default": "#94A3B8",
+      "visible_if": "{{ block.settings.pill_enable_inner_glow }}"
+    },
+    {
+      "type": "color",
+      "id": "pill_selected_inner_glow_color",
+      "label": "Selected inner glow color",
+      "default": "#3B82F6",
+      "visible_if": "{{ block.settings.pill_enable_inner_glow }}"
+    },
+    {
+      "type": "header",
+      "content": "Unselected Option Colors"
+    },
+    {
+      "type": "color",
+      "id": "border_color_unselected",
+      "label": "Border Color",
+      "default": "#e6e6e6"
+    },
+    {
+      "type": "color",
+      "id": "text_color_unselected",
+      "label": "Text Color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "back_color_unselected",
+      "label": "Background Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "border_color_hover_unselected",
+      "label": "Border Hover Color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "unselected_button_dot_color",
+      "label": "Dot Color",
+      "default": "#333333"
+    },
+    {
+      "type": "header",
+      "content": "Selected Option Colors"
+    },
+    {
+      "type": "color",
+      "id": "text_color_selected",
+      "label": "Text Color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "selected_button_bg_color",
+      "label": "Background Color",
+      "default": "#f2f2f2"
+    },
+    {
+      "type": "color",
+      "id": "selected_button_dot_color",
+      "label": "Dot Color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "selected_button_border_color",
+      "label": "Border Color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "border_color_hover_selected",
+      "label": "Border Hover Color",
+      "default": "#000000"
+    },
+    {
+      "type": "header",
+      "content": "Badge and Other Settings"
+    },
+    {
+      "type": "color",
+      "id": "savings_text_color",
+      "label": "Savings Label Text Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "savings_bg_color",
+      "label": "Savings Label Background Color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "compare_font_color",
+      "label": "Compare Price Color",
+      "default": "#E71717"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Quantity Breaks — Simple",
+      "category": "Product",
+      "settings": {
+        "show_on_all_products": true,
+        "quantity_style": "vertical",
+        "columns_block": "40",
+        "vertical_two_column_layout": "compact",
+        "option_height": "auto",
+        "preselected": "2",
+        "discount_type": "percentage",
+        "show_strikethrough_price": "calculated",
+        "hide_checkbox": true,
+        "compact_per_unit_under_label": false,
+        "badge_font_size": 1.3,
+        "badge_font_size_mobile": 1,
+        "badge_bg_color": "#fe463e",
+        "badge_font_color": "#ffffff",
+        "option_1_show_label": true,
+        "option_1_show_image": false,
+        "option_1_label": "<strong>1 Pack</strong>",
+        "option_1_quantity": 1,
+        "option_1_fixed_discount": "0",
+        "option_1_discount_percentage": 0,
+        "option_1_badge_enable": false,
+        "option_1_unit_label": "($)/Pcs",
+        "option_1_save_text": "Standad Price",
+        "option_2_show_label": true,
+        "option_2_show_image": false,
+        "option_2_label": "<strong>2 Pack</strong>",
+        "option_2_quantity": 2,
+        "option_2_fixed_discount": "5",
+        "option_2_discount_percentage": 20,
+        "option_2_badge_enable": true,
+        "option_2_badge_text": "<strong>Most Popular</strong>",
+        "option_2_unit_label": "($)/Pcs",
+        "option_2_save_text": "Save (%)",
+        "option_3_show_label": true,
+        "option_3_show_image": false,
+        "option_3_label": "<strong>3 Pack</strong>",
+        "option_3_quantity": 3,
+        "option_3_fixed_discount": "10",
+        "option_3_discount_percentage": 30,
+        "option_3_badge_enable": false,
+        "option_3_unit_label": "($)/Pcs",
+        "option_3_save_text": "Save (%)",
+        "option_4_show_label": true,
+        "option_4_label": "<strong>4 Pack</strong>",
+        "option_4_quantity": 4,
+        "option_4_fixed_discount": "0",
+        "option_4_discount_percentage": 0,
+        "option_4_badge_enable": false,
+        "option_4_badge_text": "Most Popular",
+        "option_4_unit_label": "($)/Pcs",
+        "option_4_save_text": "Save (%)",
+        "option_5_show_label": false,
+        "option_6_show_label": false,
+        "show_quantity_label": true,
+        "hide_lines": false,
+        "title_text_align": "center",
+        "quantity_title_text": "<strong>Bundle & Save</strong>",
+        "title_font_size": 1.8,
+        "title_color": "#000000",
+        "title_line_color": "#000000",
+        "border_radius": 0.5,
+        "option_bottom_spacing": 2.5,
+        "label_font_size": 2,
+        "compare_price_font_size": 1.3,
+        "final_price_font_size": 1.5,
+        "per_unit_font_size": 1,
+        "savings_label_font_size": 1.1,
+        "buttons_border_thickness": 0.2,
+        "border_color_unselected": "#c3c3c3",
+        "text_color_unselected": "#4a4a4a",
+        "back_color_unselected": "#ffffff",
+        "text_color_selected": "#000000",
+        "selected_button_bg_color": "#ffffff",
+        "selected_button_dot_color": "#000000",
+        "selected_button_border_color": "#fe463e",
+        "border_color_hover_selected": "#fe463e",
+        "savings_text_color": "#ffffff",
+        "savings_bg_color": "#333333",
+        "compare_font_color": "#fe463e"
+      }
+    },
+    {
+      "name": "Quantity Breaks — 3 Column",
+      "category": "Product",
+      "settings": {
+        "show_on_all_products": true,
+        "quantity_style": "vertical",
+        "columns_block": "25",
+        "vertical_two_column_layout": "default",
+        "option_height": "auto",
+        "preselected": "2",
+        "discount_type": "percentage",
+        "show_strikethrough_price": "calculated",
+        "hide_checkbox": false,
+        "show_strikethrough": true,
+        "show_total_pricing": true,
+        "show_per_unit": true,
+        "compact_per_unit_under_label": false,
+        "badge_style": "ribbon ribbon-top-short",
+        "badge_font_size": 1.3,
+        "badge_font_size_mobile": 1,
+        "badge_bg_color": "#fe463e",
+        "badge_font_color": "#ffffff",
+        "option_1_show_label": true,
+        "option_1_show_image": false,
+        "option_1_label": "<strong>1 Pack</strong>",
+        "option_1_quantity": 1,
+        "option_1_fixed_discount": "0",
+        "option_1_discount_percentage": 0,
+        "option_1_badge_enable": false,
+        "option_1_unit_label": "($)/Pcs",
+        "option_1_save_text": "Standad Price",
+        "option_2_show_label": true,
+        "option_2_show_image": false,
+        "option_2_label": "<strong>2 Pack</strong>",
+        "option_2_quantity": 2,
+        "option_2_fixed_discount": "5",
+        "option_2_discount_percentage": 20,
+        "option_2_badge_enable": true,
+        "option_2_badge_text": "<strong>Most Popular</strong>",
+        "option_2_unit_label": "($)/Pcs",
+        "option_2_save_text": "Save (%)",
+        "option_3_show_label": true,
+        "option_3_show_image": false,
+        "option_3_label": "<strong>3 Pack</strong>",
+        "option_3_quantity": 3,
+        "option_3_fixed_discount": "10",
+        "option_3_discount_percentage": 30,
+        "option_3_badge_enable": false,
+        "option_3_unit_label": "($)/Pcs",
+        "option_3_save_text": "Save (%)",
+        "option_4_show_label": false,
+        "option_5_show_label": false,
+        "option_6_show_label": false,
+        "show_quantity_label": true,
+        "hide_lines": false,
+        "title_text_align": "center",
+        "quantity_title_text": "<strong>Bundle & Save</strong>",
+        "title_font_size": 1.8,
+        "title_color": "#000000",
+        "title_line_color": "#000000",
+        "border_radius": 0.5,
+        "option_bottom_spacing": 2.5,
+        "label_font_size": 2,
+        "compare_price_font_size": 1.3,
+        "final_price_font_size": 1.5,
+        "per_unit_font_size": 1,
+        "savings_label_font_size": 1.1,
+        "buttons_border_thickness": 0.2,
+        "pill_enable_inner_glow": true,
+        "pill_inner_glow_blur": 30,
+        "pill_inner_glow_spread": 0,
+        "pill_inner_glow_opacity": 75,
+        "pill_unselected_inner_glow_color": "#ffffff",
+        "pill_selected_inner_glow_color": "#ffe7ed",
+        "border_color_unselected": "#c3c3c3",
+        "text_color_unselected": "#4a4a4a",
+        "back_color_unselected": "#ffffff",
+        "text_color_selected": "#000000",
+        "selected_button_bg_color": "#ffffff",
+        "selected_button_dot_color": "#000000",
+        "selected_button_border_color": "#fe463e",
+        "border_color_hover_selected": "#fe463e",
+        "savings_text_color": "#ffffff",
+        "savings_bg_color": "#333333",
+        "compare_font_color": "#fe463e"
+      }
+    }
+  ]
+}
+{% endschema %}

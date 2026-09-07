@@ -1,0 +1,23 @@
+{%- if block.settings.text != blank -%}
+  <div
+    class="vts__item"
+    {{ block.shopify_attributes }}
+  >
+    <span>{{ block.settings.text | escape }}</span>
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "t:names.vertical_text_scroll_item",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "text",
+      "label": "t:settings.text",
+      "default": "Reversible"
+    }
+  ]
+}
+{% endschema %}

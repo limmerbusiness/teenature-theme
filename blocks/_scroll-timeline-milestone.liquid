@@ -1,0 +1,185 @@
+<article
+  class="scroll-timeline__item"
+  data-timeline-item
+  role="listitem"
+  style="
+    --timeline-image-radius: {{ block.settings.image_corner_radius }}px;
+    --timeline-left-text-size: {{ block.settings.left_text_size }}px;
+  "
+  {{ block.shopify_attributes }}
+>
+  <div class="scroll-timeline__left-text">{{ block.settings.left_text }}</div>
+
+  <div class="scroll-timeline__rail" aria-hidden="true">
+    <span class="scroll-timeline__line scroll-timeline__line--before"></span>
+    <span class="scroll-timeline__icon{% if block.settings.remove_icon_background %} scroll-timeline__icon--no-background{% endif %}">
+      {% case block.settings.icon %}
+        {% when 'custom' %}
+          {% if block.settings.custom_icon != blank %}
+            {{
+              block.settings.custom_icon
+              | image_url: width: 128
+              | image_tag:
+                class: 'scroll-timeline__custom-icon',
+                widths: '64, 128',
+                sizes: '64px',
+                loading: 'lazy'
+            }}
+          {% else %}
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 3.5c.6 4.7 3.3 7.4 8 8-4.7.6-7.4 3.3-8 8-.6-4.7-3.3-7.4-8-8 4.7-.6 7.4-3.3 8-8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            </svg>
+          {% endif %}
+        {% when 'spark' %}
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 3.5c.6 4.7 3.3 7.4 8 8-4.7.6-7.4 3.3-8 8-.6-4.7-3.3-7.4-8-8 4.7-.6 7.4-3.3 8-8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          </svg>
+        {% when 'target' %}
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7.5" stroke="currentColor" stroke-width="1.8"/>
+            <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.8"/>
+            <path d="m14.5 9.5 4-4M16 5.5h2.5V8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        {% when 'heart' %}
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M20 9.2c0 4.9-8 9.3-8 9.3s-8-4.4-8-9.3C4 6.7 5.8 5 8.2 5c1.5 0 2.9.8 3.8 2.1C12.9 5.8 14.3 5 15.8 5 18.2 5 20 6.7 20 9.2Z" fill="currentColor"/>
+          </svg>
+        {% else %}
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="m13.2 2.8-7 10.1h5.2l-.7 8.3 7.1-11h-5.3l.7-7.4Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+      {% endcase %}
+    </span>
+    <span class="scroll-timeline__line scroll-timeline__line--after"></span>
+  </div>
+
+  <div class="scroll-timeline__content">
+    {% if block.settings.badge != blank %}
+      <span class="scroll-timeline__badge">{{ block.settings.badge }}</span>
+    {% endif %}
+    <h3 class="scroll-timeline__title">{{ block.settings.title }}</h3>
+    {% if block.settings.text != blank %}
+      <div class="scroll-timeline__text rte">{{ block.settings.text }}</div>
+    {% endif %}
+    {% if block.settings.image != blank %}
+      {{
+        block.settings.image
+        | image_url: width: 1600
+        | image_tag:
+          class: 'scroll-timeline__image',
+          widths: '320, 480, 640, 960, 1280, 1600',
+          sizes: '(min-width: 990px) 70vw, calc(100vw - 80px)',
+          loading: 'lazy'
+      }}
+    {% endif %}
+  </div>
+</article>
+
+{% schema %}
+{
+  "name": "Timeline milestone",
+  "tag": null,
+  "settings": [
+    {
+      "type": "select",
+      "id": "icon",
+      "label": "Icon",
+      "options": [
+        {
+          "value": "bolt",
+          "label": "Bolt"
+        },
+        {
+          "value": "spark",
+          "label": "Spark"
+        },
+        {
+          "value": "target",
+          "label": "Target"
+        },
+        {
+          "value": "heart",
+          "label": "Heart"
+        },
+        {
+          "value": "custom",
+          "label": "Custom image"
+        }
+      ],
+      "default": "bolt"
+    },
+    {
+      "type": "image_picker",
+      "id": "custom_icon",
+      "label": "Custom icon",
+      "visible_if": "{{ block.settings.icon == 'custom' }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "remove_icon_background",
+      "label": "Remove icon background",
+      "default": false
+    },
+    {
+      "type": "inline_richtext",
+      "id": "left_text",
+      "label": "Left text",
+      "info": "Optional text displayed to the left of the timeline marker."
+    },
+    {
+      "type": "range",
+      "id": "left_text_size",
+      "label": "Left text size",
+      "min": 10,
+      "max": 64,
+      "step": 1,
+      "unit": "px",
+      "default": 28
+    },
+    {
+      "type": "inline_richtext",
+      "id": "badge",
+      "label": "Time label",
+      "default": "Week 1"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "title",
+      "label": "Title",
+      "default": "A Daily Boost"
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Description",
+      "default": "<p>Describe what customers can expect at this stage.</p>"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image after text"
+    },
+    {
+      "type": "range",
+      "id": "image_corner_radius",
+      "label": "Image corner radius",
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "Timeline milestone",
+      "settings": {
+        "icon": "bolt",
+        "badge": "Week 1",
+        "title": "A Daily Boost",
+        "text": "<p>Describe what customers can expect at this stage.</p>"
+      }
+    }
+  ]
+}
+{% endschema %}

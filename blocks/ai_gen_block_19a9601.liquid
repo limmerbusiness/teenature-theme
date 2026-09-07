@@ -1,0 +1,293 @@
+{% doc %}
+  @prompt
+    generiere mirt eine trennlinie wo ich wirklich alles mögliche ienstellen kann wie farbe usw
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-divider-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    margin: 0 auto;
+  }
+
+  .ai-divider-line-{{ ai_gen_id }} {
+    border: none;
+    margin: 0;
+    {% if block.settings.divider_style == 'solid' %}
+      border-top: {{ block.settings.line_thickness }}px solid {{ block.settings.line_color }};
+    {% elsif block.settings.divider_style == 'dashed' %}
+      border-top: {{ block.settings.line_thickness }}px dashed {{ block.settings.line_color }};
+    {% elsif block.settings.divider_style == 'dotted' %}
+      border-top: {{ block.settings.line_thickness }}px dotted {{ block.settings.line_color }};
+    {% elsif block.settings.divider_style == 'double' %}
+      border-top: {{ block.settings.line_thickness }}px double {{ block.settings.line_color }};
+    {% elsif block.settings.divider_style == 'gradient' %}
+      height: {{ block.settings.line_thickness }}px;
+      background: linear-gradient(to right, {{ block.settings.gradient_start_color }}, {{ block.settings.gradient_end_color }});
+    {% elsif block.settings.divider_style == 'shadow' %}
+      height: {{ block.settings.line_thickness }}px;
+      background: {{ block.settings.line_color }};
+      box-shadow: 0 {{ block.settings.shadow_blur }}px {{ block.settings.shadow_spread }}px {{ block.settings.shadow_color }};
+    {% endif %}
+    
+    {% if block.settings.divider_style != 'gradient' and block.settings.divider_style != 'shadow' %}
+      opacity: {{ block.settings.line_opacity | divided_by: 100.0 }};
+    {% endif %}
+  }
+
+  .ai-divider-container-{{ ai_gen_id }} {
+    padding-top: {{ block.settings.spacing_top }}px;
+    padding-bottom: {{ block.settings.spacing_bottom }}px;
+  }
+
+  {% if block.settings.enable_icon %}
+    .ai-divider-with-icon-{{ ai_gen_id }} {
+      display: flex;
+      align-items: center;
+      gap: {{ block.settings.icon_spacing }}px;
+    }
+
+    .ai-divider-icon-{{ ai_gen_id }} {
+      flex-shrink: 0;
+      font-size: {{ block.settings.icon_size }}px;
+      color: {{ block.settings.icon_color }};
+    }
+
+    .ai-divider-line-left-{{ ai_gen_id }},
+    .ai-divider-line-right-{{ ai_gen_id }} {
+      flex: 1;
+    }
+  {% endif %}
+
+  @media screen and (max-width: 749px) {
+    .ai-divider-{{ ai_gen_id }} {
+      width: {{ block.settings.mobile_width_percent }}%;
+    }
+  }
+{% endstyle %}
+
+<div class="ai-divider-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  <div class="ai-divider-container-{{ ai_gen_id }}">
+    {% if block.settings.enable_icon %}
+      <div class="ai-divider-with-icon-{{ ai_gen_id }}">
+        <hr class="ai-divider-line-{{ ai_gen_id }} ai-divider-line-left-{{ ai_gen_id }}">
+        <div class="ai-divider-icon-{{ ai_gen_id }}">{{ block.settings.icon_text }}</div>
+        <hr class="ai-divider-line-{{ ai_gen_id }} ai-divider-line-right-{{ ai_gen_id }}">
+      </div>
+    {% else %}
+      <hr class="ai-divider-line-{{ ai_gen_id }}">
+    {% endif %}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Trennlinie",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Stil"
+    },
+    {
+      "type": "select",
+      "id": "divider_style",
+      "label": "Linienstil",
+      "options": [
+        {
+          "value": "solid",
+          "label": "Durchgehend"
+        },
+        {
+          "value": "dashed",
+          "label": "Gestrichelt"
+        },
+        {
+          "value": "dotted",
+          "label": "Gepunktet"
+        },
+        {
+          "value": "double",
+          "label": "Doppelt"
+        },
+        {
+          "value": "gradient",
+          "label": "Farbverlauf"
+        },
+        {
+          "value": "shadow",
+          "label": "Mit Schatten"
+        }
+      ],
+      "default": "solid"
+    },
+    {
+      "type": "range",
+      "id": "line_thickness",
+      "label": "Linienstärke",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "unit": "px",
+      "default": 1
+    },
+    {
+      "type": "color",
+      "id": "line_color",
+      "label": "Linienfarbe",
+      "default": "#E6E6E6"
+    },
+    {
+      "type": "range",
+      "id": "line_opacity",
+      "label": "Deckkraft",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "header",
+      "content": "Farbverlauf"
+    },
+    {
+      "type": "color",
+      "id": "gradient_start_color",
+      "label": "Startfarbe",
+      "default": "#E6E6E6"
+    },
+    {
+      "type": "color",
+      "id": "gradient_end_color",
+      "label": "Endfarbe",
+      "default": "#000000"
+    },
+    {
+      "type": "header",
+      "content": "Schatten"
+    },
+    {
+      "type": "range",
+      "id": "shadow_blur",
+      "label": "Unschärfe",
+      "min": 0,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "shadow_spread",
+      "label": "Ausbreitung",
+      "min": 0,
+      "max": 10,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "color",
+      "id": "shadow_color",
+      "label": "Schattenfarbe",
+      "default": "#000000"
+    },
+    {
+      "type": "header",
+      "content": "Breite"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 10,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "mobile_width_percent",
+      "label": "Mobile Breite",
+      "min": 10,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "header",
+      "content": "Abstände"
+    },
+    {
+      "type": "range",
+      "id": "spacing_top",
+      "label": "Abstand oben",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "spacing_bottom",
+      "label": "Abstand unten",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "header",
+      "content": "Icon"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_icon",
+      "label": "Icon aktivieren",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "icon_text",
+      "label": "Icon oder Text",
+      "default": "✦"
+    },
+    {
+      "type": "range",
+      "id": "icon_size",
+      "label": "Icon-Größe",
+      "min": 10,
+      "max": 50,
+      "step": 2,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "color",
+      "id": "icon_color",
+      "label": "Icon-Farbe",
+      "default": "#000000"
+    },
+    {
+      "type": "range",
+      "id": "icon_spacing",
+      "label": "Icon-Abstand",
+      "min": 5,
+      "max": 50,
+      "step": 5,
+      "unit": "px",
+      "default": 15
+    }
+  ],
+  "presets": [
+    {
+      "name": "Trennlinie"
+    }
+  ]
+}
+{% endschema %}

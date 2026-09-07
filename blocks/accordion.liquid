@@ -1,0 +1,574 @@
+
+
+{% assign block_settings = block.settings %}
+{% liquid
+  case block_settings.summary_padding
+    when 'medium'
+      assign accordion_summary_padding_block = 'var(--padding-lg)'
+    when 'large'
+      assign accordion_summary_padding_block = 'var(--padding-2xl)'
+    else
+      assign accordion_summary_padding_block = 'var(--padding-sm)'
+  endcase
+%}
+<div
+  class="accordion accordion--{{ block.id }} accordion--{{ block_settings.icon }} border-style spacing-style{% if block_settings.inherit_color_scheme == false %} color-{{ block_settings.color_scheme }}{% endif %}{% if block_settings.dividers %} accordion--dividers{% endif %}"
+  style="
+    --accordion-summary-padding-block: {{ accordion_summary_padding_block }};
+    --summary-font-family: var(--font-{{ block_settings.type_preset }}--family);
+     --summary-font-style: var(--font-{{ block_settings.type_preset }}--style);
+     --summary-font-weight: var(--font-{{ block_settings.type_preset }}--weight);
+     --summary-font-size: var(--font-{{ block_settings.type_preset }}--size);
+     --summary-font-line-height: var(--font-{{ block_settings.type_preset }}--line-height);
+     --summary-font-case: var(--font-{{ block_settings.type_preset }}--case);
+    {% render 'spacing-style', settings: block_settings %}
+    {% render 'border-override', settings: block_settings %}
+  "
+  {{ block.shopify_attributes }}
+>
+  {% content_for 'blocks' %}
+</div>
+
+{%- comment -%}
+  Eigene Optik: jede Zeile als Kaestchen mit eigener Farbe, dazu getrennte
+  Schriftgroessen fuer Computer und Handy. Alles nur auf diesen einen
+  Akkordeon-Block gemuenzt (.accordion--{{ block.id }}), damit andere
+  Akkordeons im Shop unberuehrt bleiben.
+{%- endcomment -%}
+{%- style -%}
+  {%- if block_settings.card_style -%}
+    .accordion--{{ block.id }} accordion-custom {
+      display: block;
+    }
+
+    .accordion--{{ block.id }} accordion-custom + accordion-custom {
+      margin-block-start: {{ block_settings.card_gap }}px;
+    }
+
+    .accordion--{{ block.id }} .details {
+      background: {{ block_settings.card_background }};
+      color: {{ block_settings.card_text_color }};
+      border-radius: {{ block_settings.card_radius }}px;
+      padding-inline: {{ block_settings.card_padding_inline }}px;
+      border: none;
+    }
+
+    /* Trennlinien wuerden im Kaestchen-Stil quer durch die Kacheln laufen. */
+    .accordion--{{ block.id }}.accordion--dividers accordion-custom .details,
+    .accordion--{{ block.id }}.accordion--dividers accordion-custom:first-child .details,
+    .accordion--{{ block.id }}.accordion--dividers accordion-custom:last-child .details {
+      border-block-start: none;
+      border-block-end: none;
+    }
+
+    .accordion--{{ block.id }} .details[open] {
+      background: {{ block_settings.card_background_open }};
+    }
+
+    .accordion--{{ block.id }} .details__header,
+    .accordion--{{ block.id }} .details-content {
+      color: {{ block_settings.card_text_color }};
+    }
+
+    .accordion--{{ block.id }} .details-content {
+      padding-block-end: {{ block_settings.card_padding_inline }}px;
+    }
+
+    {%- if block_settings.card_full_width_mobile -%}
+      /*
+       * Das Akkordeon steckt in einer Blockgruppe, die ihre Kinder ueber
+       * align-items ausrichtet. Ein Kind bleibt dadurch so schmal wie sein
+       * Inhalt - width: 100% allein reicht nicht, es braucht align-self.
+       * Zwei Huellen-Ebenen werden mitgeweitet, weil Shopify jeden Block
+       * zusaetzlich in ein eigenes div verpackt.
+       */
+      @media screen and (max-width: 749px) {
+        .accordion--{{ block.id }},
+        *:has(> .accordion--{{ block.id }}),
+        *:has(> * > .accordion--{{ block.id }}) {
+          width: 100%;
+          max-width: 100%;
+          align-self: stretch;
+          justify-self: stretch;
+        }
+
+        .accordion--{{ block.id }} {
+          margin-inline: 0;
+        }
+
+        .accordion--{{ block.id }} accordion-custom,
+        .accordion--{{ block.id }} .details {
+          width: 100%;
+          box-sizing: border-box;
+        }
+      }
+    {%- endif -%}
+  {%- endif -%}
+
+  {%- if block_settings.answer_align_left -%}
+    .accordion--{{ block.id }} .details-content .text-block,
+    .accordion--{{ block.id }} .details-content .text-block > * {
+      width: 100%;
+      max-inline-size: 100%;
+      margin-inline: 0;
+      text-align: left;
+      align-items: flex-start;
+    }
+  {%- endif -%}
+
+  {%- if block_settings.question_size_desktop != blank -%}
+    @media screen and (min-width: 750px) {
+      .accordion--{{ block.id }} .details__header {
+        font-size: {{ block_settings.question_size_desktop }};
+      }
+    }
+  {%- endif -%}
+
+  {%- if block_settings.question_size_mobile != blank -%}
+    @media screen and (max-width: 749px) {
+      .accordion--{{ block.id }} .details__header {
+        font-size: {{ block_settings.question_size_mobile }};
+      }
+    }
+  {%- endif -%}
+{%- endstyle -%}
+
+{% stylesheet %}
+  .accordion {
+    flex: 1;
+    width: 100%;
+  }
+
+  .accordion--dividers accordion-custom:not(:first-child) .details {
+    border-block-start: var(--style-border-width) solid var(--color-border);
+  }
+
+  /* When accordion borders are not set, show fallback borders */
+  .accordion--dividers {
+    /* stylelint-disable-next-line declaration-property-value-disallowed-list */
+    --show-fallback-borders: 0;
+  }
+
+  .accordion--dividers:not([class*='color-'])[style*='--border-width: 0'],
+  .accordion--dividers:not([class*='color-'])[style*='--border-style: none'] {
+    --show-fallback-borders: 1;
+  }
+
+  .accordion--dividers accordion-custom:first-child .details {
+    border-block-start: calc(var(--style-border-width) * var(--show-fallback-borders)) solid var(--color-border);
+  }
+
+  .accordion--dividers accordion-custom:last-child .details {
+    border-block-end: calc(var(--style-border-width) * var(--show-fallback-borders)) solid var(--color-border);
+  }
+
+  .accordion--dividers .details-content {
+    padding-block-end: var(--padding-sm);
+  }
+
+  .accordion--caret .icon-plus,
+  .accordion--plus .icon-caret {
+    display: none;
+  }
+
+  /* because we can't pass apply a specific class on a block based on its parent block setting */
+  .accordion .details__header {
+    font-family: var(--summary-font-family);
+    font-style: var(--summary-font-style);
+    font-weight: var(--summary-font-weight);
+    font-size: var(--summary-font-size);
+    line-height: var(--summary-font-line-height);
+    text-transform: var(--summary-font-case);
+    min-height: var(--minimum-touch-target);
+    padding-block: var(--accordion-summary-padding-block);
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.accordion",
+  "tag": null,
+  "class": "accordion",
+  "blocks": [
+    {
+      "type": "_accordion-row"
+    }
+  ],
+  "settings": [
+    {
+      "type": "header",
+      "content": "Kästchen-Stil"
+    },
+    {
+      "type": "checkbox",
+      "id": "card_style",
+      "label": "Jede Frage als Kästchen",
+      "default": false,
+      "info": "Statt Trennlinien bekommt jede Zeile eine eigene farbige Fläche."
+    },
+    {
+      "type": "checkbox",
+      "id": "card_full_width_mobile",
+      "label": "Auf dem Handy volle Breite",
+      "default": true,
+      "info": "Zieht die Kästchen bis an den Rand, auch wenn die Gruppe darüber schmaler ist.",
+      "visible_if": "{{ block.settings.card_style }}"
+    },
+    {
+      "type": "color",
+      "id": "card_background",
+      "label": "Hintergrund",
+      "default": "#F4F1EE",
+      "visible_if": "{{ block.settings.card_style }}"
+    },
+    {
+      "type": "color",
+      "id": "card_background_open",
+      "label": "Hintergrund (geöffnet)",
+      "default": "#F4F1EE",
+      "visible_if": "{{ block.settings.card_style }}"
+    },
+    {
+      "type": "color",
+      "id": "card_text_color",
+      "label": "Schriftfarbe",
+      "default": "#1A1A1A",
+      "visible_if": "{{ block.settings.card_style }}"
+    },
+    {
+      "type": "range",
+      "id": "card_radius",
+      "label": "Eckenrundung",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 12,
+      "visible_if": "{{ block.settings.card_style }}"
+    },
+    {
+      "type": "range",
+      "id": "card_gap",
+      "label": "Abstand zwischen den Kästchen",
+      "min": 0,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 8,
+      "visible_if": "{{ block.settings.card_style }}"
+    },
+    {
+      "type": "range",
+      "id": "card_padding_inline",
+      "label": "Innenabstand seitlich",
+      "min": 8,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "default": 20,
+      "visible_if": "{{ block.settings.card_style }}"
+    },
+    {
+      "type": "header",
+      "content": "Schriftgröße der Frage"
+    },
+    {
+      "type": "select",
+      "id": "question_size_desktop",
+      "label": "Am Computer",
+      "info": "Gilt ab 750 px Bildschirmbreite.",
+      "options": [
+        { "value": "", "label": "Wie im Theme" },
+        { "value": "0.875rem", "label": "14px" },
+        { "value": "1rem", "label": "16px" },
+        { "value": "1.125rem", "label": "18px" },
+        { "value": "1.25rem", "label": "20px" },
+        { "value": "1.5rem", "label": "24px" },
+        { "value": "1.75rem", "label": "28px" },
+        { "value": "2rem", "label": "32px" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "question_size_mobile",
+      "label": "Auf dem Handy",
+      "info": "Gilt unter 750 px Bildschirmbreite.",
+      "options": [
+        { "value": "", "label": "Wie am Computer" },
+        { "value": "0.75rem", "label": "12px" },
+        { "value": "0.875rem", "label": "14px" },
+        { "value": "1rem", "label": "16px" },
+        { "value": "1.125rem", "label": "18px" },
+        { "value": "1.25rem", "label": "20px" },
+        { "value": "1.5rem", "label": "24px" }
+      ],
+      "default": ""
+    },
+    {
+      "type": "header",
+      "content": "Antwort"
+    },
+    {
+      "type": "checkbox",
+      "id": "answer_align_left",
+      "label": "Antworten linksbündig",
+      "default": true,
+      "info": "Verhindert, dass die Antwort mittig unter der Frage hängt."
+    },
+    {
+      "type": "header",
+      "content": "t:content.appearance"
+    },
+    {
+      "type": "select",
+      "id": "icon",
+      "label": "t:settings.icon",
+      "options": [
+        {
+          "value": "caret",
+          "label": "t:options.caret"
+        },
+        {
+          "value": "plus",
+          "label": "t:options.plus"
+        }
+      ],
+      "default": "caret"
+    },
+    {
+      "type": "checkbox",
+      "id": "dividers",
+      "label": "t:settings.dividers",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "type_preset",
+      "label": "t:settings.heading_preset",
+      "options": [
+        {
+          "value": "",
+          "label": "t:options.default"
+        },
+        {
+          "value": "paragraph",
+          "label": "t:options.paragraph"
+        },
+        {
+          "value": "h1",
+          "label": "t:options.h1"
+        },
+        {
+          "value": "h2",
+          "label": "t:options.h2"
+        },
+        {
+          "value": "h3",
+          "label": "t:options.h3"
+        },
+        {
+          "value": "h4",
+          "label": "t:options.h4"
+        },
+        {
+          "value": "h5",
+          "label": "t:options.h5"
+        },
+        {
+          "value": "h6",
+          "label": "t:options.h6"
+        }
+      ],
+      "default": "h6",
+      "info": "t:info.edit_presets_in_theme_settings"
+    },
+    {
+      "type": "select",
+      "id": "summary_padding",
+      "label": "t:settings.summary_padding",
+      "options": [
+        {
+          "value": "small",
+          "label": "t:options.small"
+        },
+        {
+          "value": "medium",
+          "label": "t:options.medium"
+        },
+        {
+          "value": "large",
+          "label": "t:options.large"
+        }
+      ],
+      "default": "small"
+    },
+    {
+      "type": "checkbox",
+      "id": "inherit_color_scheme",
+      "label": "t:settings.inherit_color_scheme",
+      "default": true
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:settings.color_scheme",
+      "default": "scheme-1",
+      "visible_if": "{{ block.settings.inherit_color_scheme == false }}"
+    },
+    {
+      "type": "header",
+      "content": "t:content.borders"
+    },
+    {
+      "type": "select",
+      "id": "border",
+      "label": "t:settings.style",
+      "options": [
+        {
+          "value": "none",
+          "label": "t:options.none"
+        },
+        {
+          "value": "solid",
+          "label": "t:options.solid"
+        }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "range",
+      "id": "border_width",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "label": "t:settings.thickness",
+      "default": 1,
+      "visible_if": "{{ block.settings.border != \"none\" }}"
+    },
+    {
+      "type": "range",
+      "id": "border_opacity",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "label": "t:settings.opacity",
+      "default": 100,
+      "visible_if": "{{ block.settings.border != \"none\" }}"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "t:settings.border_radius",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-start",
+      "label": "t:settings.left",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-end",
+      "label": "t:settings.right",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.accordion",
+      "category": "t:categories.layout",
+      "blocks": {
+        "row-1": {
+          "type": "_accordion-row",
+          "settings": {
+            "open_by_default": true,
+            "heading": "t:text_defaults.return_policy"
+          },
+          "blocks": {
+            "text-1": {
+              "type": "text",
+              "settings": {
+                "text": "t:html_defaults.goal_for_every_customer",
+                "width": "100%"
+              }
+            }
+          },
+          "block_order": ["text-1"]
+        },
+        "row-2": {
+          "type": "_accordion-row",
+          "settings": {
+            "heading": "t:text_defaults.shipping"
+          },
+          "blocks": {
+            "text-1": {
+              "type": "text",
+              "settings": {
+                "text": "t:html_defaults.work_quickly_to_ship",
+                "width": "100%"
+              }
+            }
+          },
+          "block_order": ["text-1"]
+        },
+        "row-3": {
+          "type": "_accordion-row",
+          "settings": {
+            "heading": "t:text_defaults.manufacturing"
+          },
+          "blocks": {
+            "text-1": {
+              "type": "text",
+              "settings": {
+                "text": "t:html_defaults.made_local_and_global",
+                "width": "100%"
+              }
+            }
+          },
+          "block_order": ["text-1"]
+        }
+      },
+      "block_order": ["row-1", "row-2", "row-3"]
+    }
+  ]
+}
+{% endschema %}

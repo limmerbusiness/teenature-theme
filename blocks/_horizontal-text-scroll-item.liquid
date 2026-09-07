@@ -1,0 +1,31 @@
+<div
+  class="hts__item"
+  {{ block.shopify_attributes }}
+>
+  {%- if block.settings.text != blank -%}
+    <span>{{ block.settings.text | escape }}</span>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{
+  "name": "t:names.horizontal_text_scroll_item",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "text",
+      "label": "t:settings.text",
+      "default": "Reversible"
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.horizontal_text_scroll_item",
+      "settings": {
+        "text": "New text"
+      }
+    }
+  ]
+}
+{% endschema %}

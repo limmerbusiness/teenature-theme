@@ -1,0 +1,241 @@
+{% doc %}
+  @prompt
+    ich brauch ein einfachen promoblock mit icon zum sleber einfügen, und dahinter einen text nur ein textfeldbitte  testgröße muss voll einstellbar sein so wie auch die schrift dicke am besten sind die einstellungen direkt über dem textfeld , ich will teile im text dick machen das geht so hier aber nicht
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-promo-block-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    gap: {{ block.settings.gap }}px;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: {{ block.settings.padding }}px;
+    margin-top: {{ block.settings.margin_top }}px;
+    margin-bottom: {{ block.settings.margin_bottom }}px;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+  }
+
+  .ai-promo-block-icon-{{ ai_gen_id }} {
+    flex-shrink: 0;
+    width: {{ block.settings.icon_size }}px;
+    height: {{ block.settings.icon_size }}px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ai-promo-block-icon-{{ ai_gen_id }} img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .ai-promo-block-icon-placeholder-{{ ai_gen_id }} {
+    width: 100%;
+    height: 100%;
+    background-color: #f4f4f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+
+  .ai-promo-block-icon-placeholder-{{ ai_gen_id }} svg {
+    width: 70%;
+    height: 70%;
+  }
+
+  .ai-promo-block-text-{{ ai_gen_id }} {
+    flex-grow: 1;
+    font-size: {{ block.settings.text_size }}px;
+    font-weight: {{ block.settings.text_weight }};
+    color: {{ block.settings.text_color }};
+    line-height: 1.4;
+  }
+
+  .ai-promo-block-text-{{ ai_gen_id }} p {
+    margin: 0;
+  }
+
+  .ai-promo-block-text-{{ ai_gen_id }} strong {
+    font-weight: {{ block.settings.bold_text_weight }};
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-promo-block-{{ ai_gen_id }} {
+      width: 100%;
+    }
+  }
+{% endstyle %}
+
+<div class="ai-promo-block-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  <div class="ai-promo-block-icon-{{ ai_gen_id }}">
+    {% if block.settings.icon %}
+      <img
+        src="{{ block.settings.icon | image_url: width: 200 }}"
+        alt="{{ block.settings.icon.alt | escape }}"
+        loading="lazy"
+        width="{{ block.settings.icon_size }}"
+        height="{{ block.settings.icon_size }}"
+      >
+    {% else %}
+      <div class="ai-promo-block-icon-placeholder-{{ ai_gen_id }}">
+        {{ 'image' | placeholder_svg_tag }}
+      </div>
+    {% endif %}
+  </div>
+  
+  <div class="ai-promo-block-text-{{ ai_gen_id }}">
+    {{ block.settings.text }}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Promo block",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Icon"
+    },
+    {
+      "type": "image_picker",
+      "id": "icon",
+      "label": "Icon"
+    },
+    {
+      "type": "range",
+      "id": "icon_size",
+      "label": "Icon size",
+      "min": 20,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "header",
+      "content": "Text"
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Text",
+      "default": "<p>Kostenloser Versand ab 50€</p>"
+    },
+    {
+      "type": "range",
+      "id": "text_size",
+      "label": "Größe",
+      "min": 10,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "text_weight",
+      "label": "Dicke",
+      "min": 100,
+      "max": 900,
+      "step": 100,
+      "default": 400
+    },
+    {
+      "type": "range",
+      "id": "bold_text_weight",
+      "label": "Fett-Dicke",
+      "min": 100,
+      "max": 900,
+      "step": 100,
+      "default": 700
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Farbe",
+      "default": "#000000"
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "label": "Abstand Icon-Text",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "label": "Innenabstand",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "margin_top",
+      "label": "Außenabstand oben",
+      "min": -30,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 0,
+      "info": "Negative Werte ziehen den Block näher an den darüberliegenden heran."
+    },
+    {
+      "type": "range",
+      "id": "margin_bottom",
+      "label": "Außenabstand unten",
+      "min": -30,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Ecken-Rundung",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Hintergrundfarbe",
+      "default": "#f5f5f5"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    }
+  ],
+  "presets": [
+    {
+      "name": "Promo block"
+    }
+  ]
+}
+{% endschema %}

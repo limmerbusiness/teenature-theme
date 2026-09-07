@@ -1,0 +1,215 @@
+{%- liquid
+  assign block_settings = block.settings
+  assign product = closest.product
+  assign margin_top = block_settings.margin_top | default: 0
+  assign margin_bottom = block_settings.margin_bottom | default: 0
+  assign border_radius = block_settings.border_radius | default: settings.badge_corner_radius | default: 40
+  assign font_size = block_settings.font_size | default: settings.badge_font_size | default: 12
+  assign font_size_mobile = block_settings.font_size_mobile | default: font_size
+  assign padding_block = block_settings.padding_block | default: 4
+  assign padding_inline = block_settings.padding_inline | default: 10
+
+  if request.visual_preview_mode and product == blank
+    assign product = collections.all.products.first
+  endif
+-%}
+
+{%- capture badges_html -%}
+  {% render 'product-custom-badge', product: product %}
+{%- endcapture -%}
+{%- assign badges_html = badges_html | strip -%}
+
+{%- if badges_html != blank -%}
+  <div
+    class="
+      product-custom-badges
+      product-custom-badges--align-{{ block_settings.alignment | default: 'left' }}
+    "
+    style="
+      --badge-border-radius: {{ border_radius }}px;
+      --badge-font-size: {{ font_size }}px;
+      --badge-font-size-mobile: {{ font_size_mobile }}px;
+      --badge-padding-block: {{ padding_block }}px;
+      --badge-padding-inline: {{ padding_inline }}px;
+      --badge-font-family: var(--font-{{ settings.badge_font_family | default: 'body' }}--family);
+      --badge-font-weight: var(--font-{{ settings.badge_font_family | default: 'body' }}--weight);
+      --badge-text-transform: {{ settings.badge_text_transform | default: 'none' }};
+      --product-custom-badges-gap: {{ block_settings.gap | default: 8 }}px;
+      margin-top: {{ margin_top }}px;
+      margin-bottom: {{ margin_bottom }}px;
+    "
+    {{ block.shopify_attributes }}
+  >
+    {{ badges_html }}
+  </div>
+{%- endif -%}
+
+{% stylesheet %}
+  .product-custom-badges {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--product-custom-badges-gap, 8px);
+    width: 100%;
+  }
+
+  .product-custom-badges--align-left {
+    justify-content: flex-start;
+  }
+
+  .product-custom-badges--align-center {
+    justify-content: center;
+  }
+
+  .product-custom-badges--align-right {
+    justify-content: flex-end;
+  }
+
+  .product-custom-badges .product-badges__badge {
+    display: inline-flex;
+    flex: 0 1 auto;
+    box-sizing: border-box;
+    gap: var(--gap-2xs);
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    text-align: center;
+    color: var(--color-foreground);
+    background: var(--color-background);
+    font-size: var(--badge-font-size, var(--font-size--xs));
+    font-family: var(--badge-font-family);
+    font-weight: var(--badge-font-weight);
+    text-transform: var(--badge-text-transform);
+    border-radius: var(--badge-border-radius);
+    line-height: 1.2;
+    white-space: nowrap;
+    padding-block: var(--badge-padding-block, 4px);
+    padding-inline: var(--badge-padding-inline, 10px);
+  }
+
+  @media screen and (max-width: 749px) {
+    .product-custom-badges .product-badges__badge {
+      font-size: var(--badge-font-size-mobile, var(--badge-font-size, var(--font-size--xs)));
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.product_custom_badges",
+  "tag": null,
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "t:content.product_custom_badges_info"
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "label": "t:settings.gap",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "t:settings.alignment",
+      "options": [
+        {
+          "value": "left",
+          "label": "t:options.left"
+        },
+        {
+          "value": "center",
+          "label": "t:options.center"
+        },
+        {
+          "value": "right",
+          "label": "t:options.right"
+        }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "label": "t:settings.border_radius",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "font_size",
+      "min": 8,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "label": "t:settings.font_size",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "font_size_mobile",
+      "min": 8,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "label": "t:settings.font_size_mobile",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "padding_block",
+      "min": 0,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "label": "t:settings.padding_vertical",
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "padding_inline",
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "label": "t:settings.padding_horizontal",
+      "default": 10
+    },
+    {
+      "type": "range",
+      "id": "margin_top",
+      "min": -16,
+      "max": 30,
+      "step": 1,
+      "unit": "px",
+      "label": "t:sections.lumin-review.margin_top",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "margin_bottom",
+      "min": -16,
+      "max": 30,
+      "step": 1,
+      "unit": "px",
+      "label": "t:sections.lumin-review.margin_bottom",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.product_custom_badges",
+      "category": "t:categories.product"
+    }
+  ]
+}
+{% endschema %}

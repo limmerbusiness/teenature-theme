@@ -1,0 +1,428 @@
+{%- liquid
+  assign product = product | default: closest.product
+
+  assign visibility_class = ''
+  if block.settings.show_on == 'desktop'
+    assign visibility_class = 'hidden--mobile'
+  elsif block.settings.show_on == 'mobile'
+    assign visibility_class = 'hidden--desktop'
+  endif
+
+  comment
+    Diese Klassen steuern assets/kokoro-custom.js und assets/kokoro-fbt.css:
+    Farbkacheln statt Dropdown, und wo der Gesamtpreis erscheint.
+  endcomment
+  assign extra_classes = ''
+  if block.settings.variant_swatch_tiles
+    assign extra_classes = extra_classes | append: ' fbt-variant-tiles'
+  endif
+
+  assign total_display = block.settings.total_display | default: 'button'
+  if total_display == 'button' or total_display == 'both'
+    assign extra_classes = extra_classes | append: ' fbt-total-button'
+  endif
+  if total_display == 'above' or total_display == 'both'
+    assign extra_classes = extra_classes | append: ' fbt-total-above'
+  endif
+-%}
+{%- capture fbt_content -%}
+  {%- render 'frequently-bought-together', block: block, product: product, section: section -%}
+{%- endcapture -%}
+{%- assign fbt_content = fbt_content | strip -%}
+{%- if fbt_content != blank -%}
+<div
+  class="product-block-frequently-bought-together{% if visibility_class != blank %} {{ visibility_class }}{% endif %}{{ extra_classes }}"
+  {% if block.settings.title_strip != blank %}data-strip-title="{{ block.settings.title_strip | escape }}"{% endif %}
+  {{ block.shopify_attributes }}
+>
+  {{ fbt_content }}
+</div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Frequently bought",
+  "settings": [
+    {
+      "type": "select",
+      "id": "show_on",
+      "label": "Show on",
+      "options": [
+        {
+          "value": "both",
+          "label": "Both"
+        },
+        {
+          "value": "desktop",
+          "label": "Desktop"
+        },
+        {
+          "value": "mobile",
+          "label": "Mobile"
+        }
+      ],
+      "default": "both"
+    },
+    {
+      "type": "header",
+      "content": "Products"
+    },
+    {
+      "type": "checkbox",
+      "id": "include_current_product",
+      "label": "Include current product",
+      "default": true
+    },
+    {
+      "type": "product_list",
+      "id": "bundle_products",
+      "label": "Bundle products",
+      "limit": 3,
+      "info": "Select up to 3 products to show in the bundle. Connect a dynamic source to pull products from a metafield."
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_sold_out",
+      "label": "Ausverkaufte Produkte ausblenden",
+      "default": true,
+      "info": "Ohne diese Option bleibt ein ausverkauftes Produkt angehakt stehen, laesst sich nicht abwaehlen und sperrt den Button fuer das ganze Bundle."
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_if_only_current_product",
+      "label": "Hide if only current product",
+      "default": false,
+      "info": "Hide this block when the product list has no other products besides the current product."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_variant_picker",
+      "label": "Show variant picker",
+      "default": false,
+      "info": "Show a variant selector for products with multiple variants. Variant changes elsewhere on the page do not affect this block."
+    },
+    {
+      "type": "checkbox",
+      "id": "variant_swatch_tiles",
+      "label": "Farbkacheln statt Dropdown",
+      "default": true,
+      "info": "Zeigt die Varianten als anklickbare Bildkacheln, wie in den Quantity Breaks.",
+      "visible_if": "{{ block.settings.show_variant_picker }}"
+    },
+    {
+      "type": "text",
+      "id": "title_strip",
+      "label": "Aus Produkttiteln entfernen",
+      "default": "Kokoro",
+      "info": "Wird nur in diesem Block aus der Anzeige entfernt, z. B. der Markenname. Mehrere Begriffe mit Komma trennen. Produktname, Warenkorb und Bestellung bleiben unveraendert."
+    },
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "select",
+      "id": "total_display",
+      "label": "Gesamtpreis anzeigen",
+      "options": [
+        {
+          "value": "button",
+          "label": "Im Button"
+        },
+        {
+          "value": "above",
+          "label": "Ueber dem Button"
+        },
+        {
+          "value": "both",
+          "label": "An beiden Stellen"
+        }
+      ],
+      "default": "button",
+      "info": "Im Button ersetzt der Preis das Haekchen."
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Frequently bought together"
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Button label",
+      "default": "Add all [count] to cart",
+      "info": "Use [count] for the number of products."
+    },
+    {
+      "type": "text",
+      "id": "compare_savings_label",
+      "label": "You save label",
+      "default": "You save: [amount]",
+      "info": "Use [amount] for the savings amount."
+    },
+    {
+      "type": "header",
+      "content": "Discount"
+    },
+    {
+      "type": "paragraph",
+      "content": "Discount is shown on the bundle total. Create a matching automatic discount in Shopify admin to apply it at checkout."
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_discount",
+      "label": "Enable bundle discount",
+      "default": false
+    },
+    {
+      "type": "select",
+      "id": "discount_type",
+      "label": "Discount type",
+      "options": [
+        {
+          "value": "percentage",
+          "label": "Percentage"
+        },
+        {
+          "value": "fixed",
+          "label": "Fixed amount"
+        }
+      ],
+      "default": "percentage",
+      "visible_if": "{{ block.settings.enable_discount }}"
+    },
+    {
+      "type": "range",
+      "id": "discount_percentage",
+      "label": "Discount percentage",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "unit": "%",
+      "default": 10,
+      "visible_if": "{{ block.settings.enable_discount and block.settings.discount_type == 'percentage' }}"
+    },
+    {
+      "type": "number",
+      "id": "discount_fixed",
+      "label": "Discount amount",
+      "default": 10,
+      "info": "Fixed discount in your store currency.",
+      "visible_if": "{{ block.settings.enable_discount and block.settings.discount_type == 'fixed' }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_savings",
+      "label": "Show savings text",
+      "default": true,
+      "visible_if": "{{ block.settings.enable_discount }}"
+    },
+    {
+      "type": "text",
+      "id": "savings_label",
+      "label": "Savings label",
+      "default": "Save [amount]",
+      "info": "Use [amount] for the savings amount.",
+      "visible_if": "{{ block.settings.enable_discount and block.settings.show_savings }}"
+    },
+    {
+      "type": "header",
+      "content": "Appearance"
+    },
+    {
+      "type": "select",
+      "id": "card_style",
+      "label": "Card Style",
+      "options": [
+        {
+          "value": "normal",
+          "label": "Normal"
+        },
+        {
+          "value": "card",
+          "label": "Card"
+        }
+      ],
+      "default": "normal"
+    },
+    {
+      "type": "color",
+      "id": "card_outer_color",
+      "label": "Card outer color",
+      "default": "#f2f2f2",
+      "visible_if": "{{ block.settings.card_style == 'card' }}"
+    },
+    {
+      "type": "color_background",
+      "id": "card_outer_gradient",
+      "label": "Card outer gradient",
+      "visible_if": "{{ block.settings.card_style == 'card' }}"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border color",
+      "default": "#e8e8e8"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 12,
+      "info": "Applies to the block in Normal style, and to the outer shell and inner card in Card style."
+    },
+    {
+      "type": "color",
+      "id": "heading_color",
+      "label": "Heading color",
+      "default": "#212121",
+      "info": "In Card style, applies to the title on the outer card."
+    },
+    {
+      "type": "text_alignment",
+      "id": "card_heading_alignment",
+      "label": "Heading alignment",
+      "default": "left",
+      "visible_if": "{{ block.settings.card_style == 'card' }}"
+    },
+    {
+      "type": "color",
+      "id": "product_title_color",
+      "label": "Product title color",
+      "default": "#6b7280"
+    },
+    {
+      "type": "color",
+      "id": "price_color",
+      "label": "Price color",
+      "default": "#1a1a1a"
+    },
+    {
+      "type": "checkbox",
+      "id": "bold_prices",
+      "label": "Bold prices",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "image_border_radius",
+      "label": "Image border radius",
+      "min": 0,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "color",
+      "id": "button_border_color",
+      "label": "Button border color",
+      "default": "transparent"
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "label": "Button border radius",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "unit": "px",
+      "default": 50
+    },
+    {
+      "type": "color",
+      "id": "button_background",
+      "label": "Button background",
+      "default": "#2563eb"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Button text color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "compare_price_color",
+      "label": "Compare price color",
+      "default": "#9ca3af"
+    },
+    {
+      "type": "color",
+      "id": "savings_color",
+      "label": "Savings text color",
+      "default": "#16a34a"
+    },
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "range",
+      "id": "heading_font_size",
+      "label": "Heading font size",
+      "min": 14,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "product_title_font_size",
+      "label": "Product title font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "price_font_size",
+      "label": "Price font size",
+      "min": 12,
+      "max": 28,
+      "step": 1,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "savings_font_size",
+      "label": "Savings font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "button_font_size",
+      "label": "Button font size",
+      "min": 12,
+      "max": 28,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    }
+  ],
+  "presets": [
+    {
+      "name": "Frequently bought"
+    }
+  ]
+}
+{% endschema %}
