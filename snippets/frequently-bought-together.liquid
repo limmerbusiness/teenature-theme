@@ -1,0 +1,386 @@
+{%- doc -%}
+  Renders a horizontal "Frequently bought together" bundle block.
+
+  @param {object} block - Block settings object
+  @param {object} product - Current product
+  @param {object} section - Parent section
+{%- enddoc -%}
+
+{%- liquid
+  assign block_id = block.id | replace: '_', '' | downcase
+  assign bundle_count = 0
+  assign companion_count = 0
+  assign total_price = 0
+  assign total_compare_price = 0
+  assign all_available = true
+
+  comment
+    Ausverkaufte Produkte wuerden sonst als angehakte, deaktivierte Checkbox
+    stehenbleiben und ausserdem den ganzen Button sperren. Mit dieser Option
+    fliegen sie stattdessen aus dem Bundle.
+  endcomment
+  assign hide_sold_out = block.settings.hide_sold_out
+
+  assign fbt_products = block.settings.bundle_products
+
+  for bundle_product in fbt_products
+    if companion_count >= 3
+      break
+    endif
+    if product != blank and bundle_product.id == product.id
+      continue
+    endif
+    if hide_sold_out
+      assign check_variant = bundle_product.selected_or_first_available_variant
+      unless check_variant.available
+        continue
+      endunless
+    endif
+    assign companion_count = companion_count | plus: 1
+  endfor
+
+  if block.settings.hide_if_only_current_product and companion_count == 0
+    assign bundle_count = 0
+  else
+    assign include_current = block.settings.include_current_product
+    if include_current and product != blank
+      assign current_variant = product.selected_or_first_available_variant
+      if hide_sold_out and current_variant.available == false
+        assign include_current = false
+      endif
+    endif
+
+    if include_current and product != blank
+      assign bundle_count = bundle_count | plus: 1
+      assign total_price = total_price | plus: current_variant.price
+      assign item_compare_price = current_variant.price
+      if current_variant.compare_at_price != blank and current_variant.compare_at_price > current_variant.price
+        assign item_compare_price = current_variant.compare_at_price
+      endif
+      assign total_compare_price = total_compare_price | plus: item_compare_price
+      unless current_variant.available
+        assign all_available = false
+      endunless
+    endif
+
+    for bundle_product in fbt_products
+      if bundle_count >= 3
+        break
+      endif
+      if include_current and bundle_product.id == product.id
+        continue
+      endif
+      assign bundle_variant = bundle_product.selected_or_first_available_variant
+      if hide_sold_out and bundle_variant.available == false
+        continue
+      endif
+      assign bundle_count = bundle_count | plus: 1
+      assign total_price = total_price | plus: bundle_variant.price
+      assign item_compare_price = bundle_variant.price
+      if bundle_variant.compare_at_price != blank and bundle_variant.compare_at_price > bundle_variant.price
+        assign item_compare_price = bundle_variant.compare_at_price
+      endif
+      assign total_compare_price = total_compare_price | plus: item_compare_price
+      unless bundle_variant.available
+        assign all_available = false
+      endunless
+    endfor
+  endif
+
+  assign discounted_total = total_price
+  assign savings_amount = 0
+  assign footer_compare_total = total_price
+  assign show_footer_totals = false
+  assign show_footer_compare = false
+
+  if total_price > 0
+    assign show_footer_totals = true
+  endif
+
+  if block.settings.enable_discount and total_price > 0
+    if block.settings.discount_type == 'fixed'
+      assign savings_amount = block.settings.discount_fixed | times: 100
+    else
+      assign savings_amount = total_price | times: block.settings.discount_percentage | divided_by: 100
+    endif
+    assign discounted_total = total_price | minus: savings_amount
+    if discounted_total < 0
+      assign discounted_total = 0
+      assign savings_amount = total_price
+    endif
+    if savings_amount > 0
+      assign footer_compare_total = total_price
+      assign show_footer_compare = true
+    endif
+  elsif total_compare_price > total_price
+    assign savings_amount = total_compare_price | minus: total_price
+    assign discounted_total = total_price
+    assign footer_compare_total = total_compare_price
+    assign show_footer_compare = true
+  endif
+
+  assign button_text = block.settings.button_label | default: 'Add all [count] to cart'
+  assign button_text = button_text | replace: '[count]', bundle_count
+  assign fbt_card_style = block.settings.card_style | default: 'normal'
+-%}
+
+{%- if bundle_count > 0 -%}
+  {{ 'frequently-bought-together.css' | asset_url | stylesheet_tag }}
+  <script src="{{ 'frequently-bought-together.js' | asset_url }}" defer="defer"></script>
+
+  {%- style -%}
+    .fbt-{{ block_id }} {
+      --fbt-bg: {{ block.settings.background_color }};
+      --fbt-border: {{ block.settings.border_color }};
+      --fbt-radius: {{ block.settings.border_radius }}px;
+      --fbt-card-shell: {{ block.settings.card_outer_color | default: '#2563eb' }};
+      {%- if block.settings.card_outer_gradient != blank -%}
+      --fbt-card-shell-gradient: {{ block.settings.card_outer_gradient }};
+      {%- endif -%}
+      --fbt-heading: {{ block.settings.heading_color }};
+      --fbt-card-heading-align: {{ block.settings.card_heading_alignment | default: 'left' }};
+      --fbt-title: {{ block.settings.product_title_color }};
+      --fbt-price: {{ block.settings.price_color }};
+      --fbt-image-radius: {{ block.settings.image_border_radius }}px;
+      --fbt-btn-border: {{ block.settings.button_border_color }};
+      --fbt-btn-radius: {{ block.settings.button_border_radius }}px;
+      --fbt-btn-bg: {{ block.settings.button_background }};
+      --fbt-btn-text: {{ block.settings.button_text_color }};
+      --fbt-compare: {{ block.settings.compare_price_color }};
+      --fbt-savings: {{ block.settings.savings_color }};
+      --fbt-price-weight: {% if block.settings.bold_prices %}700{% else %}400{% endif %};
+      --fbt-heading-size: {{ block.settings.heading_font_size }}px;
+      --fbt-title-size: {{ block.settings.product_title_font_size }}px;
+      --fbt-price-size: {{ block.settings.price_font_size }}px;
+      --fbt-savings-size: {{ block.settings.savings_font_size }}px;
+      --fbt-button-size: {{ block.settings.button_font_size }}px;
+    }
+  {%- endstyle -%}
+
+  <frequently-bought-together
+    class="fbt fbt-{{ block_id }}{% if fbt_card_style == 'card' %} fbt--card{% endif %}"
+    data-block-id="{{ block.id }}"
+    data-total-price="{{ total_price }}"
+    data-discounted-total="{{ discounted_total }}"
+    data-enable-discount="{{ block.settings.enable_discount }}"
+    data-discount-type="{{ block.settings.discount_type }}"
+    data-discount-percentage="{{ block.settings.discount_percentage }}"
+    data-discount-fixed="{{ block.settings.discount_fixed | times: 100 }}"
+    data-show-savings="{{ block.settings.show_savings }}"
+    data-savings-label="{{ block.settings.savings_label | default: 'Save [amount]' | escape }}"
+    data-compare-savings-label="{{ block.settings.compare_savings_label | default: 'You save: [amount]' | escape }}"
+  >
+    {%- if fbt_card_style == 'card' -%}
+      {%- unless block.settings.heading == blank -%}
+        <div class="fbt__card-header">
+          <h2 class="fbt__heading">{{ block.settings.heading }}</h2>
+        </div>
+      {%- endunless -%}
+      <div class="fbt__card-body">
+    {%- else -%}
+      {%- unless block.settings.heading == blank -%}
+        <h2 class="fbt__heading">{{ block.settings.heading }}</h2>
+      {%- endunless -%}
+    {%- endif -%}
+
+    <div class="fbt__products" role="list">
+      {%- assign item_index = 0 -%}
+
+      {%- if include_current and product != blank -%}
+        {%- assign item_product = product -%}
+        {%- assign item_variant = item_product.selected_or_first_available_variant -%}
+        {%- assign item_compare_at = item_variant.price -%}
+        {%- if item_variant.compare_at_price != blank and item_variant.compare_at_price > item_variant.price -%}
+          {%- assign item_compare_at = item_variant.compare_at_price -%}
+        {%- endif -%}
+        <div
+          class="fbt__product"
+          role="listitem"
+          data-fbt-item
+          data-fbt-required
+          data-fbt-current-product
+          data-section-id="{{ section.id }}"
+          data-product-id="{{ product.id }}"
+        >
+          <div class="fbt__image-wrap">
+            {%- if item_index > 0 -%}
+              <span class="fbt__plus" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" class="fbt__plus-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7V4z"/></svg>
+              </span>
+            {%- endif -%}
+            <a href="{{ item_product.url }}" class="fbt__image-link" tabindex="-1">
+              {%- if item_product.featured_image != blank -%}
+                {{
+                  item_product.featured_image
+                  | image_url: width: 400
+                  | image_tag:
+                    loading: 'lazy',
+                    widths: '180, 360, 400',
+                    sizes: '(max-width: 749px) 30vw, 180px',
+                    class: 'fbt__image',
+                    alt: item_product.featured_image.alt | escape
+                }}
+              {%- else -%}
+                {{ 'product-apparel-1' | placeholder_svg_tag: 'fbt__image fbt__placeholder' }}
+              {%- endif -%}
+            </a>
+          </div>
+          <p class="fbt__product-title">{{ item_product.title }}</p>
+          {% render 'frequently-bought-together-price',
+            variant: item_variant,
+            block: block,
+            total_price: total_price,
+            savings_amount: savings_amount
+          %}
+          {%- if block.settings.show_variant_picker and item_product.has_only_default_variant == false -%}
+            {% render 'frequently-bought-together-variant-picker',
+              item_product: item_product,
+              item_variant: item_variant,
+              block_id: block_id,
+              item_index: item_index
+            %}
+          {%- else -%}
+            <input
+              type="hidden"
+              name="variant-id"
+              value="{{ item_variant.id }}"
+              data-price="{{ item_variant.price }}"
+              data-compare-price="{{ item_compare_at }}"
+              data-fbt-variant-input
+            >
+          {%- endif -%}
+        </div>
+        {%- assign item_index = item_index | plus: 1 -%}
+      {%- endif -%}
+
+      {%- for bundle_product in fbt_products -%}
+        {%- if item_index >= 3 -%}
+          {%- break -%}
+        {%- endif -%}
+        {%- if include_current and bundle_product.id == product.id -%}
+          {%- continue -%}
+        {%- endif -%}
+        {%- assign item_product = bundle_product -%}
+        {%- assign item_variant = item_product.selected_or_first_available_variant -%}
+        {%- if hide_sold_out and item_variant.available == false -%}
+          {%- continue -%}
+        {%- endif -%}
+        {%- assign item_compare_at = item_variant.price -%}
+        {%- if item_variant.compare_at_price != blank and item_variant.compare_at_price > item_variant.price -%}
+          {%- assign item_compare_at = item_variant.compare_at_price -%}
+        {%- endif -%}
+        <div
+          class="fbt__product"
+          role="listitem"
+          data-fbt-item
+          data-fbt-selectable
+          data-fbt-selected="true"
+        >
+          <div class="fbt__image-wrap">
+            <label class="fbt__checkbox-label" for="fbt-checkbox-{{ block_id }}-{{ item_index }}">
+              <input
+                type="checkbox"
+                class="fbt__checkbox"
+                id="fbt-checkbox-{{ block_id }}-{{ item_index }}"
+                data-fbt-checkbox
+                checked
+                {% unless item_variant.available %}disabled{% endunless %}
+              >
+              <span class="fbt__checkbox-visual" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" class="fbt__checkmark-icon" viewBox="0 0 12 9" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M11.35.643a.5.5 0 0 1 .006.707l-6.77 6.886a.5.5 0 0 1-.719-.006L.638 4.845a.5.5 0 1 1 .724-.69l2.872 3.011 6.41-6.517a.5.5 0 0 1 .707-.006z" clip-rule="evenodd"/></svg>
+              </span>
+              <span class="visually-hidden">{{ item_product.title }}</span>
+            </label>
+            {%- if item_index > 0 -%}
+              <span class="fbt__plus" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" class="fbt__plus-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7V4z"/></svg>
+              </span>
+            {%- endif -%}
+            <a href="{{ item_product.url }}" class="fbt__image-link" tabindex="-1">
+              {%- if item_product.featured_image != blank -%}
+                {{
+                  item_product.featured_image
+                  | image_url: width: 400
+                  | image_tag:
+                    loading: 'lazy',
+                    widths: '180, 360, 400',
+                    sizes: '(max-width: 749px) 30vw, 180px',
+                    class: 'fbt__image',
+                    alt: item_product.featured_image.alt | escape
+                }}
+              {%- else -%}
+                {{ 'product-apparel-2' | placeholder_svg_tag: 'fbt__image fbt__placeholder' }}
+              {%- endif -%}
+            </a>
+          </div>
+          <p class="fbt__product-title">{{ item_product.title }}</p>
+          {% render 'frequently-bought-together-price',
+            variant: item_variant,
+            block: block,
+            total_price: total_price,
+            savings_amount: savings_amount
+          %}
+          {%- if block.settings.show_variant_picker and item_product.has_only_default_variant == false -%}
+            {% render 'frequently-bought-together-variant-picker',
+              item_product: item_product,
+              item_variant: item_variant,
+              block_id: block_id,
+              item_index: item_index
+            %}
+          {%- else -%}
+            <input
+              type="hidden"
+              name="variant-id"
+              value="{{ item_variant.id }}"
+              data-price="{{ item_variant.price }}"
+              data-compare-price="{{ item_compare_at }}"
+              data-fbt-variant-input
+            >
+          {%- endif -%}
+        </div>
+        {%- assign item_index = item_index | plus: 1 -%}
+      {%- endfor -%}
+    </div>
+
+    <div class="fbt__footer">
+      {%- if show_footer_totals -%}
+        <div class="fbt__totals">
+          <p class="fbt__total-price">
+            <span class="visually-hidden">{{ 'products.product.price.regular_price' | t }}</span>
+            <s class="fbt__compare-total"{% unless show_footer_compare %} hidden{% endunless %}>{{ footer_compare_total | money }}</s>
+            <span class="visually-hidden">{{ 'products.product.price.sale_price' | t }}</span>
+            <strong class="fbt__discounted-total" data-fbt-discounted-total>{{ discounted_total | money }}</strong>
+          </p>
+          {%- if block.settings.enable_discount and block.settings.show_savings -%}
+            {%- assign savings_money = savings_amount | money -%}
+            {%- assign savings_text = block.settings.savings_label | default: 'Save [amount]' -%}
+            {%- assign savings_text = savings_text | replace: '[amount]', savings_money -%}
+            <p class="fbt__savings" data-fbt-savings>{{ savings_text }}</p>
+          {%- elsif block.settings.enable_discount == false and savings_amount > 0 -%}
+            {%- assign savings_money = savings_amount | money -%}
+            {%- assign compare_savings_text = block.settings.compare_savings_label | default: 'You save: [amount]' -%}
+            {%- assign compare_savings_text = compare_savings_text | replace: '[amount]', savings_money -%}
+            <p class="fbt__savings" data-fbt-savings data-fbt-compare-savings>{{ compare_savings_text }}</p>
+          {%- endif -%}
+        </div>
+      {%- endif -%}
+
+      <button
+        type="button"
+        class="fbt__button"
+        data-fbt-add-to-cart
+        data-fbt-button-label="{{ block.settings.button_label | default: 'Add all [count] to cart' | escape }}"
+        {% unless all_available %}disabled{% endunless %}
+      >
+        <span class="fbt__button-icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" class="fbt__checkmark-icon" viewBox="0 0 12 9" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M11.35.643a.5.5 0 0 1 .006.707l-6.77 6.886a.5.5 0 0 1-.719-.006L.638 4.845a.5.5 0 1 1 .724-.69l2.872 3.011 6.41-6.517a.5.5 0 0 1 .707-.006z" clip-rule="evenodd"/></svg>
+        </span>
+        <span data-fbt-button-text>{{ button_text }}</span>
+        {%- render 'loading-spinner' -%}
+      </button>
+    </div>
+    {%- if fbt_card_style == 'card' -%}
+      </div>
+    {%- endif -%}
+  </frequently-bought-together>
+{%- endif -%}

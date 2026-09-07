@@ -1,0 +1,116 @@
+{%- doc -%}
+  Renders a country flag using Shopify's native flag CDN.
+
+  @param {string} country_code - Country code or name
+  @param {number} [width] - Flag image width (default: 32)
+  @param {string} [flag_style] - Flag display style: circle, wide, or crisp (default: wide)
+{%- enddoc -%}
+
+{%- liquid
+  assign flag_width = width | default: 32
+  assign flag_style_value = flag_style | default: 'wide'
+  assign flag_wrapper_class = wrapper_class | default: 'country-flag' | append: ' country-flag--' | append: flag_style_value
+  assign country_input = country_code | strip
+
+  if country_input == 'UK' or country_input == 'EN' or country_input == 'SC' or country_input == 'WA' or country_input == 'NI'
+    assign country_iso = 'GB'
+  elsif country_input == 'USA' or country_input == 'America'
+    assign country_iso = 'US'
+  elsif country_input == 'Canada'
+    assign country_iso = 'CA'
+  elsif country_input == 'Australia'
+    assign country_iso = 'AU'
+  elsif country_input == 'Germany'
+    assign country_iso = 'DE'
+  elsif country_input == 'France'
+    assign country_iso = 'FR'
+  elsif country_input == 'Spain'
+    assign country_iso = 'ES'
+  elsif country_input == 'Italy'
+    assign country_iso = 'IT'
+  elsif country_input == 'Netherlands'
+    assign country_iso = 'NL'
+  elsif country_input == 'Belgium'
+    assign country_iso = 'BE'
+  elsif country_input == 'Switzerland'
+    assign country_iso = 'CH'
+  elsif country_input == 'Austria'
+    assign country_iso = 'AT'
+  elsif country_input == 'Sweden'
+    assign country_iso = 'SE'
+  elsif country_input == 'Norway'
+    assign country_iso = 'NO'
+  elsif country_input == 'Denmark'
+    assign country_iso = 'DK'
+  elsif country_input == 'Finland'
+    assign country_iso = 'FI'
+  elsif country_input == 'Poland'
+    assign country_iso = 'PL'
+  elsif country_input == 'Czech Republic'
+    assign country_iso = 'CZ'
+  elsif country_input == 'Slovakia'
+    assign country_iso = 'SK'
+  elsif country_input == 'Hungary'
+    assign country_iso = 'HU'
+  elsif country_input == 'Romania'
+    assign country_iso = 'RO'
+  elsif country_input == 'Bulgaria'
+    assign country_iso = 'BG'
+  elsif country_input == 'Greece'
+    assign country_iso = 'GR'
+  elsif country_input == 'Portugal'
+    assign country_iso = 'PT'
+  elsif country_input == 'Ireland'
+    assign country_iso = 'IE'
+  elsif country_input == 'New Zealand'
+    assign country_iso = 'NZ'
+  elsif country_input == 'Japan'
+    assign country_iso = 'JP'
+  elsif country_input == 'South Korea'
+    assign country_iso = 'KR'
+  elsif country_input == 'China'
+    assign country_iso = 'CN'
+  elsif country_input == 'India'
+    assign country_iso = 'IN'
+  elsif country_input == 'Brazil'
+    assign country_iso = 'BR'
+  elsif country_input == 'Mexico'
+    assign country_iso = 'MX'
+  elsif country_input == 'Argentina'
+    assign country_iso = 'AR'
+  elsif country_input == 'Chile'
+    assign country_iso = 'CL'
+  elsif country_input == 'South Africa'
+    assign country_iso = 'ZA'
+  else
+    assign country_iso = country_input | upcase
+  endif
+
+  assign review_country = nil
+  for country in localization.available_countries
+    if country.iso_code == country_iso
+      assign review_country = country
+      break
+    endif
+  endfor
+
+  if review_country
+    assign flag_image_url = review_country | image_url: width: flag_width
+  else
+    assign flag_image_url = '//cdn.shopify.com/static/images/flags/' | append: country_iso | downcase | append: '.svg?width=' | append: flag_width
+  endif
+-%}
+
+{%- if country_iso.size == 2 -%}
+  <div
+    class="{{ flag_wrapper_class }}"
+    data-flag-url="{{ flag_image_url }}"
+    data-country-code="{{ country_iso }}"
+  >
+    <span
+      class="icon-flag"
+      style="background-image: url({{ flag_image_url }});"
+      aria-hidden="true"
+    ></span>
+  </div>
+{%- endif -%}

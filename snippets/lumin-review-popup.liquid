@@ -1,0 +1,64 @@
+{%- if section.settings.enable_review_popup -%}
+<div id="reviewPopupModal" class="review-popup-modal" role="dialog" aria-modal="true" aria-labelledby="popupReviewTitle">
+  <div class="review-popup-content">
+    <button type="button" class="review-popup-close" aria-label="Close review popup">&times;</button>
+
+    <div class="review-popup-header">
+      <div class="review-popup-customer">
+        <div class="review-popup-avatar">
+          <div id="popupCustomerAvatar" class="popup-customer-avatar">
+            <img id="popupCustomerImage" src="" alt="" loading="lazy" decoding="async" width="60" height="60">
+            <div id="popupCustomerInitials" class="popup-customer-initials customer-initials customer-initials--hidden"></div>
+          </div>
+        </div>
+        <div class="review-popup-customer-info">
+          <div class="popup-customer-name-flag">
+            <h3 id="popupCustomerName"></h3>
+            <div id="popupCountryFlag" class="popup-country-flag country-flag country-flag--{{ section.settings.flag_style | default: 'wide' }}" hidden>
+              <span id="popupFlagIcon" class="icon-flag" aria-hidden="true"></span>
+            </div>
+          </div>
+          <p class="review-popup-date" id="popupReviewDate"></p>
+          <div class="review-popup-rating">
+            <div class="review-popup-stars lr-stars lr-stars--md" id="popupReviewStars"></div>
+            <span class="review-popup-rating-text" id="popupRatingText"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="review-popup-body">
+      <h2 class="review-popup-title" id="popupReviewTitle"></h2>
+      <p class="review-popup-text" id="popupReviewText"></p>
+      <div class="review-popup-images" id="popupReviewImages"></div>
+    </div>
+
+    <div class="review-popup-footer">
+      {%- if section.settings.show_popup_product_info -%}
+        <div class="review-popup-product" id="popupProductInfo">
+          <div class="review-popup-product-image">
+            <img id="popupProductImage" src="" alt="" loading="lazy" decoding="async" width="50" height="50">
+          </div>
+          <div class="review-popup-product-title" id="popupProductTitle"></div>
+        </div>
+      {%- endif -%}
+
+      {%- if section.settings.show_popup_helpful_buttons -%}
+        <div class="review-popup-helpful">
+          <span class="review-popup-helpful-text">{{ section.settings.popup_helpful_text | default: 'Was this helpful?' }}</span>
+          <div class="review-popup-helpful-buttons">
+            <button type="button" class="helpful-btn" data-action="like" aria-label="Mark as helpful">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              <span id="likeCount">0</span>
+            </button>
+            <button type="button" class="helpful-btn" data-action="dislike" aria-label="Mark as not helpful">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              <span id="dislikeCount">0</span>
+            </button>
+          </div>
+        </div>
+      {%- endif -%}
+    </div>
+  </div>
+</div>
+{%- endif -%}

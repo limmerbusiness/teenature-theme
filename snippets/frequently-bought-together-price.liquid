@@ -1,0 +1,48 @@
+{%- doc -%}
+  Renders product price for the frequently bought together block.
+
+  @param {object} variant - Product variant
+  @param {object} block - Block settings
+  @param {number} total_price - Bundle sale total in cents
+  @param {number} savings_amount - Bundle savings in cents
+{%- enddoc -%}
+
+{%- liquid
+  assign sale_price = variant.price
+  assign compare_price = 0
+  assign show_strikethrough = false
+
+  if block.settings.enable_discount and savings_amount > 0 and total_price > 0
+    assign compare_price = variant.price
+
+    if block.settings.discount_type == 'percentage'
+      assign discount_factor = 100 | minus: block.settings.discount_percentage
+      assign sale_price = variant.price | times: discount_factor | divided_by: 100
+    else
+      assign item_savings = savings_amount | times: variant.price | divided_by: total_price
+      assign sale_price = variant.price | minus: item_savings
+    endif
+
+    if sale_price < 0
+      assign sale_price = 0
+    endif
+
+    if sale_price < compare_price
+      assign show_strikethrough = true
+    endif
+  elsif variant.compare_at_price != blank and variant.compare_at_price > variant.price
+    assign compare_price = variant.compare_at_price
+    assign show_strikethrough = true
+  endif
+-%}
+
+<p class="fbt__product-price">
+  {%- if show_strikethrough -%}
+    <span class="visually-hidden">{{ 'products.product.price.regular_price' | t }}</span>
+    <s class="fbt__product-compare">{{ compare_price | money }}</s>
+    <span class="visually-hidden">{{ 'products.product.price.sale_price' | t }}</span>
+    <span class="fbt__product-sale">{{ sale_price | money }}</span>
+  {%- else -%}
+    {{ sale_price | money }}
+  {%- endif -%}
+</p>

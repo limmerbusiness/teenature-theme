@@ -1,0 +1,40 @@
+{%- doc -%}
+  Renders a variant picker for a frequently bought together item.
+
+  @param {object} item_product - Product object
+  @param {object} item_variant - Selected variant
+  @param {string} block_id - Block id for unique select ids
+  @param {number} item_index - Item index in the bundle
+  @param {boolean} [swatch_tiles] - Render as image tiles instead of a dropdown
+{%- enddoc -%}
+
+{%- unless item_product.has_only_default_variant -%}
+  <div class="fbt__variants">
+    <div class="select">
+      <select
+        id="fbt-variant-{{ block_id }}-{{ item_index }}"
+        name="fbt-variant-{{ block_id }}-{{ item_product.id }}"
+        class="fbt__variant-select{% if swatch_tiles %} fbt__variant-select--tiles{% endif %}"
+        data-fbt-variant-select
+        aria-label="{{ 'products.product.product_variants' | t }}"
+      >
+        {%- for variant in item_product.variants -%}
+          <option
+            value="{{ variant.id }}"
+            data-price="{{ variant.price }}"
+            data-compare-price="{% if variant.compare_at_price != blank and variant.compare_at_price > variant.price %}{{ variant.compare_at_price }}{% else %}{{ variant.price }}{% endif %}"
+            data-variant-img="{{ variant.image | default: item_product.featured_image | image_url: width: 400 }}"
+            data-variant-label="{{ variant.title | escape }}"
+            {% if variant.id == item_variant.id %}selected{% endif %}
+            {% unless variant.available %}disabled{% endunless %}
+          >
+            {{ variant.title }} - {{ variant.price | money }}
+          </option>
+        {%- endfor -%}
+      </select>
+      <span class="svg-wrapper" aria-hidden="true">
+        {{- 'icon-caret.svg' | inline_asset_content -}}
+      </span>
+    </div>
+  </div>
+{%- endunless -%}

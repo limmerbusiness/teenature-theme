@@ -1,0 +1,26 @@
+{%- doc -%}
+  Renders a valid CSS `font-family` value from a `font_picker` font.
+
+  Shopify's `font.family` may include literal `"` characters; those are stripped before
+  wrapping the name in single quotes so values stay valid inside `{% style %}` (which
+  escapes `"` from `| json`) and inside double-quoted HTML `style=""` attributes.
+
+  System fonts output only `fallback_families` (no bogus internal family handle).
+
+  @param {object} font - Shopify font from font_picker
+  @param {boolean} [in_style_attribute] - Deprecated; kept for callers. Output is the same.
+{%- enddoc -%}
+
+{%- if font != blank -%}
+  {%- if font.system? and font.fallback_families != blank -%}
+    {{ font.fallback_families }}
+  {%- else -%}
+    {%- assign family = font.family | strip | remove: '"' -%}
+    {%- assign escaped_family = family | replace: "'", "\\'" -%}
+    {%- if font.fallback_families != blank -%}
+      '{{ escaped_family }}', {{ font.fallback_families }}
+    {%- else -%}
+      '{{ escaped_family }}'
+    {%- endif -%}
+  {%- endif -%}
+{%- endif -%}

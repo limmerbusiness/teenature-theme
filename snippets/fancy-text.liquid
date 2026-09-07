@@ -1,0 +1,33 @@
+{%- comment -%}
+  Renders text with optional gradient fancy highlights.
+
+  @param {string} text - Source text
+  @param {boolean} [escape] - Escape HTML before applying brackets (plain text fields)
+  @param {string} [divider] - Inserted inside the opening fancy1 span (e.g. '|' for dividers)
+
+  Syntax (theme settings → Fancy Text):
+    [text]   → gradient 1
+    ((text)) → gradient 2
+    [[text]] → gradient 1 (legacy, still supported)
+
+  Usage:
+    {% render 'fancy-text', text: block.settings.heading %}
+    {% render 'fancy-text', text: block.settings.caption, escape: true %}
+    {% render 'fancy-text', text: label, divider: '|' %}
+{%- endcomment -%}
+{%- liquid
+  assign fancy1_open = '<span class="boring-text__fancy1">'
+  if divider != blank
+    assign fancy1_open = fancy1_open | append: divider
+  endif
+
+  assign output = text
+  if escape
+    assign output = output | escape
+  endif
+
+  assign output = output | replace: '((', '<span class="boring-text__fancy2">' | replace: '))', '</span>'
+  assign output = output | replace: '[[', fancy1_open | replace: ']]', '</span>'
+  assign output = output | replace: '[', fancy1_open | replace: ']', '</span>'
+-%}
+{{- output -}}

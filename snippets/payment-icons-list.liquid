@@ -1,0 +1,104 @@
+{%- doc -%}
+  Renders payment icon list items from theme settings.
+
+  Used by payment icon blocks and the cart checkout area.
+{%- enddoc -%}
+
+{%- if settings.payment_icons_source == 'shopify' -%}
+  {%- for type in shop.enabled_payment_types -%}
+    <li class="payment-icons__item">
+      {{ type | payment_type_svg_tag: class: 'icon icon--full-color' }}
+    </li>
+  {%- endfor -%}
+{%- else -%}
+  {%- liquid
+    assign payment_icon_allowlist = 'visa,master,american_express,paypal,apple_pay,google_pay,shopify_pay,shop_pay,discover,diners_club,jcb,maestro,unionpay,ideal,bancontact,klarna,klarna_pay_later,afterpay,clearpay,sofort,sepa_direct_debit,eps,giropay,przelewy24,blik,vipps,mobilepay,swish,twint,affirm,zip,laybuy,sezzle,venmo,cashapppay,stripe,bitcoin,litecoin,grabpay,gcash,pix,mercadopago' | split: ','
+    assign rendered_keys = ','
+    assign rendered_count = 0
+    assign use_custom_settings = true
+
+    if localization.language.primary == false
+      assign use_custom_settings = false
+    endif
+  -%}
+
+  {%- if use_custom_settings and settings.payment_icons_types != blank -%}
+    {%- assign payment_types = settings.payment_icons_types | downcase | strip | replace: '-', '_' | replace: ' ', '' | split: ',' -%}
+    {%- for type in payment_types -%}
+      {%- if type != blank and payment_icon_allowlist contains type -%}
+        {%- assign rendered_key_token = type | prepend: ',' | append: ',' -%}
+        {%- unless rendered_keys contains rendered_key_token -%}
+          {%- assign rendered_keys = rendered_keys | append: type | append: ',' -%}
+          {%- assign rendered_count = rendered_count | plus: 1 -%}
+          <li class="payment-icons__item">
+            {{ type | payment_type_svg_tag: class: 'icon icon--full-color' }}
+          </li>
+        {%- endunless -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endif -%}
+
+  {%- if rendered_count == 0 and shop.enabled_payment_types.size > 0 -%}
+    {%- for type in shop.enabled_payment_types -%}
+      <li class="payment-icons__item">
+        {{ type | payment_type_svg_tag: class: 'icon icon--full-color' }}
+      </li>
+    {%- endfor -%}
+  {%- endif -%}
+
+  {%- if settings.payment_icon_custom_1 != blank -%}
+    <li
+      class="payment-icons__item payment-icons__item--custom"
+      style="--payment-icon-custom-width: {{ settings.payment_icon_custom_1_width }}px;"
+    >
+      {{
+        settings.payment_icon_custom_1
+        | image_url: width: 200
+        | image_tag:
+          class: 'payment-icons__custom-image',
+          widths: '100, 150, 200',
+          alt: settings.payment_icon_custom_1.alt | default: 'Payment method'
+      }}
+    </li>
+  {%- endif -%}
+
+  {%- if settings.payment_icon_custom_2 != blank -%}
+    <li
+      class="payment-icons__item payment-icons__item--custom"
+      style="--payment-icon-custom-width: {{ settings.payment_icon_custom_2_width }}px;"
+    >
+      {{
+        settings.payment_icon_custom_2
+        | image_url: width: 200
+        | image_tag:
+          class: 'payment-icons__custom-image',
+          widths: '100, 150, 200',
+          alt: settings.payment_icon_custom_2.alt | default: 'Payment method'
+      }}
+    </li>
+  {%- endif -%}
+
+  {%- if settings.payment_icon_custom_3 != blank -%}
+    <li
+      class="payment-icons__item payment-icons__item--custom"
+      style="--payment-icon-custom-width: {{ settings.payment_icon_custom_3_width }}px;"
+    >
+      {{
+        settings.payment_icon_custom_3
+        | image_url: width: 200
+        | image_tag:
+          class: 'payment-icons__custom-image',
+          widths: '100, 150, 200',
+          alt: settings.payment_icon_custom_3.alt | default: 'Payment method'
+      }}
+    </li>
+  {%- endif -%}
+{%- endif -%}
+
+{% stylesheet %}
+  .payment-icons__custom-image {
+    width: var(--payment-icon-size, var(--payment-icon-custom-width, 38px));
+    height: auto;
+    display: block;
+  }
+{% endstylesheet %}

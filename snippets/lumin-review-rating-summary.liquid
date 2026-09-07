@@ -1,0 +1,50 @@
+{%- comment -%}
+  Renders the rating summary block.
+  Accepts:
+  - block: rating_summary block
+  - section: parent section
+{%- endcomment -%}
+
+<div
+  class="rating-summary {% if section.settings.show_add_review_button %}rating-summary--with-cta{% else %}rating-summary--no-cta{% endif %}"
+  {{ block.shopify_attributes }}
+  style="background: {{ block.settings.rating_summary_bg }}; border: {{ block.settings.rating_summary_border_width }}px {{ block.settings.rating_summary_border_style }} {{ block.settings.rating_summary_border_color }}; border-radius: {{ block.settings.rating_summary_border_radius }}px;"
+>
+  <div class="rating-summary-left">
+    <div class="rating-summary-score" style="color: {{ block.settings.rating_summary_score_color | default: '#333' }};">{{ block.settings.rating_summary_score | default: '4.7' }}</div>
+    <div class="rating-summary-stars" aria-hidden="true">
+      {% render 'lumin-review-stars', section: section, filled_count: 5, star_size: 'lg' %}
+    </div>
+    <div class="rating-summary-count" style="color: {{ block.settings.rating_summary_text_color | default: '#666' }};">{{ block.settings.rating_summary_total | default: '104 Reviews' }}</div>
+  </div>
+
+  <div class="rating-summary-breakdown">
+    {%- assign bar_configs = '5,4,3,2,1' | split: ',' -%}
+    {%- for star_level in bar_configs -%}
+      {%- assign width_key = 'rating_bar_' | append: star_level | append: '_width' -%}
+      {%- assign count_key = 'rating_bar_' | append: star_level | append: '_count' -%}
+      {%- assign bar_width = block.settings[width_key] | default: 0 -%}
+      {%- assign bar_count = block.settings[count_key] | default: bar_width -%}
+      <div class="rating-bar">
+        <div class="rating-bar-stars" aria-hidden="true">
+          {%- assign star_num = star_level | plus: 0 -%}
+          {% render 'lumin-review-stars', section: section, filled_count: star_num, star_size: 'sm' %}
+        </div>
+        <div class="rating-bar-progress" style="background: {{ block.settings.rating_bar_bg }};">
+          <div class="rating-bar-fill" style="width: {{ bar_width }}%; background: {{ block.settings.rating_bar_fill | default: '#ffd700' }};"></div>
+        </div>
+        <div class="rating-bar-count" style="color: {{ block.settings.rating_summary_text_color | default: '#666' }};">{{ bar_count }}%</div>
+      </div>
+    {%- endfor -%}
+  </div>
+
+  {%- if section.settings.show_add_review_button -%}
+    <div class="rating-summary-review-cta" style="background: {{ block.settings.rating_summary_bg }};">
+      <h3 class="review-cta-heading">{{ section.settings.review_cta_heading }}</h3>
+      <p id="review-cta-description" class="review-cta-subtext">{{ section.settings.review_cta_subtext }}</p>
+      <button id="addReviewBtn" type="button" class="review-cta-button button" aria-label="{{ section.settings.add_review_button_text | default: 'Write a review' }}" aria-describedby="review-cta-description">
+        {{ section.settings.add_review_button_text | default: 'Write a review' }}
+      </button>
+    </div>
+  {%- endif -%}
+</div>

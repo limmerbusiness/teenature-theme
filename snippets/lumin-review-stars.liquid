@@ -1,0 +1,45 @@
+{%- comment -%}
+  Renders star icons via SVG sprite.
+  Accepts:
+  - section: {Object} required
+  - rating: {Number} decimal rating for review cards (e.g. 4.5)
+  - filled_count: {Number} 0-5 for bar/summary mode
+  - star_size: 'sm' | 'md' | 'lg' (default md)
+{%- endcomment -%}
+
+{%- liquid
+  assign sprite_id = 'lumin-star-' | append: section.id
+  assign half_id = 'lumin-star-half-' | append: section.id
+  assign size_class = 'lr-stars--md'
+  if star_size == 'sm'
+    assign size_class = 'lr-stars--sm'
+  elsif star_size == 'lg'
+    assign size_class = 'lr-stars--lg'
+  endif
+
+  assign full_stars = 0
+  assign half_star = 0
+  assign empty_stars = 5
+
+  if filled_count != blank
+    assign full_stars = filled_count | at_most: 5
+    assign empty_stars = 5 | minus: full_stars
+  else
+    assign rating_value = rating | default: 5
+    assign full_stars = rating_value | floor
+    assign half_star = rating_value | minus: full_stars | times: 2 | round
+    assign empty_stars = 5 | minus: full_stars | minus: half_star
+  endif
+-%}
+
+<span class="lr-stars {{ size_class }}">
+  {%- for i in (1..full_stars) -%}
+    <svg class="lr-star lr-star--full" viewBox="0 0 24 24" aria-hidden="true"><use href="#{{ sprite_id }}"></use></svg>
+  {%- endfor -%}
+  {%- if half_star == 1 -%}
+    <svg class="lr-star lr-star--half" viewBox="0 0 24 24" aria-hidden="true"><use href="#{{ sprite_id }}" fill="url(#{{ half_id }})"></use></svg>
+  {%- endif -%}
+  {%- for i in (1..empty_stars) -%}
+    <svg class="lr-star lr-star--empty" viewBox="0 0 24 24" aria-hidden="true"><use href="#{{ sprite_id }}"></use></svg>
+  {%- endfor -%}
+</span>

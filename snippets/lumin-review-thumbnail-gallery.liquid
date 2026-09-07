@@ -1,0 +1,137 @@
+{%- comment -%}
+  Thumbnail gallery. Images are rendered from section.blocks server-side, then
+  refreshed by lumin-review.js from each review card's data-gallery-images.
+{%- endcomment -%}
+
+{%- liquid
+  assign thumb_size = block.settings.image_size | default: 60
+  assign lr_gallery_image_count = 0
+
+  for review_block in section.blocks
+    if review_block.type == 'review' or review_block.type == '_lumin-review' or review_block.id contains 'review_'
+      if review_block.settings.img_block != blank
+        assign lr_gallery_image_count = lr_gallery_image_count | plus: 1
+      endif
+      if review_block.settings.img_block2 != blank
+        assign lr_gallery_image_count = lr_gallery_image_count | plus: 1
+      endif
+    endif
+  endfor
+
+  assign lr_gallery_review_index = 0
+-%}
+
+<div
+  class="review-thumbnail-gallery"
+  {{ block.shopify_attributes }}
+  style="
+    --thumbnail-gallery-bg: {{ block.settings.gallery_bg | default: '#f8f8f8' }};
+    --thumbnail-gallery-title-color: {{ block.settings.gallery_title_color | default: '#333' }};
+    --thumbnail-gallery-accent-color: {{ block.settings.gallery_accent_color.red }},{{ block.settings.gallery_accent_color.green }},{{ block.settings.gallery_accent_color.blue }};
+    --thumbnail-border-thickness: {{ block.settings.border_thickness | default: 1 }}px;
+    --thumbnail-border-color: {{ block.settings.border_color | default: '#ddd' }};
+    --thumbnail-border-style: {{ block.settings.border_style | default: 'solid' }};
+    --thumbnail-border-radius: {{ block.settings.border_radius | default: 8 }}px;
+    --thumbnail-image-size: {{ thumb_size }}px;
+    --thumbnail-size: {{ thumb_size }}px;
+  "
+>
+  {%- if block.settings.gallery_title != blank -%}
+    <div class="thumbnail-gallery-title" style="text-align: {{ block.settings.thumbnail_align }};">
+      {{ block.settings.gallery_title }}
+      {%- if lr_gallery_image_count > 0 -%}
+        <span class="thumbnail-gallery-count" data-lumin-gallery-count>
+          ({{ lr_gallery_image_count }} image{% if lr_gallery_image_count != 1 %}s{% endif %})
+        </span>
+      {%- else -%}
+        <span class="thumbnail-gallery-count" data-lumin-gallery-count hidden></span>
+      {%- endif -%}
+    </div>
+  {%- endif -%}
+
+  <div
+    class="thumbnail-gallery-grid"
+    data-lumin-gallery-grid
+    style="justify-content: {{ block.settings.thumbnail_align }};"
+    {% if lr_gallery_image_count == 0 %}hidden{% endif %}
+  >
+    {%- for review_block in section.blocks -%}
+      {%- if review_block.type == 'review' or review_block.type == '_lumin-review' or review_block.id contains 'review_' -%}
+        {%- assign lr_gallery_review_index = lr_gallery_review_index | plus: 1 -%}
+        {%- if review_block.settings.img_block != blank -%}
+          {%- assign lr_thumb_alt = review_block.settings.name_text | append: ' review image' -%}
+          {%- if review_block.settings.img_block.alt != blank -%}
+            {%- assign lr_thumb_alt = review_block.settings.img_block.alt -%}
+          {%- endif -%}
+          {%- liquid
+            assign thumb_height = thumb_size
+            assign thumb_aspect = review_block.settings.img_block.aspect_ratio | default: 1
+            assign thumb_display_width = thumb_height | times: thumb_aspect | round | at_least: 1
+            assign thumb_src_width = thumb_display_width | times: 2 | at_least: 120
+          -%}
+          <div
+            class="thumbnail-item"
+            data-review-index="{{ lr_gallery_review_index }}"
+            data-image-type="primary"
+            role="button"
+            tabindex="0"
+            aria-label="View review {{ lr_gallery_review_index }}"
+          >
+            {{
+              review_block.settings.img_block
+              | image_url: width: thumb_src_width
+              | image_tag:
+                alt: lr_thumb_alt,
+                loading: 'lazy',
+                decoding: 'async',
+                widths: '60, 120, 180',
+                sizes: '(max-width: 600px) 60px, 120px',
+                class: 'thumbnail-image loaded',
+                width: thumb_display_width,
+                height: thumb_height
+            }}
+          </div>
+        {%- endif -%}
+        {%- if review_block.settings.img_block2 != blank -%}
+          {%- assign lr_thumb_alt_2 = review_block.settings.name_text | append: ' review image 2' -%}
+          {%- if review_block.settings.img_block2.alt != blank -%}
+            {%- assign lr_thumb_alt_2 = review_block.settings.img_block2.alt -%}
+          {%- endif -%}
+          {%- liquid
+            assign thumb2_height = thumb_size
+            assign thumb2_aspect = review_block.settings.img_block2.aspect_ratio | default: 1
+            assign thumb2_display_width = thumb2_height | times: thumb2_aspect | round | at_least: 1
+            assign thumb2_src_width = thumb2_display_width | times: 2 | at_least: 120
+          -%}
+          <div
+            class="thumbnail-item"
+            data-review-index="{{ lr_gallery_review_index }}"
+            data-image-type="secondary"
+            role="button"
+            tabindex="0"
+            aria-label="View review {{ lr_gallery_review_index }}"
+          >
+            {{
+              review_block.settings.img_block2
+              | image_url: width: thumb2_src_width
+              | image_tag:
+                alt: lr_thumb_alt_2,
+                loading: 'lazy',
+                decoding: 'async',
+                widths: '60, 120, 180',
+                sizes: '(max-width: 600px) 60px, 120px',
+                class: 'thumbnail-image loaded',
+                width: thumb2_display_width,
+                height: thumb2_height
+            }}
+          </div>
+        {%- endif -%}
+      {%- endif -%}
+    {%- endfor -%}
+  </div>
+
+  <div class="thumbnail-gallery-empty" data-lumin-gallery-empty{% unless lr_gallery_image_count == 0 %} hidden{% endunless %}>
+    <p>No review images available yet.</p>
+    <p class="thumbnail-gallery-empty-hint">Add images to your review blocks to see them here.</p>
+  </div>
+</div>
