@@ -1,0 +1,337 @@
+/*
+ * Eigene Anpassungen fuer Kokoro. Hier ist Platz ohne Zeichenlimit.
+ * Die --qb-* Werte kommen aus dem Block "Quantity Breaks: Stil".
+ *
+ * Grundsatz: Was der Kunde selbst verstellen will, gehoert als Einstellung in
+ * den jeweiligen Block - nicht hierher. Hier steht nur, was sich nicht
+ * sinnvoll als Regler abbilden laesst.
+ *
+ * Hinweis: quantity-breaks.css wird erst im Body geladen, also NACH dieser
+ * Datei. Regeln, die dortige Vorgaben ueberschreiben, brauchen deshalb einen
+ * zusaetzlichen Vorfahren im Selektor.
+ */
+
+/* --- Quantity Breaks: Optik --- */
+.quantity-breaks__card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  background: #ffffff;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.quantity-breaks__card--active {
+  border: var(--qb-active-border-width, 2px) solid var(--qb-active-border-color, #111827);
+  background: var(--qb-active-background, #f6f6f6);
+}
+
+/* Kleines Eck-Faehnchen oben rechts statt breitem Balken ueber der Karte. */
+.quantity-breaks__card .quantity-breaks__recommended-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  margin: 0;
+  padding: 3px 10px;
+  max-width: none;
+  background: var(--qb-badge-color, #16a34a);
+  color: var(--qb-badge-text-color, #ffffff);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  border-radius: 0 10px 0 8px;
+  white-space: nowrap;
+}
+
+.quantity-breaks__discount-badge {
+  background: #e11d48;
+  color: #ffffff;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.quantity-breaks__quantity-title {
+  font-weight: 700;
+}
+
+/* Preis und Streichpreis nebeneinander - wie in den Varianten-Zeilen. */
+.quantity-breaks__card .quantity-breaks__content-right,
+.quantity-breaks__card .quantity-breaks__price-container {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/*
+ * Gleiche Preisfarbe in allen Karten. Die ausgewaehlte Karte bekommt vom
+ * Theme sonst einen helleren Ton, deshalb hier ausdruecklich mitgenommen.
+ */
+.quantity-breaks__card .quantity-breaks__price,
+.quantity-breaks__card.quantity-breaks__card--active .quantity-breaks__price,
+.quantity-breaks__card.quantity-breaks__card--recommended .quantity-breaks__price {
+  color: #e11d48;
+  font-weight: 700;
+  opacity: 1;
+}
+
+/* Gleiche Anmutung wie der Streichpreis in den Varianten-Zeilen. */
+.quantity-breaks__card .quantity-breaks__original-price,
+.quantity-breaks__card.quantity-breaks__card--active .quantity-breaks__original-price,
+.quantity-breaks__card.quantity-breaks__card--recommended .quantity-breaks__original-price {
+  color: #9ca3af;
+  font-weight: 400;
+  text-decoration: line-through;
+  opacity: 1;
+}
+
+/*
+ * Aufgeklapptes Set: der Preis oben verschwindet, weil unten die
+ * Gesamtpreis-Zeile steht. Nicht aufgeklappte Karten behalten ihren Preis
+ * oben, damit man die Pakete vergleichen kann.
+ */
+.quantity-breaks__card--active:has(.quantity-breaks__variant-picker-row) .quantity-breaks__content-right {
+  display: none;
+}
+
+/*
+ * Der Karteninhalt ist ein umbrechender Flex-Container. Varianten-Zeilen und
+ * Gesamtpreis brauchen deshalb ausdruecklich eine eigene volle Zeile.
+ */
+.quantity-breaks__variant-pickers {
+  flex: 0 0 100%;
+  width: 100%;
+  order: 98;
+}
+
+.qb-total {
+  flex: 0 0 100%;
+  width: 100%;
+  order: 99;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  color: #111827;
+}
+
+.qb-total__label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Groesse wird per JS vom Kartenpreis uebernommen, das hier ist der Notwert. */
+.qb-total__value {
+  font-size: 17px;
+  font-weight: 700;
+  color: #e11d48;
+  white-space: nowrap;
+}
+
+.qb-total__value s {
+  margin-inline-start: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+/* --- Varianten-Zeilen --- */
+.quantity-breaks__variant-picker-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.quantity-breaks__variant-picker-row + .quantity-breaks__variant-picker-row {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.quantity-breaks__variant-picker-number {
+  flex: 0 0 auto;
+  min-width: 18px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.quantity-breaks__variant-picker-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.quantity-breaks__variant-swatch {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 2px solid #111827;
+  background: var(--swatch-background) center / cover no-repeat;
+}
+
+.quantity-breaks__variant-select {
+  padding: 6px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 13px;
+}
+
+.qb-row-price {
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+  font-size: 14px;
+  font-weight: 700;
+  color: #e11d48;
+  white-space: nowrap;
+}
+
+.qb-row-price s {
+  margin-inline-start: 4px;
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+/*
+ * --- Farbkacheln statt Dropdown ---
+ * Gilt fuer Quantity Breaks und fuer "Frequently bought together", sobald dort
+ * die Einstellung "Farbkacheln statt Dropdown" aktiv ist.
+ */
+.qb-has-tiles .quantity-breaks__variant-select,
+.qb-has-tiles .quantity-breaks__variant-swatch,
+.qb-has-tiles .fbt__variant-select,
+.qb-has-tiles > .svg-wrapper {
+  display: none;
+}
+
+.qb-tiles {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.qb-tiles::-webkit-scrollbar {
+  display: none;
+}
+
+.fbt__variants .qb-tiles {
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.qb-tile {
+  position: relative;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: var(--qb-tile-size, 34px);
+  height: var(--qb-tile-size, 34px);
+  padding: 0;
+  border: var(--qb-tile-border-width, 1px) solid transparent;
+  border-radius: 8px;
+  outline: 1px solid rgba(0, 0, 0, 0.12);
+  outline-offset: -1px;
+  background: var(--qb-tile-bg, #e5e7eb) center / cover no-repeat;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.qb-tile:hover {
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+.qb-tile.is-active {
+  border-color: var(--qb-tile-active-color, #111827);
+  outline-color: transparent;
+}
+
+/* Ausverkaufte Farbe: sichtbar, aber blass und diagonal durchgestrichen. */
+.qb-tile.is-unavailable {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.qb-tile.is-unavailable::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 1px),
+    rgba(17, 24, 39, 0.75) calc(50% - 1px),
+    rgba(17, 24, 39, 0.75) calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
+
+.qb-tile.is-unavailable:hover {
+  border-color: transparent;
+}
+
+/* --- Auswahlkreis kleiner --- */
+.quantity-breaks__lumin-radio-indicator {
+  transform: scale(0.5);
+  margin-inline-end: -4px;
+}
+
+/* --- Farbfelder groesser und eckig --- */
+.swatch {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+}
+
+*:has(> .swatch) {
+  width: auto;
+  height: auto;
+  border-radius: 6px;
+}
+
+/*
+ * Der Auswahlring der Farbauswahl war hartnaeckig rund. Statt weiter zu raten,
+ * an welchem Element er haengt, bekommt alles innerhalb der Swatch-Auswahl
+ * dieselbe Eckenrundung. Bewusst grob, aber eng auf diesen Bereich begrenzt.
+ */
+.variant-option--swatches,
+.variant-option--swatches *,
+.variant-option--swatches *::before,
+.variant-option--swatches *::after {
+  border-radius: 6px !important;
+}
+
+/* --- Lagerbestands-Balken ausblenden, Text bleibt --- */
+[class*='lumin-inventory-status__bar-container-'] {
+  display: none;
+}
+
+/*
+ * Versandschaetzung ohne eigenen Kasten - die Farbeinstellung im Block laesst
+ * kein transparent zu, deshalb hier. Abstaende, Puls und Ausrichtung sind
+ * Einstellungen im Block selbst.
+ */
+.shipping-estimate {
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+/* Inventory-Kasten naeher an den Button. */
+div:has(> [class*='lumin-inventory-status-']) {
+  margin-bottom: -16px;
+}

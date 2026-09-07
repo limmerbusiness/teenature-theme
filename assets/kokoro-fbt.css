@@ -1,0 +1,106 @@
+/*
+ * Anpassungen am Block "Frequently bought together".
+ * Bewusst in einer eigenen Datei, damit die Quantity-Breaks-Regeln in
+ * kokoro-custom.css uebersichtlich bleiben.
+ */
+
+/*
+ * Gleiche Hoehe fuer alle drei Zellen. Ohne das rutscht alles unter einem
+ * zweizeiligen Titel nach unten, waehrend die Nachbarzelle mit einzeiligem
+ * Titel hoeher steht - das war der unruhige Eindruck.
+ */
+.fbt__products {
+  align-items: stretch;
+}
+
+.fbt__product {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fbt__product-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.6em;
+  line-height: 1.3;
+  text-align: center;
+}
+
+/*
+ * Preis immer auf gleicher Hoehe, Farbkacheln buendig am unteren Rand.
+ * Zugleich die Reihenfolge umdrehen: erst der aktuelle Preis, dann der
+ * Streichpreis. Im Markup steht der Streichpreis zuerst, deshalb ueber
+ * "order" statt ueber eine Aenderung an der Liquid-Datei.
+ */
+.fbt__product-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  min-height: 1.6em;
+  margin-bottom: 6px;
+}
+
+.fbt__variants {
+  margin-top: auto;
+}
+
+.fbt__product-price .fbt__product-sale {
+  order: 1;
+}
+
+.fbt__product-price .fbt__product-compare {
+  order: 2;
+  font-weight: 400;
+  color: var(--fbt-compare, #9ca3af);
+}
+
+.fbt__total-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+}
+
+.fbt__total-price .fbt__discounted-total {
+  order: 1;
+}
+
+.fbt__total-price .fbt__compare-total {
+  order: 2;
+  font-weight: 400;
+  color: var(--fbt-compare, #9ca3af);
+}
+
+/*
+ * Wo der Gesamtpreis steht, entscheidet die Einstellung im Block. Sie setzt
+ * die Klassen fbt-total-above und fbt-total-button auf die Block-Huelle.
+ */
+.product-block-frequently-bought-together:not(.fbt-total-above) .fbt__totals {
+  display: none;
+}
+
+.product-block-frequently-bought-together:not(.fbt-total-button) .fbt-button-total {
+  display: none;
+}
+
+/* Das Haekchen im Button weicht dem Preis. */
+.product-block-frequently-bought-together.fbt-total-button .fbt__button-icon {
+  display: none;
+}
+
+/*
+ * Der Preis im Button erbt die komplette Schrift des Buttons. Die kommt per
+ * kokoro-fbt.js vom Warenkorb-Button, damit beide Buttons identisch wirken.
+ */
+.fbt-button-total {
+  margin-inline-start: 8px;
+  font: inherit;
+  letter-spacing: inherit;
+  white-space: nowrap;
+}

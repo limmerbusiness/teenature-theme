@@ -1,0 +1,173 @@
+/* renewlift-styles.css — shared design system for the RenewLift advertorial clone */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root{
+  --rl-bg:            #fdf8f3;
+  --rl-surface:       #ffffff;
+  --rl-ink:           #2b2420;
+  --rl-ink-muted:     #6b5f56;
+  --rl-border:        #ecdfd2;
+  --rl-accent:        #c98a6b;
+  --rl-accent-deep:   #a9694b;
+  --rl-accent-soft:   #f6e4da;
+  --rl-success:       #3f7d5c;
+  --rl-star:          #e0a944;
+  --rl-btn-bg:        #2b2420;
+  --rl-btn-fg:        #ffffff;
+  --rl-radius:        16px;
+  --rl-radius-sm:     10px;
+  --rl-radius-btn:    999px;
+  --rl-font-heading:  'Fraunces', Georgia, serif;
+  --rl-font-body:     'Inter', system-ui, -apple-system, sans-serif;
+  --rl-shadow:        0 8px 24px rgba(43,36,32,.08);
+}
+
+.renewlift-section * { box-sizing: border-box; }
+.renewlift-container { max-width: 800px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 32px); }
+.renewlift-section   { padding: clamp(28px, 6vw, 56px) 0; background: var(--rl-bg); font-family: var(--rl-font-body); }
+.renewlift-section p { color: var(--rl-ink); line-height: 1.65; font-size: clamp(16px, 2.4vw, 18px); margin: 0 0 18px; }
+.renewlift-section strong { font-weight: 700; }
+
+/* Eyebrow / breadcrumb */
+.renewlift-eyebrow {
+  display: inline-block; font-family: var(--rl-font-body); font-weight: 700;
+  font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--rl-accent-deep); background: var(--rl-accent-soft);
+  padding: 6px 14px; border-radius: var(--rl-radius-btn); margin-bottom: 18px;
+}
+
+/* Headline / subhead */
+.renewlift-headline {
+  font-family: var(--rl-font-heading); font-weight: 700;
+  font-size: clamp(28px, 5vw, 44px); line-height: 1.15; color: var(--rl-ink);
+  margin: 0 0 16px;
+}
+.renewlift-subhead {
+  font-size: clamp(17px, 2.6vw, 20px); color: var(--rl-ink-muted);
+  line-height: 1.5; margin: 0 0 22px; font-weight: 500;
+}
+
+/* Byline */
+.renewlift-byline { display: flex; align-items: center; gap: 10px; margin-bottom: 26px; }
+.renewlift-byline-avatar { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: var(--rl-accent-soft); flex-shrink: 0; }
+.renewlift-byline-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.renewlift-byline-meta { font-size: 14px; color: var(--rl-ink-muted); }
+.renewlift-byline-name { font-weight: 700; color: var(--rl-ink); }
+
+/* Hero image */
+.renewlift-hero-media { border-radius: var(--rl-radius); overflow: hidden; box-shadow: var(--rl-shadow); margin-bottom: 8px; }
+.renewlift-hero-media img, .renewlift-hero-media video { width: 100%; height: auto; display: block; }
+
+/* Stat / callout card */
+.renewlift-stat-card {
+  background: var(--rl-surface); border: 1px solid var(--rl-border); border-radius: var(--rl-radius);
+  padding: clamp(20px, 4vw, 32px); text-align: center; box-shadow: var(--rl-shadow); margin: 24px 0;
+}
+.renewlift-stat-card .renewlift-stat-headline {
+  font-family: var(--rl-font-heading); font-weight: 700; color: var(--rl-accent-deep);
+  font-size: clamp(20px, 3.4vw, 28px); line-height: 1.25; margin: 0 0 10px;
+}
+.renewlift-stat-card p { margin: 0; font-size: 15px; color: var(--rl-ink-muted); }
+
+/* Buttons */
+.renewlift-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--rl-btn-bg); color: var(--rl-btn-fg); font-weight: 700;
+  font-size: clamp(15px, 2vw, 17px); padding: 16px 28px; border-radius: var(--rl-radius-btn);
+  text-decoration: none; border: none; cursor: pointer; width: 100%;
+  transition: transform .15s ease, opacity .15s ease;
+}
+.renewlift-btn:hover { opacity: .92; transform: translateY(-1px); }
+.renewlift-btn-secondary {
+  background: transparent; color: var(--rl-accent-deep); border: 2px solid var(--rl-accent);
+}
+
+/* Product intro card */
+.renewlift-product-card {
+  background: var(--rl-surface); border-radius: var(--rl-radius); box-shadow: var(--rl-shadow);
+  padding: clamp(20px, 4vw, 32px); margin: 24px 0; border: 1px solid var(--rl-border);
+}
+.renewlift-product-card h3 {
+  font-family: var(--rl-font-heading); font-size: clamp(22px, 3.4vw, 28px); color: var(--rl-ink); margin: 0 0 14px;
+}
+
+/* Benefits checklist */
+.renewlift-checklist { list-style: none; margin: 24px 0; padding: 0; display: grid; gap: 14px; }
+.renewlift-check-item {
+  display: flex; gap: 12px; align-items: flex-start; background: var(--rl-surface);
+  border: 1px solid var(--rl-border); border-radius: var(--rl-radius-sm); padding: 14px 16px;
+}
+.renewlift-check-icon {
+  flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--rl-success);
+  color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800;
+}
+.renewlift-check-text strong { display: block; color: var(--rl-ink); margin-bottom: 2px; }
+.renewlift-check-text span { color: var(--rl-ink-muted); font-size: 15px; }
+
+/* Testimonials */
+.renewlift-testimonial-grid { display: grid; gap: 18px; margin: 24px 0; }
+.renewlift-testimonial-card {
+  background: var(--rl-surface); border: 1px solid var(--rl-border); border-radius: var(--rl-radius);
+  padding: clamp(18px, 3vw, 26px); box-shadow: var(--rl-shadow);
+}
+.renewlift-stars { color: var(--rl-star); font-size: 16px; letter-spacing: 2px; margin-bottom: 10px; }
+.renewlift-testimonial-name { font-weight: 700; color: var(--rl-ink); margin-top: 12px; display: block; }
+.renewlift-testimonial-card p { font-size: 15px; margin: 0; color: var(--rl-ink); }
+
+/* Urgency / offer banner */
+.renewlift-urgency-banner {
+  background: linear-gradient(135deg, var(--rl-accent-soft), var(--rl-bg));
+  border: 1px solid var(--rl-border); border-radius: var(--rl-radius);
+  padding: clamp(22px, 4vw, 34px); text-align: center; margin: 24px 0;
+}
+.renewlift-price-row { display: flex; align-items: baseline; justify-content: center; gap: 12px; margin: 10px 0 18px; }
+.renewlift-price-now { font-family: var(--rl-font-heading); font-size: clamp(32px, 5vw, 42px); font-weight: 700; color: var(--rl-accent-deep); }
+.renewlift-price-was { font-size: 18px; color: var(--rl-ink-muted); text-decoration: line-through; }
+.renewlift-badge-pill {
+  display: inline-block; background: var(--rl-accent-deep); color: #fff; font-weight: 700;
+  font-size: 12px; letter-spacing: .05em; text-transform: uppercase; padding: 6px 14px;
+  border-radius: var(--rl-radius-btn); margin-bottom: 14px;
+}
+
+/* Guarantee grid */
+.renewlift-guarantee-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 24px 0; }
+.renewlift-guarantee-item {
+  text-align: center; background: var(--rl-surface); border: 1px solid var(--rl-border);
+  border-radius: var(--rl-radius-sm); padding: 16px 10px; font-size: 13px; font-weight: 600; color: var(--rl-ink-muted);
+}
+.renewlift-guarantee-item .renewlift-guarantee-icon { font-size: 22px; display: block; margin-bottom: 6px; }
+@media (min-width: 640px) { .renewlift-guarantee-grid { grid-template-columns: repeat(4, 1fr); } }
+
+/* Comments */
+.renewlift-comments-list { display: grid; gap: 18px; margin: 20px 0; }
+.renewlift-comment-item { display: flex; gap: 12px; }
+.renewlift-comment-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--rl-accent-soft); flex-shrink: 0; display:flex; align-items:center; justify-content:center; font-weight:700; color: var(--rl-accent-deep); font-size:14px; }
+.renewlift-comment-body { background: var(--rl-surface); border: 1px solid var(--rl-border); border-radius: var(--rl-radius-sm); padding: 12px 14px; flex: 1; }
+.renewlift-comment-name { font-weight: 700; font-size: 14px; color: var(--rl-ink); }
+.renewlift-comment-text { font-size: 14px; color: var(--rl-ink); margin: 4px 0 6px; }
+.renewlift-comment-meta { font-size: 12px; color: var(--rl-ink-muted); }
+
+/* FAQ */
+.renewlift-faq-item { border-bottom: 1px solid var(--rl-border); padding: 16px 0; }
+.renewlift-faq-item summary { font-weight: 700; cursor: pointer; color: var(--rl-ink); font-size: 16px; }
+.renewlift-faq-item p { margin-top: 10px; font-size: 15px; color: var(--rl-ink-muted); }
+
+/* Sticky mobile CTA */
+.renewlift-sticky-cta { display: none; }
+@media (max-width: 749px) {
+  .renewlift-sticky-cta {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+    padding: 12px 16px; background: var(--rl-btn-bg); color: var(--rl-btn-fg);
+    box-shadow: 0 -2px 14px rgba(0,0,0,.12); opacity: 0; transform: translateY(100%);
+    transition: opacity .25s ease, transform .25s ease;
+  }
+  .renewlift-sticky-cta.is-visible { opacity: 1; transform: translateY(0); }
+  .renewlift-sticky-cta .renewlift-btn { width: auto; padding: 12px 20px; }
+  body { padding-bottom: 0; }
+}
+
+/* Mobile-safe overrides */
+@media (max-width: 749px) {
+  .renewlift-guarantee-grid { grid-template-columns: repeat(2, 1fr); }
+}
