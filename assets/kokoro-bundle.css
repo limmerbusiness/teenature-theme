@@ -1,0 +1,30 @@
+/*
+ * Bundle Deals: eigene Anpassungen.
+ *
+ * Die Abschnitts-Datei ist 63 KB gross und enthaelt die Rabatt- und
+ * Warenkorblogik, deshalb wird sie nicht angefasst. Alles hier laeuft ueber
+ * die Klassen, die der Abschnitt ohnehin vergibt.
+ *
+ * Schalter (Hinweiszeile, Fortschrittsbalken, Position des Preises) stehen im
+ * Abschnitt "Kokoro: Bundle-Stil".
+ */
+
+/* --- Farbkacheln statt Dropdown --- */
+
+/*
+ * Die Kacheln selbst sind in kokoro-custom.css gestaltet (.qb-tiles /
+ * .qb-tile). Hier nur, was fuer die Bundle-Karten noetig ist: das
+ * urspruengliche Dropdown ausblenden, sobald die Kacheln gebaut sind.
+ */
+.bundle-product-card__variants.qb-has-tiles .bundle-product-card__variant-select {
+  display: none;
+}
+
+.bundle-product-card__variants .qb-tiles {
+  justify-content: center;
+  margin-block: 6px 10px;
+}
+
+.bundle-product-card__variants .qb-tile {
+  --qb-tile-size: 38px;
+}
