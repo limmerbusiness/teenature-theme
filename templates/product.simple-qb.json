@@ -6196,17 +6196,10 @@
                   },
                   "blocks": {}
                 },
-                "date": {
+                "date": { 
                   "type": "_contact-form-date",
                   "static": true,
-                  "settings": {
-                    "label": "Preferred date",
-                    "placeholder": "Choose a date",
-                    "field_name": "preferred_date",
-                    "required": false,
-                    "min_date": "",
-                    "max_date": ""
-                  },
+                  "settings": {},
                   "blocks": {}
                 }
               },
