@@ -1,0 +1,180 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "main": {
+      "type": "main-page",
+      "blocks": {
+        "heading": {
+          "type": "text",
+          "name": "Title",
+          "settings": {
+            "text": "<h1>{{ closest.page.title }}</h1>",
+            "enable_text_truncation": false,
+            "truncate_lines": 3,
+            "truncate_view_more_label": "View more",
+            "truncate_view_less_label": "View less",
+            "width": "100%",
+            "max_width": "normal",
+            "alignment": "left",
+            "type_preset": "h2",
+            "font": "var(--font-primary--family)",
+            "custom_typography_font": "work_sans_n4",
+            "enable_bold_typography_font": false,
+            "bold_typography_font": "work_sans_n7",
+            "enable_italic_typography_font": false,
+            "italic_typography_font": "work_sans_i4",
+            "font_size": "",
+            "line_height": "normal",
+            "letter_spacing": "normal",
+            "case": "none",
+            "wrap": "pretty",
+            "color_mode": "default",
+            "color": "",
+            "custom_color_style": "solid",
+            "custom_text_color": "#000000",
+            "custom_gradient_color_start": "#000000",
+            "custom_gradient_color_end": "#666666",
+            "custom_gradient_direction": "to right",
+            "custom_color_bold": "#000000",
+            "custom_color_italic": "#000000",
+            "custom_color_underline": "#000000",
+            "custom_color_background_bold": "rgba(0,0,0,0)",
+            "custom_color_background_italic": "rgba(0,0,0,0)",
+            "custom_color_background_underline": "rgba(0,0,0,0)",
+            "background": false,
+            "background_color": "#00000026",
+            "corner_radius": 0,
+            "padding-block-start": 0,
+            "padding-block-end": 0,
+            "padding-inline-start": 0,
+            "padding-inline-end": 0,
+            "ancher_id": ""
+          },
+          "blocks": {}
+        },
+        "page-content": {
+          "type": "page-content",
+          "settings": {},
+          "blocks": {}
+        }
+      },
+      "block_order": [
+        "heading",
+        "page-content"
+      ],
+      "disabled": true,
+      "settings": {
+        "content_direction": "column",
+        "gap": 32,
+        "color_scheme": "",
+        "padding-block-start": 40,
+        "padding-block-end": 80
+      }
+    },
+    "bundle_deals_9D4jfq": {
+      "type": "bundle-deals",
+      "blocks": {
+        "bundle_tier_Urf4zg": {
+          "type": "bundle_tier",
+          "settings": {
+            "min_items": 3,
+            "discount_percent": 10,
+            "tier_label": "Add {quantity}+ to Get {discount}%",
+            "discount_code": ""
+          }
+        },
+        "bundle_tier_GNednw": {
+          "type": "bundle_tier",
+          "settings": {
+            "min_items": 5,
+            "discount_percent": 15,
+            "tier_label": "Add {quantity}+ to Get {discount}%",
+            "discount_code": ""
+          }
+        }
+      },
+      "block_order": [
+        "bundle_tier_Urf4zg",
+        "bundle_tier_GNednw"
+      ],
+      "name": "Bundle deals",
+      "settings": {
+        "collection": "",
+        "products": [],
+        "max_products_to_show": 12,
+        "mobile_columns": "2",
+        "section_width": "page-width",
+        "color_scheme": "scheme-1",
+        "card_color_scheme": "scheme-1",
+        "min_products": 3,
+        "max_products": 12,
+        "discount_mode": "tiered",
+        "discount_percent": 0,
+        "discount_code": "",
+        "heading": "<strong>Mix & Match Your [Perfect Smile Bundle]</strong>",
+        "heading_tag": "h2",
+        "heading_size": "h3",
+        "text": "<p><strong>Build Your Routine. Your Way.<br/></strong>Why settle for one when you can create your perfect combo?<br/>With our <strong>Mix & Match Bundle</strong>, you choose the products — and unlock exclusive savings.</p>",
+        "container_alignment": "left",
+        "highlight_style": "gradient",
+        "highlight_color": "#e85d04",
+        "highlight_gradient_start": "#ed0882",
+        "highlight_gradient_end": "#565cb5",
+        "show_badge": true,
+        "show_vendor": true,
+        "show_variant_selector": true,
+        "card_title_font_size": 16,
+        "card_price_font_size": 16,
+        "card_button_font_size_desktop": 14,
+        "card_button_font_size_mobile": 14,
+        "badge_color": "#ffffff",
+        "badge_background": "#ed0882",
+        "bundle_deals_regular_price_no_compare_color": "#000000",
+        "bundle_deals_regular_price_color": "#000000",
+        "bundle_deals_summary_price_color": "#000000",
+        "bundle_deals_compare_price_color": "#ed0882",
+        "bundle_deals_compare_strike_color": "#ed0882",
+        "summary_color_scheme": "",
+        "bundle_label": "<strong>Your [Bundle]</strong>",
+        "summary_instruction": "Add [min] to [max] products to proceed and Save [%]",
+        "checkout_disclaimer": "Discounts will be applied at checkout.",
+        "bundle_tier_progress_message": "You are {count} items away from {reward}!",
+        "bundle_tier_progress_success": "You've unlocked every tier — best discount applied!",
+        "bundle_flat_progress_message": "Add {count} more product(s) to complete your bundle.",
+        "bundle_flat_progress_complete": "Minimum bundle size met. Add to cart when ready.",
+        "tier_bar_height": 6,
+        "tier_bar_customize_colors": false,
+        "tier_bar_track_color": "#0000001f",
+        "tier_bar_fill_color": "#1a1a1a",
+        "tier_bar_fill_qualified_color": "#00a650",
+        "summary_heading_font_size": "medium",
+        "summary_text_font_size": "medium",
+        "summary_item_font_size": "small",
+        "summary_price_font_size": "small",
+        "summary_total_font_size": "medium",
+        "summary_disclaimer_font_size": "small",
+        "bundle_deals_customisation": true,
+        "bundle_deals_padding": 20,
+        "border": "solid",
+        "border_width": 1,
+        "border_radius": 12,
+        "border_color_mode": "default",
+        "border_color": "#000000",
+        "padding-block-start": 48,
+        "padding-block-end": 36
+      }
+    }
+  },
+  "order": [
+    "main",
+    "bundle_deals_9D4jfq"
+  ]
+}
